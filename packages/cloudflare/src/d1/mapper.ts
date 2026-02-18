@@ -21,17 +21,14 @@ export function toTradeOrder(row: TradeOrderRow): TradeOrder {
   return {
     id: row.id,
     stockCode: row.stock_code,
-    stockName: row.stock_name,
     side: row.side,
     referencePrice: row.reference_price,
     quantity: row.quantity,
     trailingStopPct: row.trailing_stop_pct,
-    volumeThreshold: row.volume_threshold,
     broker: row.broker,
     market: row.market,
     status: row.status,
     peakPrice: row.peak_price,
-    memo: row.memo,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

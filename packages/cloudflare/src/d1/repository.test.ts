@@ -5,16 +5,14 @@ import type { TradeOrderRow } from "./types";
 const sampleRow: TradeOrderRow = {
   id: 1,
   stock_code: "005930",
-  stock_name: "삼성전자",
   side: "buy",
   reference_price: 70000,
   quantity: 10,
   trailing_stop_pct: 3.0,
-  volume_threshold: null,
   broker: "kis",
   market: "kospi",
   status: "pending",
-  memo: null,
+  peak_price: null,
   created_at: "2025-01-01 00:00:00",
   updated_at: "2025-01-01 00:00:00",
 };

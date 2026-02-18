@@ -264,7 +264,6 @@ describe("handleOrderExecution", () => {
         trailingStopPct: 5,
         peakPrice: 105000,
         market: "kospi",
-        stockName: "삼성전자",
       },
     ]);
     // 현재가 = 95000 → 기준가 100000의 95% → 손절
@@ -315,7 +314,6 @@ describe("handleOrderExecution", () => {
         trailingStopPct: 5,
         peakPrice: 115000,
         market: "kospi",
-        stockName: "삼성전자",
       },
     ]);
     // 현재가 = 115000 → 기준가 100000의 115% → 익절
@@ -363,7 +361,6 @@ describe("handleOrderExecution", () => {
         trailingStopPct: 5,
         peakPrice: 110000,
         market: "kospi",
-        stockName: "삼성전자",
       },
     ]);
     // 현재가 = 104500 → 고점 110000 * 0.95 = 104500 → 트레일링 스탑

@@ -7,16 +7,14 @@ describe("toTradeOrder", () => {
     const row: TradeOrderRow = {
       id: 1,
       stock_code: "005930",
-      stock_name: "삼성전자",
       side: "buy",
       reference_price: 70000,
       quantity: 10,
       trailing_stop_pct: 3.5,
-      volume_threshold: 1000000,
       broker: "kis",
       market: "kospi",
       status: "pending",
-      memo: "테스트 메모",
+      peak_price: null,
       created_at: "2024-01-15 10:30:00",
       updated_at: "2024-01-15 10:30:00",
     };
@@ -26,16 +24,14 @@ describe("toTradeOrder", () => {
     expect(result).toEqual({
       id: 1,
       stockCode: "005930",
-      stockName: "삼성전자",
       side: "buy",
       referencePrice: 70000,
       quantity: 10,
       trailingStopPct: 3.5,
-      volumeThreshold: 1000000,
       broker: "kis",
       market: "kospi",
       status: "pending",
-      memo: "테스트 메모",
+      peakPrice: null,
       createdAt: "2024-01-15 10:30:00",
       updatedAt: "2024-01-15 10:30:00",
     });
@@ -45,41 +41,35 @@ describe("toTradeOrder", () => {
     const row: TradeOrderRow = {
       id: 2,
       stock_code: "035720",
-      stock_name: null,
       side: "sell",
       reference_price: 50000,
       quantity: 5,
       trailing_stop_pct: 2.0,
-      volume_threshold: null,
       broker: "kiwoom",
       market: "kosdaq",
       status: "monitoring",
-      memo: null,
+      peak_price: null,
       created_at: "2024-01-16 09:00:00",
       updated_at: "2024-01-16 09:00:00",
     };
 
     const result = toTradeOrder(row);
 
-    expect(result.stockName).toBeNull();
-    expect(result.volumeThreshold).toBeNull();
-    expect(result.memo).toBeNull();
+    expect(result.peakPrice).toBeNull();
   });
 
   test("모든 필드 타입 보존", () => {
     const row: TradeOrderRow = {
       id: 3,
       stock_code: "000660",
-      stock_name: "SK하이닉스",
       side: "buy",
       reference_price: 120000,
       quantity: 100,
       trailing_stop_pct: 5.0,
-      volume_threshold: 500000,
       broker: "kis",
       market: "kospi",
       status: "executed",
-      memo: "장기 투자",
+      peak_price: 130000,
       created_at: "2024-01-17 14:00:00",
       updated_at: "2024-01-17 15:30:00",
     };
@@ -88,15 +78,12 @@ describe("toTradeOrder", () => {
 
     expect(typeof result.id).toBe("number");
     expect(typeof result.stockCode).toBe("string");
-    expect(typeof result.stockName).toBe("string");
     expect(typeof result.side).toBe("string");
     expect(typeof result.referencePrice).toBe("number");
     expect(typeof result.quantity).toBe("number");
     expect(typeof result.trailingStopPct).toBe("number");
-    expect(typeof result.volumeThreshold).toBe("number");
     expect(typeof result.broker).toBe("string");
     expect(typeof result.status).toBe("string");
-    expect(typeof result.memo).toBe("string");
     expect(typeof result.createdAt).toBe("string");
     expect(typeof result.updatedAt).toBe("string");
   });

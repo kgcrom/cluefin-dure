@@ -21,22 +21,20 @@ const ADD_HELP = `Usage: broker order add [options]
 D1 trade_orders 테이블에 새 주문을 추가합니다.
 
 필수 옵션:
-  --stock-code <code>       종목코드 (예: 005930)
-  --side <buy|sell>         매수/매도 구분
-  --price <number>          기준가격
-  --qty <number>            수량
-  --broker <kis|kiwoom>     증권사
+  --stock-code <code>           종목코드 (예: 005930)
+  --side <buy|sell>             매수/매도 구분
+  --price <number>              기준가격
+  --qty <number>                수량
+  --broker <kis|kiwoom>         증권사
+  --market <kospi|kosdaq>       시장 구분
 
 선택 옵션:
-  --trailing-stop <pct>     트레일링 스탑 비율 (기본: 5.0)
-  --stock-name <name>       종목명 (예: 삼성전자)
-  --volume-threshold <n>    거래량 임계값
-  --memo <text>             메모
-  -h, --help                도움말 출력
+  --trailing-stop <pct>         트레일링 스탑 비율 (기본: 5.0)
+  -h, --help                    도움말 출력
 
 예시:
-  broker order add --stock-code 005930 --side buy --price 70000 --qty 10 --broker kis
-  broker order add --stock-code 005930 --side buy --price 70000 --qty 10 --broker kis --stock-name 삼성전자 --trailing-stop 5.0`;
+  broker order add --stock-code 005930 --side buy --price 70000 --qty 10 --broker kis --market kospi
+  broker order add --stock-code 005930 --side buy --price 70000 --qty 10 --broker kis --market kosdaq --trailing-stop 5.0`;
 
 const LIST_HELP = `Usage: broker order list [options]
 
@@ -97,14 +95,12 @@ async function addOrder(args: string[], remote: boolean): Promise<void> {
     args,
     options: {
       "stock-code": { type: "string" },
-      "stock-name": { type: "string" },
       side: { type: "string" },
       price: { type: "string" },
       qty: { type: "string" },
       broker: { type: "string" },
+      market: { type: "string" },
       "trailing-stop": { type: "string" },
-      "volume-threshold": { type: "string" },
-      memo: { type: "string" },
       help: { type: "boolean", short: "h" },
     },
     strict: true,
@@ -120,8 +116,9 @@ async function addOrder(args: string[], remote: boolean): Promise<void> {
   const price = values.price;
   const qty = values.qty;
   const broker = values.broker;
+  const market = values.market;
 
-  if (!stockCode || !side || !price || !qty || !broker) {
+  if (!stockCode || !side || !price || !qty || !broker || !market) {
     console.error(ADD_HELP);
     process.exit(1);
   }
@@ -134,43 +131,14 @@ async function addOrder(args: string[], remote: boolean): Promise<void> {
     console.error('broker는 "kis" 또는 "kiwoom"이어야 합니다.');
     process.exit(1);
   }
+  if (!["kospi", "kosdaq"].includes(market)) {
+    console.error('market은 "kospi" 또는 "kosdaq"이어야 합니다.');
+    process.exit(1);
+  }
 
   const trailingStop = values["trailing-stop"] ?? "5.0";
-  const stockName = values["stock-name"];
-  const volumeThreshold = values["volume-threshold"];
-  const memo = values.memo;
 
-  const columns = [
-    "stock_code",
-    "side",
-    "reference_price",
-    "quantity",
-    "trailing_stop_pct",
-    "broker",
-  ];
-  const vals = [
-    `'${escapeSQL(stockCode)}'`,
-    `'${escapeSQL(side)}'`,
-    price,
-    qty,
-    trailingStop,
-    `'${escapeSQL(broker)}'`,
-  ];
-
-  if (stockName) {
-    columns.push("stock_name");
-    vals.push(`'${escapeSQL(stockName)}'`);
-  }
-  if (volumeThreshold) {
-    columns.push("volume_threshold");
-    vals.push(volumeThreshold);
-  }
-  if (memo) {
-    columns.push("memo");
-    vals.push(`'${escapeSQL(memo)}'`);
-  }
-
-  const sql = `INSERT INTO trade_orders (${columns.join(", ")}) VALUES (${vals.join(", ")})`;
+  const sql = `INSERT INTO trade_orders (stock_code, side, reference_price, quantity, trailing_stop_pct, broker, market) VALUES ('${escapeSQL(stockCode)}', '${escapeSQL(side)}', ${price}, ${qty}, ${trailingStop}, '${escapeSQL(broker)}', '${escapeSQL(market)}')`;
   const output = await execD1(sql, remote);
   console.log("주문 추가 완료");
   if (output.trim()) console.log(output);

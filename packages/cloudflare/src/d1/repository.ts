@@ -139,21 +139,18 @@ export function createOrderRepository(db: D1Database) {
     async createOrder(input: CreateTradeOrderInput): Promise<TradeOrder> {
       const result = await db
         .prepare(
-          `INSERT INTO trade_orders (stock_code, stock_name, side, reference_price, quantity, trailing_stop_pct, volume_threshold, broker, market, memo)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `INSERT INTO trade_orders (stock_code, side, reference_price, quantity, trailing_stop_pct, broker, market)
+           VALUES (?, ?, ?, ?, ?, ?, ?)
            RETURNING *`,
         )
         .bind(
           input.stockCode,
-          input.stockName ?? null,
           input.side,
           input.referencePrice,
           input.quantity,
           input.trailingStopPct ?? 5,
-          input.volumeThreshold ?? null,
           input.broker,
           input.market ?? "kospi",
-          input.memo ?? null,
         )
         .first<TradeOrderRow>();
 
