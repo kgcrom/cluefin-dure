@@ -50,17 +50,20 @@ describe("isOrderExecutionTime", () => {
 });
 
 describe("isFillCheckTime", () => {
-  test("KST 16:00 → true (시작)", () => {
-    expect(isFillCheckTime(utcDate(7, 0))).toBe(true);
+  test("KST 09:00 → true (시작 경계)", () => {
+    expect(isFillCheckTime(utcDate(0, 0))).toBe(true);
   });
-  test("KST 17:59 → true (종료 경계)", () => {
-    expect(isFillCheckTime(utcDate(8, 59))).toBe(true);
+  test("KST 08:59 → false (시작 전)", () => {
+    expect(isFillCheckTime(utcDate(23, 59))).toBe(false);
   });
-  test("KST 15:59 → false (시작 전)", () => {
-    expect(isFillCheckTime(utcDate(6, 59))).toBe(false);
+  test("KST 15:00 → true (종료 경계)", () => {
+    expect(isFillCheckTime(utcDate(6, 0))).toBe(true);
   });
-  test("KST 18:00 → false (종료 후)", () => {
-    expect(isFillCheckTime(utcDate(9, 0))).toBe(false);
+  test("KST 15:01 → false (종료 후)", () => {
+    expect(isFillCheckTime(utcDate(6, 1))).toBe(false);
+  });
+  test("KST 12:00 → true (중간)", () => {
+    expect(isFillCheckTime(utcDate(3, 0))).toBe(true);
   });
 });
 

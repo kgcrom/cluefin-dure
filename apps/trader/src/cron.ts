@@ -6,10 +6,11 @@ import {
   createKisMarketClient,
   createKisOrderClient,
   type KisDailyOrderParams,
-  type KisIndexPriceResponse,
+  type KisIntradayChartResponse,
   type KisStockPriceResponse,
 } from "@cluefin/securities";
 import type { Env } from "./bindings";
+import { evaluateBuyCondition, evaluateSellCondition, updatePeakPrice } from "./strategy";
 import { getTodayKst, isFillCheckTime, isOrderExecutionTime } from "./time-utils";
 import { getBrokerToken, refreshBrokerToken } from "./token-store";
 
@@ -45,6 +46,15 @@ async function executeKisOrder(
   };
 }
 
+function getCurrentKstHour(): string {
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const h = String(kst.getUTCHours()).padStart(2, "0");
+  const m = String(kst.getUTCMinutes()).padStart(2, "0");
+  const s = String(kst.getUTCSeconds()).padStart(2, "0");
+  return `${h}${m}${s}`;
+}
+
 export async function handleOrderExecution(env: Env): Promise<void> {
   const repo = createOrderRepository(env.cluefin_fsd_db);
   const orders = await repo.getActiveOrders();
@@ -65,27 +75,89 @@ export async function handleOrderExecution(env: Env): Promise<void> {
         `[cron] 주문 처리 시작: order_id=${order.id}, broker=${order.broker}, stock=${order.stockCode}, side=${order.side}`,
       );
 
-      if (order.broker === "kis") {
-        if (!kisToken) throw new Error("KIS 토큰이 설정되지 않았습니다");
-        const stockPrice: KisStockPriceResponse = await marketClient.getStockPrice(
-          credentials,
-          kisToken,
-          { marketCode: "J", stockCode: order.stockCode },
-        );
-        // TODO: order.market 기반 업종코드 매핑
-        const sectorCode = "0001"; // 임시 KOSPI 고정
-        const indexPrice: KisIndexPriceResponse = await marketClient.getIndexPrice(
-          credentials,
-          kisToken,
-          { sectorCode },
-        );
-        console.log(
-          `[cron] 시세 조회: stock=${order.stockCode}, 현재가=${stockPrice.output.stckPrpr}, 업종지수=${indexPrice.output.bstpNmixPrpr}`,
-        );
-      }
-      // TODO: 매수 조건식 — stockPrice/indexPrice 기반 조건 충족 여부 판단
-      // TODO: 매도 조건식 — 보유 종목의 수익률/손실률 기반 매도 시점 판단
+      if (!kisToken) throw new Error("KIS 토큰이 설정되지 않았습니다");
 
+      const stockPrice: KisStockPriceResponse = await marketClient.getStockPrice(
+        credentials,
+        kisToken,
+        { marketCode: "J", stockCode: order.stockCode },
+      );
+      const intradayChart: KisIntradayChartResponse = await marketClient.getIntradayChart(
+        credentials,
+        kisToken,
+        {
+          marketCode: "J",
+          stockCode: order.stockCode,
+          inputHour: getCurrentKstHour(),
+          includePrevData: "N",
+          etcClassCode: "",
+        },
+      );
+
+      const currentPrice = Number(stockPrice.output.stckPrpr);
+      console.log(
+        `[cron] 시세 조회: stock=${order.stockCode}, 현재가=${currentPrice}, 분봉=${intradayChart.output2.length}건`,
+      );
+
+      // 매수 주문 + monitoring 상태: 매도 조건 우선 확인
+      if (order.side === "buy" && order.status === "monitoring") {
+        const newPeak = updatePeakPrice(order.peakPrice, currentPrice);
+        await repo.updatePeakPrice(order.id, newPeak);
+
+        const sellResult = evaluateSellCondition(
+          currentPrice,
+          order.referencePrice,
+          newPeak,
+          order.trailingStopPct,
+        );
+
+        if (sellResult.shouldSell) {
+          console.log(`[cron] 자동 매도 트리거: order_id=${order.id}, reason=${sellResult.reason}`);
+
+          const filledQty = await repo.getFilledQuantityForOrder(order.id);
+          if (filledQty > 0) {
+            const sellOrder = { ...order, side: "sell" as const, referencePrice: currentPrice };
+            const { brokerOrderId, brokerResponse } = await executeKisOrder(
+              env,
+              sellOrder,
+              filledQty,
+              kisToken,
+            );
+            await repo.createExecution({
+              orderId: order.id,
+              brokerOrderId,
+              requestedQty: filledQty,
+              requestedPrice: currentPrice,
+              broker: order.broker,
+              brokerResponse,
+            });
+            console.log(
+              `[cron] 매도 즉시 실행: stock=${order.stockCode}, qty=${filledQty}, price=${currentPrice}, brokerOrderId=${brokerOrderId}`,
+            );
+          }
+
+          await repo.updateOrderStatus(order.id, "executed");
+          processedCount++;
+          continue;
+        }
+      }
+
+      // 매수 주문: 매수 조건 확인
+      if (order.side === "buy") {
+        const buyResult = evaluateBuyCondition(
+          currentPrice,
+          intradayChart.output2,
+          stockPrice.output,
+        );
+
+        if (!buyResult.shouldBuy) {
+          console.log(`[cron] 매수 조건 미충족: order_id=${order.id}, reason=${buyResult.reason}`);
+          continue;
+        }
+        console.log(`[cron] 매수 조건 충족: order_id=${order.id}, reason=${buyResult.reason}`);
+      }
+
+      // 잔여수량 확인 및 주문 실행
       const requestedQty = await repo.getRequestedQuantity(order.id);
       const remaining = order.quantity - requestedQty;
 
@@ -116,11 +188,12 @@ export async function handleOrderExecution(env: Env): Promise<void> {
         `[cron] 분할 수량 계산: order_id=${order.id}, total=${order.quantity}, requested=${requestedQty}, remaining=${remaining}, thisRound=${quantity}`,
       );
 
-      let brokerOrderId: string;
-      let brokerResponse: string;
-
-      if (!kisToken) throw new Error("KIS 토큰이 설정되지 않았습니다");
-      ({ brokerOrderId, brokerResponse } = await executeKisOrder(env, order, quantity, kisToken));
+      const { brokerOrderId, brokerResponse } = await executeKisOrder(
+        env,
+        order,
+        quantity,
+        kisToken,
+      );
 
       await repo.createExecution({
         orderId: order.id,
@@ -135,9 +208,6 @@ export async function handleOrderExecution(env: Env): Promise<void> {
         `[cron] 주문 실행 성공: order_id=${order.id}, brokerOrderId=${brokerOrderId}, quantity=${quantity}`,
       );
       processedCount++;
-
-      // TODO: trailing stop — 체결 후 고점 대비 trailing_stop_pct 이상 하락 시 매도 주문 생성
-      // TODO: loss cut — 매수 평균가 대비 일정 비율 이하 하락 시 즉시 매도 주문 생성
 
       if (order.status === "pending") {
         await repo.updateOrderStatus(order.id, "monitoring");
@@ -253,9 +323,5 @@ export async function handleScheduled(
   if (runFill) {
     console.log("[cron] 체결 확인 시작");
     ctx.waitUntil(handleFillCheck(env));
-  }
-
-  if (!runOrder && !runFill) {
-    console.log("[cron] 주문 실행/체결 확인 시간이 아님, 스킵");
   }
 }
