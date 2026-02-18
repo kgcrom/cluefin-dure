@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { createKisMarketClient } from "./market";
-import type { KisIndexPriceParams, KisIntradayChartParams, KisStockPriceParams } from "./types";
+import type {
+  KisDailyPriceParams,
+  KisIndexPriceParams,
+  KisIntradayChartParams,
+  KisStockPriceParams,
+} from "./types";
 
 const originalFetch = globalThis.fetch;
 
@@ -195,6 +200,37 @@ const indexPriceParams: KisIndexPriceParams = {
   sectorCode: "0001",
 };
 
+const dailyPriceParams: KisDailyPriceParams = {
+  marketCode: "J",
+  stockCode: "005930",
+  periodDivCode: "D",
+  orgAdjPrc: "0",
+};
+
+const rawDailyPriceResponse = {
+  rt_cd: "0",
+  msg_cd: "MCA00000",
+  msg1: "정상처리 되었습니다.",
+  output: [
+    {
+      stck_bsop_date: "20260218",
+      stck_oprc: "66000",
+      stck_hgpr: "66300",
+      stck_lwpr: "65800",
+      stck_clpr: "66100",
+      acml_vol: "10000000",
+      prdy_vrss_vol_rate: "85.20",
+      prdy_vrss: "100",
+      prdy_vrss_sign: "2",
+      prdy_ctrt: "0.15",
+      hts_frgn_ehrt: "52.50",
+      frgn_ntby_qty: "-500000",
+      flng_cls_code: "00",
+      acml_prtt_rate: "1.50",
+    },
+  ],
+};
+
 describe("createKisMarketClient", () => {
   test("sends correct query parameters", async () => {
     const client = createKisMarketClient("prod");
@@ -324,5 +360,63 @@ describe("getIndexPrice", () => {
     expect(result.output.dryyBstpNmixHgpr).toBe("2800.00");
     expect(result.output.totalAskpRsqn).toBe("5000000");
     expect(result.output.ntbyRsqn).toBe("-500000");
+  });
+});
+
+describe("getDailyPrice", () => {
+  test("sends correct query parameters", async () => {
+    globalThis.fetch = mock(() =>
+      Promise.resolve(new Response(JSON.stringify(rawDailyPriceResponse), { status: 200 })),
+    );
+
+    const client = createKisMarketClient("prod");
+    await client.getDailyPrice(credentials, token, dailyPriceParams);
+
+    const callArgs = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const url = new URL(callArgs[0] as string);
+
+    expect(url.pathname).toBe("/uapi/domestic-stock/v1/quotations/inquire-daily-price");
+    expect(url.searchParams.get("FID_COND_MRKT_DIV_CODE")).toBe("J");
+    expect(url.searchParams.get("FID_INPUT_ISCD")).toBe("005930");
+    expect(url.searchParams.get("FID_PERIOD_DIV_CODE")).toBe("D");
+    expect(url.searchParams.get("FID_ORG_ADJ_PRC")).toBe("0");
+  });
+
+  test("throws on HTTP error", async () => {
+    globalThis.fetch = mock(() =>
+      Promise.resolve(new Response("Forbidden", { status: 403, statusText: "Forbidden" })),
+    );
+
+    const client = createKisMarketClient("prod");
+
+    expect(client.getDailyPrice(credentials, token, dailyPriceParams)).rejects.toThrow(
+      "KIS daily price request failed: 403 Forbidden",
+    );
+  });
+
+  test("maps snake_case response to camelCase", async () => {
+    globalThis.fetch = mock(() =>
+      Promise.resolve(new Response(JSON.stringify(rawDailyPriceResponse), { status: 200 })),
+    );
+
+    const client = createKisMarketClient("prod");
+    const result = await client.getDailyPrice(credentials, token, dailyPriceParams);
+
+    expect(result.rtCd).toBe("0");
+    expect(result.msgCd).toBe("MCA00000");
+    expect(result.output).toHaveLength(1);
+    expect(result.output[0].stckBsopDate).toBe("20260218");
+    expect(result.output[0].stckOprc).toBe("66000");
+    expect(result.output[0].stckHgpr).toBe("66300");
+    expect(result.output[0].stckLwpr).toBe("65800");
+    expect(result.output[0].stckClpr).toBe("66100");
+    expect(result.output[0].acmlVol).toBe("10000000");
+    expect(result.output[0].prdyVrss).toBe("100");
+    expect(result.output[0].prdyVrssSign).toBe("2");
+    expect(result.output[0].prdyCtrt).toBe("0.15");
+    expect(result.output[0].htsFrgnEhrt).toBe("52.50");
+    expect(result.output[0].frgnNtbyQty).toBe("-500000");
+    expect(result.output[0].flngClsCode).toBe("00");
+    expect(result.output[0].acmlPrttRate).toBe("1.50");
   });
 });

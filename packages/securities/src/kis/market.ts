@@ -1,6 +1,9 @@
 import type { BrokerEnv } from "../types";
 import type {
   KisCredentials,
+  KisDailyPriceOutput,
+  KisDailyPriceParams,
+  KisDailyPriceResponse,
   KisIndexPriceOutput,
   KisIndexPriceParams,
   KisIndexPriceResponse,
@@ -34,6 +37,11 @@ interface KisMarketClient {
     token: string,
     params: KisIndexPriceParams,
   ): Promise<KisIndexPriceResponse>;
+  getDailyPrice(
+    credentials: KisCredentials,
+    token: string,
+    params: KisDailyPriceParams,
+  ): Promise<KisDailyPriceResponse>;
 }
 
 interface RawIntradayChartOutput1 {
@@ -66,6 +74,7 @@ interface RawIntradayChartResponse {
   output2: RawIntradayChartOutput2[];
 }
 
+/** 분봉 차트 요약 데이터(현재가, 전일 대비, 누적 거래량 등)를 camelCase로 매핑 */
 function mapOutput1(raw: RawIntradayChartOutput1): KisIntradayChartOutput1 {
   return {
     prdyVrss: raw.prdy_vrss,
@@ -79,6 +88,7 @@ function mapOutput1(raw: RawIntradayChartOutput1): KisIntradayChartOutput1 {
   };
 }
 
+/** 분봉 차트 시간별 시세 데이터(시가, 고가, 저가, 종가, 거래량 등)를 camelCase로 매핑 */
 function mapOutput2(raw: RawIntradayChartOutput2): KisIntradayChartOutput2 {
   return {
     stckBsopDate: raw.stck_bsop_date,
@@ -230,6 +240,7 @@ interface RawIndexPriceResponse {
   output: RawIndexPriceOutput;
 }
 
+/** 업종 현재지수 응답 데이터(지수, 전일 대비, 거래량, 상승/하락 종목수 등)를 camelCase로 매핑 */
 function mapIndexPriceOutput(raw: RawIndexPriceOutput): KisIndexPriceOutput {
   return {
     bstpNmixPrpr: raw.bstp_nmix_prpr,
@@ -271,6 +282,51 @@ function mapIndexPriceOutput(raw: RawIndexPriceOutput): KisIndexPriceOutput {
   };
 }
 
+interface RawDailyPriceOutput {
+  stck_bsop_date: string;
+  stck_oprc: string;
+  stck_hgpr: string;
+  stck_lwpr: string;
+  stck_clpr: string;
+  acml_vol: string;
+  prdy_vrss_vol_rate: string;
+  prdy_vrss: string;
+  prdy_vrss_sign: string;
+  prdy_ctrt: string;
+  hts_frgn_ehrt: string;
+  frgn_ntby_qty: string;
+  flng_cls_code: string;
+  acml_prtt_rate: string;
+}
+
+interface RawDailyPriceResponse {
+  rt_cd: string;
+  msg_cd: string;
+  msg1: string;
+  output: RawDailyPriceOutput[];
+}
+
+/** 일자별 시세 데이터(시가, 고가, 저가, 종가, 거래량 등)를 camelCase로 매핑 */
+function mapDailyPriceOutput(raw: RawDailyPriceOutput): KisDailyPriceOutput {
+  return {
+    stckBsopDate: raw.stck_bsop_date,
+    stckOprc: raw.stck_oprc,
+    stckHgpr: raw.stck_hgpr,
+    stckLwpr: raw.stck_lwpr,
+    stckClpr: raw.stck_clpr,
+    acmlVol: raw.acml_vol,
+    prdyVrssVolRate: raw.prdy_vrss_vol_rate,
+    prdyVrss: raw.prdy_vrss,
+    prdyVrssSign: raw.prdy_vrss_sign,
+    prdyCtrt: raw.prdy_ctrt,
+    htsFrgnEhrt: raw.hts_frgn_ehrt,
+    frgnNtbyQty: raw.frgn_ntby_qty,
+    flngClsCode: raw.flng_cls_code,
+    acmlPrttRate: raw.acml_prtt_rate,
+  };
+}
+
+/** 주식 현재가 응답 데이터(현재가, PER, PBR, 52주 고저가, 외국인 보유량 등)를 camelCase로 매핑 */
 function mapStockPriceOutput(raw: RawStockPriceOutput): KisStockPriceOutput {
   return {
     iscdStatClsCode: raw.iscd_stat_cls_code,
@@ -358,6 +414,7 @@ function mapStockPriceOutput(raw: RawStockPriceOutput): KisStockPriceOutput {
   };
 }
 
+/** KIS 국내주식 시세 API 클라이언트를 생성한다. env에 따라 실전/모의투자 URL이 결정된다. */
 export function createKisMarketClient(env: BrokerEnv): KisMarketClient {
   const baseUrl = BASE_URLS[env];
   if (!baseUrl) {
@@ -365,6 +422,7 @@ export function createKisMarketClient(env: BrokerEnv): KisMarketClient {
   }
 
   return {
+    /** 주식 당일 분봉 차트 조회 (tr_id: FHKST03010200) */
     async getIntradayChart(
       credentials: KisCredentials,
       token: string,
@@ -411,6 +469,7 @@ export function createKisMarketClient(env: BrokerEnv): KisMarketClient {
       };
     },
 
+    /** 주식 현재가 조회 (tr_id: FHKST01010100) */
     async getStockPrice(
       credentials: KisCredentials,
       token: string,
@@ -453,6 +512,7 @@ export function createKisMarketClient(env: BrokerEnv): KisMarketClient {
       };
     },
 
+    /** 국내업종 현재지수 조회 (tr_id: FHPUP02100000) */
     async getIndexPrice(
       credentials: KisCredentials,
       token: string,
@@ -492,6 +552,51 @@ export function createKisMarketClient(env: BrokerEnv): KisMarketClient {
         msgCd: data.msg_cd,
         msg1: data.msg1,
         output: mapIndexPriceOutput(data.output),
+      };
+    },
+
+    /** 주식현재가 일자별 조회 (tr_id: FHKST01010400) */
+    async getDailyPrice(
+      credentials: KisCredentials,
+      token: string,
+      params: KisDailyPriceParams,
+    ): Promise<KisDailyPriceResponse> {
+      const query = new URLSearchParams({
+        FID_COND_MRKT_DIV_CODE: params.marketCode,
+        FID_INPUT_ISCD: params.stockCode,
+        FID_PERIOD_DIV_CODE: params.periodDivCode,
+        FID_ORG_ADJ_PRC: params.orgAdjPrc,
+      });
+
+      const response = await fetch(
+        `${baseUrl}/uapi/domestic-stock/v1/quotations/inquire-daily-price?${query}`,
+        {
+          method: "GET",
+          headers: {
+            "content-type": "application/json; charset=UTF-8",
+            authorization: `Bearer ${token}`,
+            appkey: credentials.appkey,
+            appsecret: credentials.appsecret,
+            tr_id: "FHKST01010400",
+            custtype: "P",
+          },
+        },
+      );
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(
+          `KIS daily price request failed: ${response.status} ${response.statusText}\n${errorBody}`,
+        );
+      }
+
+      const data: RawDailyPriceResponse = await response.json();
+
+      return {
+        rtCd: data.rt_cd,
+        msgCd: data.msg_cd,
+        msg1: data.msg1,
+        output: data.output.map(mapDailyPriceOutput),
       };
     },
   };

@@ -473,6 +473,44 @@ export interface KisBalanceResponse {
   ctxAreaNk100?: string;
 }
 
+/** 주식현재가 일자별 조회 파라미터 */
+export interface KisDailyPriceParams {
+  /** 시장 분류 코드 (J:주식, NX:넥스트, UN:유닛) */
+  marketCode: "J" | "NX" | "UN";
+  /** 종목코드 (6자리) */
+  stockCode: string;
+  /** 기간 분류 코드 (D:일, W:주, M:월) */
+  periodDivCode: "D" | "W" | "M";
+  /** 수정주가 반영 여부 (0:미반영, 1:반영) */
+  orgAdjPrc: "0" | "1";
+}
+
+/** 주식현재가 일자별 조회 응답 output */
+export interface KisDailyPriceOutput {
+  stckBsopDate: string;
+  stckOprc: string;
+  stckHgpr: string;
+  stckLwpr: string;
+  stckClpr: string;
+  acmlVol: string;
+  prdyVrssVolRate: string;
+  prdyVrss: string;
+  prdyVrssSign: string;
+  prdyCtrt: string;
+  htsFrgnEhrt: string;
+  frgnNtbyQty: string;
+  flngClsCode: string;
+  acmlPrttRate: string;
+}
+
+/** 주식현재가 일자별 조회 응답 */
+export interface KisDailyPriceResponse {
+  rtCd: string;
+  msgCd: string;
+  msg1: string;
+  output: KisDailyPriceOutput[];
+}
+
 /** 국내업종 현재지수 조회 파라미터 */
 export interface KisIndexPriceParams {
   /** 업종코드 (코스피: 0001, 코스닥: 1001, 코스피200: 2001 등) */

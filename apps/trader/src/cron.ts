@@ -13,7 +13,7 @@ import type { Env } from "./bindings";
 import { getTodayKst, isFillCheckTime, isOrderExecutionTime } from "./time-utils";
 import { getBrokerToken, refreshBrokerToken } from "./token-store";
 
-const TOKEN_REFRESH_CRON = "0 */3 * * *";
+const TOKEN_REFRESH_CRON = "0 */6 * * *";
 
 async function executeKisOrder(
   env: Env,
