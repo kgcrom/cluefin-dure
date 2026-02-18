@@ -24,11 +24,16 @@ trader 배포: `cd apps/trader && npx wrangler deploy`
 
 Bun 워크스페이스 모노레포. 패키지 간 의존은 `workspace:*` 프로토콜.
 
-- `@cluefin/securities` — KIS/Kiwoom 증권사 API 클라이언트 라이브러리
-- `@cluefin/cloudflare` — Cloudflare 런타임 유틸리티 (D1, R2, Secrets Store 등)
+- `@cluefin/securities` — KIS 증권사 API 클라이언트 라이브러리
+- `@cluefin/cloudflare` — Cloudflare 런타임 유틸리티 (D1 repository, R2, Secrets Store 등)
 - `@cluefin/broker` — 증권사 인증 토큰 발급 CLI
-- trader (`apps/trader`)는 Hono + Cloudflare Workers로 동작
-- scheduler (`apps/scheduler`)는 자동 매매 스케줄러 (미구현)
+- trader (`apps/trader`)는 Hono + Cloudflare Workers로 동작. Cron 스케줄: 토큰갱신 6h, 주문실행 KST 9-15시, 체결확인 KST 9-15시
+
+## Trading Strategy
+
+자동매매 전략:
+- **매수**: 이동평균(MA) 기반 매수 신호
+- **매도**: 손절(stop-loss) / 익절(take-profit) / 트레일링스탑(trailing stop)
 
 ## Conventions
 
