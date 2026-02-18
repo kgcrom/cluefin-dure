@@ -1,9 +1,9 @@
-import type { TradeExecution, TradeExecutionRow, TradeOrder, TradeOrderRow } from "./types";
+import type { EntryOrder, EntryOrderRow, TradeExecution, TradeExecutionRow } from "./types";
 
 export function toTradeExecution(row: TradeExecutionRow): TradeExecution {
   return {
     id: row.id,
-    orderId: row.order_id,
+    entryOrderId: row.entry_order_id,
     brokerOrderId: row.broker_order_id,
     requestedQty: row.requested_qty,
     requestedPrice: row.requested_price,
@@ -17,11 +17,10 @@ export function toTradeExecution(row: TradeExecutionRow): TradeExecution {
   };
 }
 
-export function toTradeOrder(row: TradeOrderRow): TradeOrder {
+export function toEntryOrder(row: EntryOrderRow): EntryOrder {
   return {
     id: row.id,
     stockCode: row.stock_code,
-    side: row.side,
     referencePrice: row.reference_price,
     quantity: row.quantity,
     trailingStopPct: row.trailing_stop_pct,

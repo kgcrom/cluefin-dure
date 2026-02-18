@@ -8,6 +8,8 @@ mock.module("@cluefin/cloudflare", () => ({
     updateOrderStatus: mock(),
     getUnfilledExecutions: mock(() => Promise.resolve([])),
     updateExecutionFill: mock(),
+    getFilledQuantityForEntryOrder: mock(),
+    createEntryOrder: mock(),
   }),
 }));
 

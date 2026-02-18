@@ -1,12 +1,10 @@
-export type OrderSide = "buy" | "sell";
 export type OrderStatus = "pending" | "monitoring" | "executed" | "cancelled";
 export type OrderBroker = "kis" | "kiwoom";
 export type OrderMarket = "kospi" | "kosdaq";
 
-export interface TradeOrder {
+export interface EntryOrder {
   id: number;
   stockCode: string;
-  side: OrderSide;
   referencePrice: number;
   quantity: number;
   trailingStopPct: number;
@@ -18,10 +16,9 @@ export interface TradeOrder {
   updatedAt: string;
 }
 
-export interface TradeOrderRow {
+export interface EntryOrderRow {
   id: number;
   stock_code: string;
-  side: OrderSide;
   reference_price: number;
   quantity: number;
   trailing_stop_pct: number;
@@ -37,7 +34,7 @@ export type ExecutionStatus = "ordered" | "filled" | "partial" | "rejected";
 
 export interface TradeExecution {
   id: number;
-  orderId: number;
+  entryOrderId: number;
   brokerOrderId: string;
   requestedQty: number;
   requestedPrice: number;
@@ -52,7 +49,7 @@ export interface TradeExecution {
 
 export interface TradeExecutionRow {
   id: number;
-  order_id: number;
+  entry_order_id: number;
   broker_order_id: string;
   requested_qty: number;
   requested_price: number;
@@ -66,7 +63,7 @@ export interface TradeExecutionRow {
 }
 
 export interface CreateTradeExecutionInput {
-  orderId: number;
+  entryOrderId: number;
   brokerOrderId: string;
   requestedQty: number;
   requestedPrice: number;
@@ -74,9 +71,8 @@ export interface CreateTradeExecutionInput {
   brokerResponse?: string;
 }
 
-export interface CreateTradeOrderInput {
+export interface CreateEntryOrderInput {
   stockCode: string;
-  side: OrderSide;
   referencePrice: number;
   quantity: number;
   trailingStopPct?: number;

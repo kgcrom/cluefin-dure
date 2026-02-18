@@ -8,8 +8,8 @@ const mockUpdateOrderStatus = mock(() => Promise.resolve());
 const mockGetUnfilledExecutions = mock(() => Promise.resolve([]));
 const mockUpdateExecutionFill = mock(() => Promise.resolve());
 const mockUpdatePeakPrice = mock(() => Promise.resolve());
-const mockGetFilledQuantityForOrder = mock(() => Promise.resolve(0));
-const mockCreateOrder = mock(() => Promise.resolve({}));
+const mockGetFilledQuantityForEntryOrder = mock(() => Promise.resolve(0));
+const mockCreateEntryOrder = mock(() => Promise.resolve({}));
 const mockBuyOrder = mock(() => Promise.resolve({ output: { odno: "001", ordTmd: "121000" } }));
 const mockSellOrder = mock(() => Promise.resolve({ output: { odno: "002", ordTmd: "121001" } }));
 const mockGetDailyOrdersKis = mock(() =>
@@ -42,13 +42,16 @@ mock.module("@cluefin/cloudflare", () => ({
     getUnfilledExecutions: mockGetUnfilledExecutions,
     updateExecutionFill: mockUpdateExecutionFill,
     updatePeakPrice: mockUpdatePeakPrice,
-    getFilledQuantityForOrder: mockGetFilledQuantityForOrder,
-    createOrder: mockCreateOrder,
+    getFilledQuantityForEntryOrder: mockGetFilledQuantityForEntryOrder,
+    createEntryOrder: mockCreateEntryOrder,
   }),
 }));
 
 mock.module("@cluefin/securities", () => ({
   createKisAuthClient: () => ({
+    getToken: mock(),
+  }),
+  createKiwoomAuthClient: () => ({
     getToken: mock(),
   }),
   createKisMarketClient: () => ({
@@ -141,8 +144,8 @@ afterEach(() => {
   mockGetUnfilledExecutions.mockClear();
   mockUpdateExecutionFill.mockClear();
   mockUpdatePeakPrice.mockClear();
-  mockGetFilledQuantityForOrder.mockClear();
-  mockCreateOrder.mockClear();
+  mockGetFilledQuantityForEntryOrder.mockClear();
+  mockCreateEntryOrder.mockClear();
   mockBuyOrder.mockClear();
   mockSellOrder.mockClear();
   mockGetDailyOrdersKis.mockClear();
@@ -156,7 +159,6 @@ describe("handleOrderExecution", () => {
       {
         id: 1,
         stockCode: "005930",
-        side: "buy",
         referencePrice: 66000,
         quantity: 10,
         broker: "kis",
@@ -188,7 +190,6 @@ describe("handleOrderExecution", () => {
       {
         id: 1,
         stockCode: "005930",
-        side: "buy",
         referencePrice: 66000,
         quantity: 10,
         broker: "kis",
@@ -221,7 +222,6 @@ describe("handleOrderExecution", () => {
       {
         id: 2,
         stockCode: "005930",
-        side: "buy",
         referencePrice: 66000,
         quantity: 10,
         broker: "kis",
@@ -256,7 +256,6 @@ describe("handleOrderExecution", () => {
       {
         id: 3,
         stockCode: "005930",
-        side: "buy",
         referencePrice: 100000,
         quantity: 10,
         broker: "kis",
@@ -277,11 +276,11 @@ describe("handleOrderExecution", () => {
       output1: {},
       output2: makeBullishCandles(),
     });
-    mockGetFilledQuantityForOrder.mockResolvedValueOnce(5);
+    mockGetFilledQuantityForEntryOrder.mockResolvedValueOnce(5);
 
     await handleOrderExecution(mockEnv);
 
-    expect(mockCreateOrder).not.toHaveBeenCalled();
+    expect(mockCreateEntryOrder).not.toHaveBeenCalled();
     expect(mockSellOrder).toHaveBeenCalledTimes(1);
     // 손절은 시장가("01")로 주문, price="0"
     const sellParams = mockSellOrder.mock.calls[0];
@@ -291,7 +290,7 @@ describe("handleOrderExecution", () => {
     });
     expect(mockCreateExecution).toHaveBeenCalledTimes(1);
     expect(mockCreateExecution.mock.calls[0][0]).toMatchObject({
-      orderId: 3,
+      entryOrderId: 3,
       brokerOrderId: "002",
       requestedQty: 5,
       requestedPrice: 95000,
@@ -306,7 +305,6 @@ describe("handleOrderExecution", () => {
       {
         id: 4,
         stockCode: "005930",
-        side: "buy",
         referencePrice: 100000,
         quantity: 10,
         broker: "kis",
@@ -327,11 +325,11 @@ describe("handleOrderExecution", () => {
       output1: {},
       output2: makeBullishCandles(),
     });
-    mockGetFilledQuantityForOrder.mockResolvedValueOnce(8);
+    mockGetFilledQuantityForEntryOrder.mockResolvedValueOnce(8);
 
     await handleOrderExecution(mockEnv);
 
-    expect(mockCreateOrder).not.toHaveBeenCalled();
+    expect(mockCreateEntryOrder).not.toHaveBeenCalled();
     expect(mockSellOrder).toHaveBeenCalledTimes(1);
     // 익절은 지정가("00")로 주문
     const sellParams = mockSellOrder.mock.calls[0];
@@ -340,7 +338,7 @@ describe("handleOrderExecution", () => {
     });
     expect(mockCreateExecution).toHaveBeenCalledTimes(1);
     expect(mockCreateExecution.mock.calls[0][0]).toMatchObject({
-      orderId: 4,
+      entryOrderId: 4,
       brokerOrderId: "002",
       requestedQty: 8,
       requestedPrice: 115000,
@@ -353,7 +351,6 @@ describe("handleOrderExecution", () => {
       {
         id: 5,
         stockCode: "005930",
-        side: "buy",
         referencePrice: 100000,
         quantity: 10,
         broker: "kis",
@@ -374,11 +371,11 @@ describe("handleOrderExecution", () => {
       output1: {},
       output2: makeBullishCandles(),
     });
-    mockGetFilledQuantityForOrder.mockResolvedValueOnce(3);
+    mockGetFilledQuantityForEntryOrder.mockResolvedValueOnce(3);
 
     await handleOrderExecution(mockEnv);
 
-    expect(mockCreateOrder).not.toHaveBeenCalled();
+    expect(mockCreateEntryOrder).not.toHaveBeenCalled();
     expect(mockSellOrder).toHaveBeenCalledTimes(1);
     // 트레일링 스탑은 지정가("00")로 주문
     const sellParams = mockSellOrder.mock.calls[0];
@@ -387,45 +384,12 @@ describe("handleOrderExecution", () => {
     });
     expect(mockCreateExecution).toHaveBeenCalledTimes(1);
     expect(mockCreateExecution.mock.calls[0][0]).toMatchObject({
-      orderId: 5,
+      entryOrderId: 5,
       brokerOrderId: "002",
       requestedQty: 3,
       requestedPrice: 104500,
     });
     expect(mockUpdateOrderStatus).toHaveBeenCalledWith(5, "executed");
-  });
-
-  test("sell 주문은 조건 없이 즉시 실행", async () => {
-    mockGetActiveOrders.mockResolvedValueOnce([
-      {
-        id: 6,
-        stockCode: "005930",
-        side: "sell",
-        referencePrice: 66000,
-        quantity: 10,
-        broker: "kis",
-        status: "pending",
-        trailingStopPct: 0,
-        peakPrice: null,
-        market: "kospi",
-      },
-    ]);
-    mockGetStockPrice.mockResolvedValueOnce({
-      output: makeBullishStockInfo("66000"),
-    });
-    mockGetIntradayChart.mockResolvedValueOnce({
-      rtCd: "0",
-      msgCd: "MCA00000",
-      msg1: "성공",
-      output1: {},
-      output2: makeBearishCandles(),
-    });
-    mockGetRequestedQuantity.mockResolvedValueOnce(0);
-
-    await handleOrderExecution(mockEnv);
-
-    expect(mockSellOrder).toHaveBeenCalledTimes(1);
-    expect(mockCreateExecution).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -442,7 +406,7 @@ describe("handleFillCheck", () => {
     mockGetUnfilledExecutions.mockResolvedValueOnce([
       {
         id: 1,
-        orderId: 10,
+        entryOrderId: 10,
         brokerOrderId: "KIS001",
         requestedQty: 10,
         requestedPrice: 50000,
@@ -476,7 +440,7 @@ describe("handleFillCheck", () => {
     mockGetUnfilledExecutions.mockResolvedValueOnce([
       {
         id: 2,
-        orderId: 20,
+        entryOrderId: 20,
         brokerOrderId: "KIS002",
         requestedQty: 10,
         requestedPrice: 50000,
@@ -510,7 +474,7 @@ describe("handleFillCheck", () => {
     mockGetUnfilledExecutions.mockResolvedValueOnce([
       {
         id: 3,
-        orderId: 30,
+        entryOrderId: 30,
         brokerOrderId: "KIS003",
         requestedQty: 10,
         requestedPrice: 50000,
@@ -544,7 +508,7 @@ describe("handleFillCheck", () => {
     mockGetUnfilledExecutions.mockResolvedValueOnce([
       {
         id: 6,
-        orderId: 60,
+        entryOrderId: 60,
         brokerOrderId: "KIS999",
         requestedQty: 10,
         requestedPrice: 50000,
@@ -571,7 +535,7 @@ describe("handleFillCheck", () => {
     mockGetUnfilledExecutions.mockResolvedValueOnce([
       {
         id: 7,
-        orderId: 70,
+        entryOrderId: 70,
         brokerOrderId: "KIS100",
         requestedQty: 10,
         requestedPrice: 50000,
@@ -581,7 +545,7 @@ describe("handleFillCheck", () => {
       },
       {
         id: 8,
-        orderId: 80,
+        entryOrderId: 80,
         brokerOrderId: "KIS200",
         requestedQty: 5,
         requestedPrice: 60000,
@@ -613,7 +577,7 @@ describe("handleFillCheck", () => {
     mockGetUnfilledExecutions.mockResolvedValueOnce([
       {
         id: 12,
-        orderId: 120,
+        entryOrderId: 120,
         brokerOrderId: "KIS400",
         requestedQty: 10,
         requestedPrice: 50000,

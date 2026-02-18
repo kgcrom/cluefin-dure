@@ -1,11 +1,10 @@
 import { describe, expect, mock, test } from "bun:test";
 import { createOrderRepository } from "./repository";
-import type { TradeOrderRow } from "./types";
+import type { EntryOrderRow } from "./types";
 
-const sampleRow: TradeOrderRow = {
+const sampleRow: EntryOrderRow = {
   id: 1,
   stock_code: "005930",
-  side: "buy",
   reference_price: 70000,
   quantity: 10,
   trailing_stop_pct: 3.0,
@@ -44,25 +43,24 @@ describe("createOrderRepository", () => {
     expect(mockStmt.bind).toHaveBeenCalledWith("pending", "monitoring", "kis");
   });
 
-  test("getOrderById returns mapped order", async () => {
+  test("getEntryOrderById returns mapped order", async () => {
     const { db } = createMockDB();
     const repo = createOrderRepository(db);
 
-    const order = await repo.getOrderById(1);
+    const order = await repo.getEntryOrderById(1);
 
     expect(order).not.toBeNull();
     expect(order?.id).toBe(1);
-    expect(order?.side).toBe("buy");
     expect(order?.broker).toBe("kis");
   });
 
-  test("getOrderById returns null when not found", async () => {
+  test("getEntryOrderById returns null when not found", async () => {
     const { db } = createMockDB({
       first: mock(() => Promise.resolve(null)),
     });
     const repo = createOrderRepository(db);
 
-    const order = await repo.getOrderById(999);
+    const order = await repo.getEntryOrderById(999);
     expect(order).toBeNull();
   });
 

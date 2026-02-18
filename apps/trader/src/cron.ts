@@ -1,5 +1,5 @@
 import type { ScheduledEvent } from "@cloudflare/workers-types";
-import type { ExecutionStatus, TradeExecution, TradeOrder } from "@cluefin/cloudflare";
+import type { EntryOrder, ExecutionStatus, TradeExecution } from "@cluefin/cloudflare";
 import { createOrderRepository } from "@cluefin/cloudflare";
 import {
   type BrokerEnv,
@@ -18,10 +18,12 @@ const TOKEN_REFRESH_CRON = "0 */6 * * *";
 
 async function executeKisOrder(
   env: Env,
-  order: TradeOrder,
+  order: EntryOrder,
   quantity: number,
   kisToken: string,
+  action: "buy" | "sell",
   orderType: string = "00",
+  limitPrice: number = order.referencePrice,
 ): Promise<{ brokerOrderId: string; brokerResponse: string }> {
   const kisEnv = env.KIS_ENV as BrokerEnv;
   const credentials = { appkey: env.KIS_APP_KEY, appsecret: env.KIS_SECRET_KEY };
@@ -33,11 +35,11 @@ async function executeKisOrder(
     stockCode: order.stockCode,
     orderType,
     quantity: String(quantity),
-    price: orderType === "01" ? "0" : String(order.referencePrice),
+    price: orderType === "01" ? "0" : String(limitPrice),
   };
 
   const result =
-    order.side === "buy"
+    action === "buy"
       ? await client.buyOrder(credentials, kisToken, params)
       : await client.sellOrder(credentials, kisToken, params);
 
@@ -73,7 +75,7 @@ export async function handleOrderExecution(env: Env): Promise<void> {
   for (const order of orders) {
     try {
       console.log(
-        `[cron] 주문 처리 시작: order_id=${order.id}, broker=${order.broker}, stock=${order.stockCode}, side=${order.side}`,
+        `[cron] 주문 처리 시작: order_id=${order.id}, broker=${order.broker}, stock=${order.stockCode}`,
       );
 
       if (!kisToken) throw new Error("KIS 토큰이 설정되지 않았습니다");
@@ -100,8 +102,8 @@ export async function handleOrderExecution(env: Env): Promise<void> {
         `[cron] 시세 조회: stock=${order.stockCode}, 현재가=${currentPrice}, 분봉=${intradayChart.output2.length}건`,
       );
 
-      // 매수 주문 + monitoring 상태: 매도 조건 우선 확인
-      if (order.side === "buy" && order.status === "monitoring") {
+      // monitoring 상태: 매도 조건 우선 확인
+      if (order.status === "monitoring") {
         const newPeak = updatePeakPrice(order.peakPrice, currentPrice);
         await repo.updatePeakPrice(order.id, newPeak);
 
@@ -115,19 +117,20 @@ export async function handleOrderExecution(env: Env): Promise<void> {
         if (sellResult.shouldSell) {
           console.log(`[cron] 자동 매도 트리거: order_id=${order.id}, reason=${sellResult.reason}`);
 
-          const filledQty = await repo.getFilledQuantityForOrder(order.id);
+          const filledQty = await repo.getFilledQuantityForEntryOrder(order.id);
           if (filledQty > 0) {
-            const sellOrder = { ...order, side: "sell" as const, referencePrice: currentPrice };
             const sellOrderType = sellResult.type === "loss_cut" ? "01" : "00";
             const { brokerOrderId, brokerResponse } = await executeKisOrder(
               env,
-              sellOrder,
+              order,
               filledQty,
               kisToken,
+              "sell",
               sellOrderType,
+              currentPrice,
             );
             await repo.createExecution({
-              orderId: order.id,
+              entryOrderId: order.id,
               brokerOrderId,
               requestedQty: filledQty,
               requestedPrice: currentPrice,
@@ -145,20 +148,17 @@ export async function handleOrderExecution(env: Env): Promise<void> {
         }
       }
 
-      // 매수 주문: 매수 조건 확인
-      if (order.side === "buy") {
-        const buyResult = evaluateBuyCondition(
-          currentPrice,
-          intradayChart.output2,
-          stockPrice.output,
-        );
+      const buyResult = evaluateBuyCondition(
+        currentPrice,
+        intradayChart.output2,
+        stockPrice.output,
+      );
 
-        if (!buyResult.shouldBuy) {
-          console.log(`[cron] 매수 조건 미충족: order_id=${order.id}, reason=${buyResult.reason}`);
-          continue;
-        }
-        console.log(`[cron] 매수 조건 충족: order_id=${order.id}, reason=${buyResult.reason}`);
+      if (!buyResult.shouldBuy) {
+        console.log(`[cron] 매수 조건 미충족: order_id=${order.id}, reason=${buyResult.reason}`);
+        continue;
       }
+      console.log(`[cron] 매수 조건 충족: order_id=${order.id}, reason=${buyResult.reason}`);
 
       // 잔여수량 확인 및 주문 실행
       const requestedQty = await repo.getRequestedQuantity(order.id);
@@ -171,13 +171,8 @@ export async function handleOrderExecution(env: Env): Promise<void> {
         continue;
       }
 
-      let quantity: number;
-      if (order.side === "buy") {
-        const maxQty = Math.floor(300000 / order.referencePrice);
-        quantity = Math.min(remaining, maxQty);
-      } else {
-        quantity = remaining === 1 ? 1 : Math.floor(remaining / 2);
-      }
+      const maxQty = Math.floor(300000 / order.referencePrice);
+      const quantity = Math.min(remaining, maxQty);
 
       // 한주당 30만원이 넘는 주식을 매수하는 경우 발생
       if (quantity <= 0) {
@@ -196,10 +191,11 @@ export async function handleOrderExecution(env: Env): Promise<void> {
         order,
         quantity,
         kisToken,
+        "buy",
       );
 
       await repo.createExecution({
-        orderId: order.id,
+        entryOrderId: order.id,
         brokerOrderId,
         requestedQty: quantity,
         requestedPrice: order.referencePrice,

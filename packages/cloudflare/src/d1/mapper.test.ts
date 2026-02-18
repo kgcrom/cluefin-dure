@@ -1,13 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { toTradeExecution, toTradeOrder } from "./mapper";
-import type { TradeExecutionRow, TradeOrderRow } from "./types";
+import { toEntryOrder, toTradeExecution } from "./mapper";
+import type { EntryOrderRow, TradeExecutionRow } from "./types";
 
-describe("toTradeOrder", () => {
+describe("toEntryOrder", () => {
   test("snake_case를 camelCase로 변환", () => {
-    const row: TradeOrderRow = {
+    const row: EntryOrderRow = {
       id: 1,
       stock_code: "005930",
-      side: "buy",
       reference_price: 70000,
       quantity: 10,
       trailing_stop_pct: 3.5,
@@ -19,12 +18,11 @@ describe("toTradeOrder", () => {
       updated_at: "2024-01-15 10:30:00",
     };
 
-    const result = toTradeOrder(row);
+    const result = toEntryOrder(row);
 
     expect(result).toEqual({
       id: 1,
       stockCode: "005930",
-      side: "buy",
       referencePrice: 70000,
       quantity: 10,
       trailingStopPct: 3.5,
@@ -38,10 +36,9 @@ describe("toTradeOrder", () => {
   });
 
   test("null 필드 처리", () => {
-    const row: TradeOrderRow = {
+    const row: EntryOrderRow = {
       id: 2,
       stock_code: "035720",
-      side: "sell",
       reference_price: 50000,
       quantity: 5,
       trailing_stop_pct: 2.0,
@@ -53,16 +50,15 @@ describe("toTradeOrder", () => {
       updated_at: "2024-01-16 09:00:00",
     };
 
-    const result = toTradeOrder(row);
+    const result = toEntryOrder(row);
 
     expect(result.peakPrice).toBeNull();
   });
 
   test("모든 필드 타입 보존", () => {
-    const row: TradeOrderRow = {
+    const row: EntryOrderRow = {
       id: 3,
       stock_code: "000660",
-      side: "buy",
       reference_price: 120000,
       quantity: 100,
       trailing_stop_pct: 5.0,
@@ -74,11 +70,10 @@ describe("toTradeOrder", () => {
       updated_at: "2024-01-17 15:30:00",
     };
 
-    const result = toTradeOrder(row);
+    const result = toEntryOrder(row);
 
     expect(typeof result.id).toBe("number");
     expect(typeof result.stockCode).toBe("string");
-    expect(typeof result.side).toBe("string");
     expect(typeof result.referencePrice).toBe("number");
     expect(typeof result.quantity).toBe("number");
     expect(typeof result.trailingStopPct).toBe("number");
@@ -93,7 +88,7 @@ describe("toTradeExecution", () => {
   test("snake_case를 camelCase로 변환", () => {
     const row: TradeExecutionRow = {
       id: 1,
-      order_id: 10,
+      entry_order_id: 10,
       broker_order_id: "ORD-12345",
       requested_qty: 50,
       requested_price: 70000,
@@ -110,7 +105,7 @@ describe("toTradeExecution", () => {
 
     expect(result).toEqual({
       id: 1,
-      orderId: 10,
+      entryOrderId: 10,
       brokerOrderId: "ORD-12345",
       requestedQty: 50,
       requestedPrice: 70000,
@@ -127,7 +122,7 @@ describe("toTradeExecution", () => {
   test("null 필드 처리", () => {
     const row: TradeExecutionRow = {
       id: 2,
-      order_id: 20,
+      entry_order_id: 20,
       broker_order_id: "ORD-67890",
       requested_qty: 100,
       requested_price: 50000,
@@ -151,7 +146,7 @@ describe("toTradeExecution", () => {
   test("부분 체결 상태 처리", () => {
     const row: TradeExecutionRow = {
       id: 3,
-      order_id: 30,
+      entry_order_id: 30,
       broker_order_id: "ORD-PARTIAL",
       requested_qty: 100,
       requested_price: 80000,

@@ -1,7 +1,6 @@
-CREATE TABLE trade_orders (
+CREATE TABLE entry_orders (
     id                INTEGER PRIMARY KEY AUTOINCREMENT,
     stock_code        TEXT    NOT NULL,
-    side              TEXT    NOT NULL CHECK (side IN ('buy', 'sell')),
     reference_price   INTEGER NOT NULL,
     quantity          INTEGER NOT NULL,
     trailing_stop_pct REAL    NOT NULL DEFAULT 5.0,
@@ -14,12 +13,12 @@ CREATE TABLE trade_orders (
     updated_at        TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE INDEX idx_trade_orders_status ON trade_orders(status);
-CREATE INDEX idx_trade_orders_broker_status ON trade_orders(broker, status);
+CREATE INDEX idx_entry_orders_status ON entry_orders(status);
+CREATE INDEX idx_entry_orders_broker_status ON entry_orders(broker, status);
 
 CREATE TABLE trade_executions (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_id         INTEGER NOT NULL REFERENCES trade_orders(id),
+    entry_order_id   INTEGER NOT NULL REFERENCES entry_orders(id),
     broker_order_id  TEXT    NOT NULL,
     requested_qty    INTEGER NOT NULL,
     requested_price  INTEGER NOT NULL,
@@ -33,7 +32,7 @@ CREATE TABLE trade_executions (
     filled_at        TEXT
 );
 
-CREATE INDEX idx_trade_executions_order_id ON trade_executions(order_id);
+CREATE INDEX idx_trade_executions_entry_order_id ON trade_executions(entry_order_id);
 CREATE INDEX idx_trade_executions_status ON trade_executions(status);
 
 CREATE TABLE broker_auth_tokens (

@@ -18,11 +18,10 @@ Commands:
 
 const ADD_HELP = `Usage: broker order add [options]
 
-D1 trade_orders 테이블에 새 주문을 추가합니다.
+D1 entry_orders 테이블에 새 진입 주문을 추가합니다.
 
 필수 옵션:
   --stock-code <code>           종목코드 (예: 005930)
-  --side <buy|sell>             매수/매도 구분
   --price <number>              기준가격
   --qty <number>                수량
   --broker <kis|kiwoom>         증권사
@@ -33,8 +32,8 @@ D1 trade_orders 테이블에 새 주문을 추가합니다.
   -h, --help                    도움말 출력
 
 예시:
-  broker order add --stock-code 005930 --side buy --price 70000 --qty 10 --broker kis --market kospi
-  broker order add --stock-code 005930 --side buy --price 70000 --qty 10 --broker kis --market kosdaq --trailing-stop 5.0`;
+  broker order add --stock-code 005930 --price 70000 --qty 10 --broker kis --market kospi
+  broker order add --stock-code 005930 --price 70000 --qty 10 --broker kis --market kosdaq --trailing-stop 5.0`;
 
 const LIST_HELP = `Usage: broker order list [options]
 
@@ -95,7 +94,6 @@ async function addOrder(args: string[], remote: boolean): Promise<void> {
     args,
     options: {
       "stock-code": { type: "string" },
-      side: { type: "string" },
       price: { type: "string" },
       qty: { type: "string" },
       broker: { type: "string" },
@@ -112,21 +110,16 @@ async function addOrder(args: string[], remote: boolean): Promise<void> {
   }
 
   const stockCode = values["stock-code"];
-  const side = values.side;
   const price = values.price;
   const qty = values.qty;
   const broker = values.broker;
   const market = values.market;
 
-  if (!stockCode || !side || !price || !qty || !broker || !market) {
+  if (!stockCode || !price || !qty || !broker || !market) {
     console.error(ADD_HELP);
     process.exit(1);
   }
 
-  if (!["buy", "sell"].includes(side)) {
-    console.error('side는 "buy" 또는 "sell"이어야 합니다.');
-    process.exit(1);
-  }
   if (!["kis", "kiwoom"].includes(broker)) {
     console.error('broker는 "kis" 또는 "kiwoom"이어야 합니다.');
     process.exit(1);
@@ -138,7 +131,7 @@ async function addOrder(args: string[], remote: boolean): Promise<void> {
 
   const trailingStop = values["trailing-stop"] ?? "5.0";
 
-  const sql = `INSERT INTO trade_orders (stock_code, side, reference_price, quantity, trailing_stop_pct, broker, market) VALUES ('${escapeSQL(stockCode)}', '${escapeSQL(side)}', ${price}, ${qty}, ${trailingStop}, '${escapeSQL(broker)}', '${escapeSQL(market)}')`;
+  const sql = `INSERT INTO entry_orders (stock_code, reference_price, quantity, trailing_stop_pct, broker, market) VALUES ('${escapeSQL(stockCode)}', ${price}, ${qty}, ${trailingStop}, '${escapeSQL(broker)}', '${escapeSQL(market)}')`;
   const output = await execD1(sql, remote);
   console.log("주문 추가 완료");
   if (output.trim()) console.log(output);
@@ -160,7 +153,7 @@ async function listOrders(args: string[], remote: boolean): Promise<void> {
     process.exit(0);
   }
 
-  let sql = "SELECT * FROM trade_orders";
+  let sql = "SELECT * FROM entry_orders";
   const conditions: string[] = [];
 
   if (values.broker) {
@@ -191,7 +184,7 @@ async function cancelOrder(args: string[], remote: boolean): Promise<void> {
     process.exit(1);
   }
 
-  const sql = `UPDATE trade_orders SET status = 'cancelled', updated_at = datetime('now') WHERE id = ${Number(id)}`;
+  const sql = `UPDATE entry_orders SET status = 'cancelled', updated_at = datetime('now') WHERE id = ${Number(id)}`;
   const output = await execD1(sql, remote);
   console.log(`주문 #${id} 취소 완료`);
   if (output.trim()) console.log(output);
