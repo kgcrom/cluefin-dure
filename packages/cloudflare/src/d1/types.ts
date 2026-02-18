@@ -15,6 +15,7 @@ export interface TradeOrder {
   broker: OrderBroker;
   market: OrderMarket;
   status: OrderStatus;
+  peakPrice: number | null;
   memo: string | null;
   createdAt: string;
   updatedAt: string;
@@ -32,6 +33,7 @@ export interface TradeOrderRow {
   broker: OrderBroker;
   market: OrderMarket;
   status: OrderStatus;
+  peak_price: number | null;
   memo: string | null;
   created_at: string;
   updated_at: string;

@@ -1,6 +1,7 @@
 import { toTradeExecution, toTradeOrder } from "./mapper";
 import type {
   CreateTradeExecutionInput,
+  CreateTradeOrderInput,
   ExecutionStatus,
   OrderBroker,
   OrderStatus,
@@ -113,6 +114,53 @@ export function createOrderRepository(db: D1Database) {
         )
         .bind(filledQty, filledPrice, status, id)
         .run();
+    },
+
+    async updatePeakPrice(id: number, peakPrice: number): Promise<void> {
+      await db
+        .prepare(
+          "UPDATE trade_orders SET peak_price = ?, updated_at = datetime('now') WHERE id = ?",
+        )
+        .bind(peakPrice, id)
+        .run();
+    },
+
+    async getFilledQuantityForOrder(orderId: number): Promise<number> {
+      const result = await db
+        .prepare(
+          "SELECT COALESCE(SUM(filled_qty), 0) as total FROM trade_executions WHERE order_id = ? AND status IN ('filled', 'partial')",
+        )
+        .bind(orderId)
+        .first<{ total: number }>();
+
+      return result?.total ?? 0;
+    },
+
+    async createOrder(input: CreateTradeOrderInput): Promise<TradeOrder> {
+      const result = await db
+        .prepare(
+          `INSERT INTO trade_orders (stock_code, stock_name, side, reference_price, quantity, trailing_stop_pct, volume_threshold, broker, market, memo)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           RETURNING *`,
+        )
+        .bind(
+          input.stockCode,
+          input.stockName ?? null,
+          input.side,
+          input.referencePrice,
+          input.quantity,
+          input.trailingStopPct ?? 0,
+          input.volumeThreshold ?? null,
+          input.broker,
+          input.market ?? "kospi",
+          input.memo ?? null,
+        )
+        .first<TradeOrderRow>();
+
+      if (!result) {
+        throw new Error("Failed to create order");
+      }
+      return toTradeOrder(result);
     },
   };
 }

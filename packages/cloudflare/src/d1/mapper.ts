@@ -30,6 +30,7 @@ export function toTradeOrder(row: TradeOrderRow): TradeOrder {
     broker: row.broker,
     market: row.market,
     status: row.status,
+    peakPrice: row.peak_price,
     memo: row.memo,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
