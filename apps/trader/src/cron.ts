@@ -21,6 +21,7 @@ async function executeKisOrder(
   order: TradeOrder,
   quantity: number,
   kisToken: string,
+  orderType: string = "00",
 ): Promise<{ brokerOrderId: string; brokerResponse: string }> {
   const kisEnv = env.KIS_ENV as BrokerEnv;
   const credentials = { appkey: env.KIS_APP_KEY, appsecret: env.KIS_SECRET_KEY };
@@ -30,9 +31,9 @@ async function executeKisOrder(
     accountNo: env.KIS_ACCOUNT_NO,
     accountProductCode: env.KIS_ACCOUNT_PRODUCT_CODE,
     stockCode: order.stockCode,
-    orderType: "00", // 지정가
+    orderType,
     quantity: String(quantity),
-    price: String(order.referencePrice),
+    price: orderType === "01" ? "0" : String(order.referencePrice),
   };
 
   const result =
@@ -117,11 +118,13 @@ export async function handleOrderExecution(env: Env): Promise<void> {
           const filledQty = await repo.getFilledQuantityForOrder(order.id);
           if (filledQty > 0) {
             const sellOrder = { ...order, side: "sell" as const, referencePrice: currentPrice };
+            const sellOrderType = sellResult.type === "loss_cut" ? "01" : "00";
             const { brokerOrderId, brokerResponse } = await executeKisOrder(
               env,
               sellOrder,
               filledQty,
               kisToken,
+              sellOrderType,
             );
             await repo.createExecution({
               orderId: order.id,

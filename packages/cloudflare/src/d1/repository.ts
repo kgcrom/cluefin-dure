@@ -149,7 +149,7 @@ export function createOrderRepository(db: D1Database) {
           input.side,
           input.referencePrice,
           input.quantity,
-          input.trailingStopPct ?? 0,
+          input.trailingStopPct ?? 5,
           input.volumeThreshold ?? null,
           input.broker,
           input.market ?? "kospi",

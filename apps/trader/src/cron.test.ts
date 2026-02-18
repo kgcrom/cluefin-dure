@@ -251,7 +251,7 @@ describe("handleOrderExecution", () => {
     expect(mockUpdateOrderStatus).toHaveBeenCalledWith(2, "monitoring");
   });
 
-  test("손절 트리거 시 즉시 매도 실행", async () => {
+  test("손절 트리거 시 시장가 전량 매도 실행", async () => {
     mockGetActiveOrders.mockResolvedValueOnce([
       {
         id: 3,
@@ -284,6 +284,12 @@ describe("handleOrderExecution", () => {
 
     expect(mockCreateOrder).not.toHaveBeenCalled();
     expect(mockSellOrder).toHaveBeenCalledTimes(1);
+    // 손절은 시장가("01")로 주문, price="0"
+    const sellParams = mockSellOrder.mock.calls[0];
+    expect(sellParams[2]).toMatchObject({
+      orderType: "01",
+      price: "0",
+    });
     expect(mockCreateExecution).toHaveBeenCalledTimes(1);
     expect(mockCreateExecution.mock.calls[0][0]).toMatchObject({
       orderId: 3,
@@ -296,7 +302,7 @@ describe("handleOrderExecution", () => {
     expect(mockBuyOrder).not.toHaveBeenCalled();
   });
 
-  test("익절 트리거 시 즉시 매도 실행", async () => {
+  test("익절 트리거 시 지정가 매도 실행", async () => {
     mockGetActiveOrders.mockResolvedValueOnce([
       {
         id: 4,
@@ -329,6 +335,11 @@ describe("handleOrderExecution", () => {
 
     expect(mockCreateOrder).not.toHaveBeenCalled();
     expect(mockSellOrder).toHaveBeenCalledTimes(1);
+    // 익절은 지정가("00")로 주문
+    const sellParams = mockSellOrder.mock.calls[0];
+    expect(sellParams[2]).toMatchObject({
+      orderType: "00",
+    });
     expect(mockCreateExecution).toHaveBeenCalledTimes(1);
     expect(mockCreateExecution.mock.calls[0][0]).toMatchObject({
       orderId: 4,
@@ -339,7 +350,7 @@ describe("handleOrderExecution", () => {
     expect(mockUpdateOrderStatus).toHaveBeenCalledWith(4, "executed");
   });
 
-  test("트레일링 스탑 트리거 시 즉시 매도 실행", async () => {
+  test("트레일링 스탑 트리거 시 지정가 매도 실행", async () => {
     mockGetActiveOrders.mockResolvedValueOnce([
       {
         id: 5,
@@ -372,6 +383,11 @@ describe("handleOrderExecution", () => {
 
     expect(mockCreateOrder).not.toHaveBeenCalled();
     expect(mockSellOrder).toHaveBeenCalledTimes(1);
+    // 트레일링 스탑은 지정가("00")로 주문
+    const sellParams = mockSellOrder.mock.calls[0];
+    expect(sellParams[2]).toMatchObject({
+      orderType: "00",
+    });
     expect(mockCreateExecution).toHaveBeenCalledTimes(1);
     expect(mockCreateExecution.mock.calls[0][0]).toMatchObject({
       orderId: 5,

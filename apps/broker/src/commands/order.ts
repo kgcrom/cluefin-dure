@@ -28,7 +28,7 @@ D1 trade_orders 테이블에 새 주문을 추가합니다.
   --broker <kis|kiwoom>     증권사
 
 선택 옵션:
-  --trailing-stop <pct>     트레일링 스탑 비율 (기본: 3.0)
+  --trailing-stop <pct>     트레일링 스탑 비율 (기본: 5.0)
   --stock-name <name>       종목명 (예: 삼성전자)
   --volume-threshold <n>    거래량 임계값
   --memo <text>             메모
@@ -135,7 +135,7 @@ async function addOrder(args: string[], remote: boolean): Promise<void> {
     process.exit(1);
   }
 
-  const trailingStop = values["trailing-stop"] ?? "3.0";
+  const trailingStop = values["trailing-stop"] ?? "5.0";
   const stockName = values["stock-name"];
   const volumeThreshold = values["volume-threshold"];
   const memo = values.memo;

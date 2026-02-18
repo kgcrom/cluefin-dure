@@ -211,32 +211,38 @@ describe("evaluateSellCondition", () => {
     const result = evaluateSellCondition(95000, 100000, 110000, 5);
     expect(result.shouldSell).toBe(true);
     expect(result.reason).toContain("손절");
+    expect(result.type).toBe("loss_cut");
   });
 
   test("손절 경계값: 현재가가 정확히 95%", () => {
     const result = evaluateSellCondition(95000, 100000, 110000, 5);
     expect(result.shouldSell).toBe(true);
+    expect(result.type).toBe("loss_cut");
   });
 
   test("손절 미달: 현재가가 95% 초과", () => {
     const result = evaluateSellCondition(95001, 100000, 100000, 5);
     expect(result.shouldSell).toBe(false);
+    expect(result.type).toBe("none");
   });
 
   test("익절: 현재가가 기준가의 115% 이상", () => {
     const result = evaluateSellCondition(115000, 100000, 115000, 5);
     expect(result.shouldSell).toBe(true);
     expect(result.reason).toContain("익절");
+    expect(result.type).toBe("take_profit");
   });
 
   test("익절 경계값: 현재가가 정확히 115%", () => {
     const result = evaluateSellCondition(115000, 100000, 115000, 5);
     expect(result.shouldSell).toBe(true);
+    expect(result.type).toBe("take_profit");
   });
 
   test("익절 미달: 현재가가 115% 미만", () => {
     const result = evaluateSellCondition(114999, 100000, 114999, 5);
     expect(result.shouldSell).toBe(false);
+    expect(result.type).toBe("none");
   });
 
   test("트레일링 스탑: 고점 대비 5% 이상 하락", () => {
@@ -244,17 +250,27 @@ describe("evaluateSellCondition", () => {
     const result = evaluateSellCondition(104500, 100000, 110000, 5);
     expect(result.shouldSell).toBe(true);
     expect(result.reason).toContain("트레일링 스탑");
+    expect(result.type).toBe("trailing_stop");
   });
 
   test("트레일링 스탑 경계값: 정확히 고점 * 0.95", () => {
     const result = evaluateSellCondition(104500, 100000, 110000, 5);
     expect(result.shouldSell).toBe(true);
+    expect(result.type).toBe("trailing_stop");
+  });
+
+  test("trailingStopPct=0이면 트레일링 스탑 비활성화", () => {
+    // peak=110000, trailing=0% → 트레일링 스탑 체크 안 함
+    const result = evaluateSellCondition(104500, 100000, 110000, 0);
+    expect(result.shouldSell).toBe(false);
+    expect(result.type).toBe("none");
   });
 
   test("매도 조건 미충족", () => {
     const result = evaluateSellCondition(105000, 100000, 110000, 5);
     expect(result.shouldSell).toBe(false);
     expect(result.reason).toContain("미충족");
+    expect(result.type).toBe("none");
   });
 });
 

@@ -54,17 +54,20 @@ export function evaluateBuyCondition(
   };
 }
 
+export type SellType = "loss_cut" | "take_profit" | "trailing_stop" | "none";
+
 export function evaluateSellCondition(
   currentPrice: number,
   referencePrice: number,
   peakPrice: number,
   trailingStopPct: number,
-): { shouldSell: boolean; reason: string } {
+): { shouldSell: boolean; reason: string; type: SellType } {
   const lossCutPrice = referencePrice * (1 - LOSS_CUT_PCT / 100);
   if (currentPrice <= lossCutPrice) {
     return {
       shouldSell: true,
       reason: `손절: 현재가(${currentPrice}) <= 기준가(${referencePrice}) * ${1 - LOSS_CUT_PCT / 100}`,
+      type: "loss_cut",
     };
   }
 
@@ -73,18 +76,22 @@ export function evaluateSellCondition(
     return {
       shouldSell: true,
       reason: `익절: 현재가(${currentPrice}) >= 기준가(${referencePrice}) * ${1 + TAKE_PROFIT_PCT / 100}`,
+      type: "take_profit",
     };
   }
 
-  const trailingStopPrice = peakPrice * (1 - trailingStopPct / 100);
-  if (currentPrice <= trailingStopPrice) {
-    return {
-      shouldSell: true,
-      reason: `트레일링 스탑: 현재가(${currentPrice}) <= 고점(${peakPrice}) * ${1 - trailingStopPct / 100}`,
-    };
+  if (trailingStopPct > 0) {
+    const trailingStopPrice = peakPrice * (1 - trailingStopPct / 100);
+    if (currentPrice <= trailingStopPrice) {
+      return {
+        shouldSell: true,
+        reason: `트레일링 스탑: 현재가(${currentPrice}) <= 고점(${peakPrice}) * ${1 - trailingStopPct / 100}`,
+        type: "trailing_stop",
+      };
+    }
   }
 
-  return { shouldSell: false, reason: "매도 조건 미충족" };
+  return { shouldSell: false, reason: "매도 조건 미충족", type: "none" };
 }
 
 export function updatePeakPrice(currentPeak: number | null, currentPrice: number): number {
