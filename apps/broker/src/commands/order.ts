@@ -1,4 +1,5 @@
 import { parseArgs } from "node:util";
+import { cancel, intro, isCancel, log, outro, select, text } from "@clack/prompts";
 import { escapeSQL, WRANGLER_CONFIG } from "../utils";
 
 const DB_NAME = "cluefin-fsd-db";
@@ -14,26 +15,7 @@ Commands:
   --remote          원격 D1 데이터베이스 사용 (기본: local)
 
 각 명령의 상세 옵션은 --help 플래그로 확인:
-  broker order add --help`;
-
-const ADD_HELP = `Usage: broker order add [options]
-
-D1 entry_orders 테이블에 새 진입 주문을 추가합니다.
-
-필수 옵션:
-  --stock-code <code>           종목코드 (예: 005930)
-  --price <number>              기준가격
-  --qty <number>                수량
-  --broker <kis|kiwoom>         증권사
-  --market <kospi|kosdaq>       시장 구분
-
-선택 옵션:
-  --trailing-stop <pct>         트레일링 스탑 비율 (기본: 5.0)
-  -h, --help                    도움말 출력
-
-예시:
-  broker order add --stock-code 005930 --price 70000 --qty 10 --broker kis --market kospi
-  broker order add --stock-code 005930 --price 70000 --qty 10 --broker kis --market kosdaq --trailing-stop 5.0`;
+  broker order list --help`;
 
 const LIST_HELP = `Usage: broker order list [options]
 
@@ -89,51 +71,90 @@ async function execD1(sql: string, remote: boolean): Promise<string> {
   return stdout;
 }
 
-async function addOrder(args: string[], remote: boolean): Promise<void> {
-  const { values } = parseArgs({
-    args,
-    options: {
-      "stock-code": { type: "string" },
-      price: { type: "string" },
-      qty: { type: "string" },
-      broker: { type: "string" },
-      market: { type: "string" },
-      "trailing-stop": { type: "string" },
-      help: { type: "boolean", short: "h" },
-    },
-    strict: true,
-  });
+async function addOrder(): Promise<void> {
+  intro("주문 추가");
 
-  if (values.help) {
-    console.log(ADD_HELP);
+  const stockCode = await text({
+    message: "종목코드를 입력하세요",
+    placeholder: "005930",
+    validate: (v) => (v.length === 0 ? "종목코드는 필수입니다" : undefined),
+  });
+  if (isCancel(stockCode)) {
+    cancel("취소됨");
     process.exit(0);
   }
 
-  const stockCode = values["stock-code"];
-  const price = values.price;
-  const qty = values.qty;
-  const broker = values.broker;
-  const market = values.market;
-
-  if (!stockCode || !price || !qty || !broker || !market) {
-    console.error(ADD_HELP);
-    process.exit(1);
+  const price = await text({
+    message: "기준가격을 입력하세요",
+    placeholder: "70000",
+    validate: (v) => (Number.isNaN(Number(v)) || v.length === 0 ? "숫자를 입력하세요" : undefined),
+  });
+  if (isCancel(price)) {
+    cancel("취소됨");
+    process.exit(0);
   }
 
-  if (!["kis", "kiwoom"].includes(broker)) {
-    console.error('broker는 "kis" 또는 "kiwoom"이어야 합니다.');
-    process.exit(1);
-  }
-  if (!["kospi", "kosdaq"].includes(market)) {
-    console.error('market은 "kospi" 또는 "kosdaq"이어야 합니다.');
-    process.exit(1);
+  const qty = await text({
+    message: "수량을 입력하세요",
+    placeholder: "10",
+    validate: (v) => (Number.isNaN(Number(v)) || v.length === 0 ? "숫자를 입력하세요" : undefined),
+  });
+  if (isCancel(qty)) {
+    cancel("취소됨");
+    process.exit(0);
   }
 
-  const trailingStop = values["trailing-stop"] ?? "5.0";
+  let broker: string;
+  while (true) {
+    const selected = await select({
+      message: "증권사를 선택하세요",
+      options: [
+        { value: "kis", label: "KIS (한국투자증권)" },
+        { value: "kiwoom", label: "Kiwoom (키움증권) — 지원예정", hint: "coming soon" },
+      ],
+    });
+    if (isCancel(selected)) {
+      cancel("취소됨");
+      process.exit(0);
+    }
+    if (selected === "kiwoom") {
+      log.warn("키움증권은 아직 지원되지 않습니다. 다른 증권사를 선택하세요.");
+      continue;
+    }
+    broker = selected;
+    break;
+  }
+
+  const target = await select({
+    message: "실행 환경을 선택하세요",
+    options: [
+      { value: "remote", label: "Remote (원격 D1)" },
+      { value: "local", label: "Local (로컬 D1)" },
+    ],
+  });
+  if (isCancel(target)) {
+    cancel("취소됨");
+    process.exit(0);
+  }
+
+  const market = await select({
+    message: "시장을 선택하세요",
+    options: [
+      { value: "kospi", label: "KOSPI" },
+      { value: "kosdaq", label: "KOSDAQ" },
+    ],
+  });
+  if (isCancel(market)) {
+    cancel("취소됨");
+    process.exit(0);
+  }
+
+  const remote = target === "remote";
+  const trailingStop = "5.0";
 
   const sql = `INSERT INTO entry_orders (stock_code, reference_price, quantity, trailing_stop_pct, broker, market) VALUES ('${escapeSQL(stockCode)}', ${price}, ${qty}, ${trailingStop}, '${escapeSQL(broker)}', '${escapeSQL(market)}')`;
   const output = await execD1(sql, remote);
-  console.log("주문 추가 완료");
+  outro("주문 추가 완료");
   if (output.trim()) console.log(output);
 }
 
@@ -205,7 +226,7 @@ export async function runOrder(args: string[]): Promise<void> {
 
   switch (subcommand) {
     case "add":
-      return addOrder(rest, remote);
+      return addOrder();
     case "list":
       return listOrders(rest, remote);
     case "cancel":
