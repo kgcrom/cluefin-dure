@@ -11,10 +11,12 @@ import {
 } from "@cluefin/securities";
 import type { Env } from "./bindings";
 import { evaluateBuyCondition, evaluateSellCondition, updatePeakPrice } from "./strategy";
-import { getTodayKst, isFillCheckTime, isOrderExecutionTime } from "./time-utils";
+import { getTodayKst } from "./time-utils";
 import { getBrokerToken, refreshBrokerToken } from "./token-store";
 
 const TOKEN_REFRESH_CRON = "0 */6 * * *";
+const ORDER_EXECUTION_CRON = "0,9,20,30,39,50 0-6 * * 2-6";
+const FILL_CHECK_CRON = "10,40 0-6 * * 2-6";
 
 async function executeKisOrder(
   env: Env,
@@ -300,27 +302,25 @@ export async function handleScheduled(
   ctx: ExecutionContext,
 ): Promise<void> {
   const now = new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
-  const runOrder = isOrderExecutionTime();
-  const runFill = isFillCheckTime();
 
-  console.log(`[cron] 스케줄 트리거: ${now}, 주문실행=${runOrder}, 체결확인=${runFill}`);
+  console.log(`[cron] 스케줄 트리거: ${now}, cron=${event.cron}`);
 
-  if (event.cron === TOKEN_REFRESH_CRON) {
-    console.log("[cron] 토큰 갱신 시작");
-    ctx.waitUntil(
-      refreshBrokerToken(env, "kis")
-        .then(() => console.log("[cron] 토큰 갱신 완료"))
-        .catch((e) => console.error("[cron] 토큰 갱신 실패:", String(e))),
-    );
-  }
-
-  if (runOrder) {
-    console.log("[cron] 주문 실행 시작");
-    ctx.waitUntil(handleOrderExecution(env));
-  }
-
-  if (runFill) {
-    console.log("[cron] 체결 확인 시작");
-    ctx.waitUntil(handleFillCheck(env));
+  switch (event.cron) {
+    case TOKEN_REFRESH_CRON:
+      console.log("[cron] 토큰 갱신 시작");
+      ctx.waitUntil(
+        refreshBrokerToken(env, "kis")
+          .then(() => console.log("[cron] 토큰 갱신 완료"))
+          .catch((e) => console.error("[cron] 토큰 갱신 실패:", String(e))),
+      );
+      break;
+    case ORDER_EXECUTION_CRON:
+      console.log("[cron] 주문 실행 시작");
+      ctx.waitUntil(handleOrderExecution(env));
+      break;
+    case FILL_CHECK_CRON:
+      console.log("[cron] 체결 확인 시작");
+      ctx.waitUntil(handleFillCheck(env));
+      break;
   }
 }
