@@ -1,3 +1,5 @@
+// ── Imports & Constants ──
+
 import type { ScheduledEvent } from "@cloudflare/workers-types";
 import type { EntryOrder, ExecutionStatus, TradeExecution } from "@cluefin/cloudflare";
 import { createOrderRepository } from "@cluefin/cloudflare";
@@ -17,6 +19,27 @@ import { getBrokerToken, refreshBrokerToken } from "./token-store";
 const TOKEN_REFRESH_CRON = "0 */6 * * *";
 const ORDER_EXECUTION_CRON = "0,9,20,30,39,50 0-6 * * 2-6";
 const FILL_CHECK_CRON = "10,40 0-6 * * 2-6";
+
+// ── 유틸리티 ──
+
+function getCurrentKstHour(): string {
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const h = String(kst.getUTCHours()).padStart(2, "0");
+  const m = String(kst.getUTCMinutes()).padStart(2, "0");
+  const s = String(kst.getUTCSeconds()).padStart(2, "0");
+  return `${h}${m}${s}`;
+}
+
+/** FILL_CHECK_CRON 마지막 실행(KST 15:30 이후)인지 판별 */
+function isMarketCloseTime(): boolean {
+  const now = new Date();
+  const kstHour = (now.getUTCHours() + 9) % 24;
+  const kstMinute = now.getUTCMinutes();
+  return kstHour > 15 || (kstHour === 15 && kstMinute >= 30);
+}
+
+// ── KIS 주문 실행 ──
 
 async function executeKisOrder(
   env: Env,
@@ -51,14 +74,7 @@ async function executeKisOrder(
   };
 }
 
-function getCurrentKstHour(): string {
-  const now = new Date();
-  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  const h = String(kst.getUTCHours()).padStart(2, "0");
-  const m = String(kst.getUTCMinutes()).padStart(2, "0");
-  const s = String(kst.getUTCSeconds()).padStart(2, "0");
-  return `${h}${m}${s}`;
-}
+// ── 주문 실행 핸들러 (매수/매도 판단 → 주문) ──
 
 export async function handleOrderExecution(env: Env): Promise<void> {
   const repo = createOrderRepository(env.cluefin_fsd_db);
@@ -150,6 +166,7 @@ export async function handleOrderExecution(env: Env): Promise<void> {
         }
       }
 
+      // 매수 조건 확인
       const buyResult = evaluateBuyCondition(
         currentPrice,
         intradayChart.output2,
@@ -224,6 +241,8 @@ export async function handleOrderExecution(env: Env): Promise<void> {
   console.log(`[cron] 주문 실행 완료: ${processedCount}/${orders.length}건 처리`);
 }
 
+// ── 체결 확인 핸들러 ──
+
 async function checkKisFills(env: Env, executions: TradeExecution[]): Promise<void> {
   if (executions.length === 0) return;
 
@@ -247,7 +266,7 @@ async function checkKisFills(env: Env, executions: TradeExecution[]): Promise<vo
 
   const response = await client.getDailyOrders(credentials, token, params);
 
-  // Map: broker_order_id -> order data
+  // broker_order_id → 체결 데이터 매핑
   const orderMap = new Map(response.output1.map((order) => [order.odno, order]));
 
   for (const execution of executions) {
@@ -266,7 +285,7 @@ async function checkKisFills(env: Env, executions: TradeExecution[]): Promise<vo
     if (rejectedQty > 0 && filledQty === 0) {
       status = "rejected";
     } else if (filledQty === 0) {
-      continue; // Still unfilled
+      continue; // 미체결 상태 유지
     } else if (filledQty < execution.requestedQty) {
       status = "partial";
     } else {
@@ -296,6 +315,33 @@ export async function handleFillCheck(env: Env): Promise<void> {
   console.log("[cron] 체결 확인 완료");
 }
 
+// ── 일일 정리 핸들러 ──
+// 장 마감(KST 15:30 이후) 시 당일 entry_orders와 trade_executions 레코드를 삭제한다.
+
+async function handleDailyCleanup(env: Env): Promise<void> {
+  const repo = createOrderRepository(env.cluefin_fsd_db);
+  const today = getTodayKst();
+
+  // 삭제 전 요약 로그
+  const summary = await repo.getDailySummary(today);
+  console.log(
+    `[cleanup] entry_orders 요약: total=${summary.orders.total}`,
+    summary.orders.byStatus,
+  );
+  console.log(
+    `[cleanup] trade_executions 요약: total=${summary.executions.total}`,
+    summary.executions.byStatus,
+  );
+
+  // 레코드 삭제
+  const result = await repo.deleteDailyRecords(today);
+  console.log(
+    `[cleanup] 일일 정리 완료: orders=${result.deletedOrders}, executions=${result.deletedExecutions}`,
+  );
+}
+
+// ── 스케줄 라우터 (entry point) ──
+
 export async function handleScheduled(
   event: ScheduledEvent,
   env: Env,
@@ -320,7 +366,15 @@ export async function handleScheduled(
       break;
     case FILL_CHECK_CRON:
       console.log("[cron] 체결 확인 시작");
-      ctx.waitUntil(handleFillCheck(env));
+      ctx.waitUntil(
+        (async () => {
+          await handleFillCheck(env);
+          // 장 마감 시간(KST 15:30 이후)이면 일일 정리 실행
+          if (isMarketCloseTime()) {
+            await handleDailyCleanup(env);
+          }
+        })(),
+      );
       break;
   }
 }
