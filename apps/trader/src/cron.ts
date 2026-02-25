@@ -12,7 +12,12 @@ import {
   type KisStockPriceResponse,
 } from "@cluefin/securities";
 import type { Env } from "./bindings";
-import { evaluateBuyCondition, evaluateSellCondition, updatePeakPrice } from "./strategy";
+import {
+  calculateChaseLimitPrice,
+  evaluateBuyCondition,
+  evaluateSellCondition,
+  updatePeakPrice,
+} from "./strategy";
 import { getTodayKst } from "./time-utils";
 import { getBrokerToken, refreshBrokerToken } from "./token-store";
 
@@ -205,19 +210,27 @@ export async function handleOrderExecution(env: Env): Promise<void> {
         `[cron] 분할 수량 계산: order_id=${order.id}, total=${order.quantity}, requested=${requestedQty}, remaining=${remaining}, thisRound=${quantity}`,
       );
 
+      const unfilledCount = await repo.getUnfilledCountForEntryOrder(order.id);
+      const limitPrice = calculateChaseLimitPrice(currentPrice, unfilledCount);
+      console.log(
+        `[cron] Chase 가격 계산: unfilled=${unfilledCount}, currentPrice=${currentPrice}, limitPrice=${limitPrice}`,
+      );
+
       const { brokerOrderId, brokerResponse } = await executeKisOrder(
         env,
         order,
         quantity,
         kisToken,
         "buy",
+        "00",
+        limitPrice,
       );
 
       await repo.createExecution({
         entryOrderId: order.id,
         brokerOrderId,
         requestedQty: quantity,
-        requestedPrice: order.referencePrice,
+        requestedPrice: limitPrice,
         broker: order.broker,
         brokerResponse,
       });

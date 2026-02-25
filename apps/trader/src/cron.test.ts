@@ -8,6 +8,7 @@ const mockUpdateOrderStatus = mock(() => Promise.resolve());
 const mockGetUnfilledExecutions = mock(() => Promise.resolve([]));
 const mockUpdateExecutionFill = mock(() => Promise.resolve());
 const mockUpdatePeakPrice = mock(() => Promise.resolve());
+const mockGetUnfilledCountForEntryOrder = mock(() => Promise.resolve(0));
 const mockGetFilledQuantityForEntryOrder = mock(() => Promise.resolve(0));
 const mockCreateEntryOrder = mock(() => Promise.resolve({}));
 const mockBuyOrder = mock(() => Promise.resolve({ output: { odno: "001", ordTmd: "121000" } }));
@@ -42,6 +43,7 @@ mock.module("@cluefin/cloudflare", () => ({
     getUnfilledExecutions: mockGetUnfilledExecutions,
     updateExecutionFill: mockUpdateExecutionFill,
     updatePeakPrice: mockUpdatePeakPrice,
+    getUnfilledCountForEntryOrder: mockGetUnfilledCountForEntryOrder,
     getFilledQuantityForEntryOrder: mockGetFilledQuantityForEntryOrder,
     createEntryOrder: mockCreateEntryOrder,
   }),
@@ -144,6 +146,7 @@ afterEach(() => {
   mockGetUnfilledExecutions.mockClear();
   mockUpdateExecutionFill.mockClear();
   mockUpdatePeakPrice.mockClear();
+  mockGetUnfilledCountForEntryOrder.mockClear();
   mockGetFilledQuantityForEntryOrder.mockClear();
   mockCreateEntryOrder.mockClear();
   mockBuyOrder.mockClear();

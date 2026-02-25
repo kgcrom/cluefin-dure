@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import type { KisIntradayChartOutput2, KisStockPriceOutput } from "@cluefin/securities";
 import {
+  calculateChaseLimitPrice,
   computeMA,
   evaluateBuyCondition,
   evaluateSellCondition,
+  roundDownToTick,
   updatePeakPrice,
 } from "./strategy";
 
@@ -271,6 +273,78 @@ describe("evaluateSellCondition", () => {
     expect(result.shouldSell).toBe(false);
     expect(result.reason).toContain("미충족");
     expect(result.type).toBe("none");
+  });
+});
+
+describe("roundDownToTick", () => {
+  test("500,000원 이상: 1,000원 단위", () => {
+    expect(roundDownToTick(512345)).toBe(512000);
+    expect(roundDownToTick(500000)).toBe(500000);
+    expect(roundDownToTick(500999)).toBe(500000);
+  });
+
+  test("200,000원 이상 500,000원 미만: 500원 단위", () => {
+    expect(roundDownToTick(200100)).toBe(200000);
+    expect(roundDownToTick(349750)).toBe(349500);
+    expect(roundDownToTick(499999)).toBe(499500);
+  });
+
+  test("50,000원 이상 200,000원 미만: 100원 단위", () => {
+    expect(roundDownToTick(50050)).toBe(50000);
+    expect(roundDownToTick(66350)).toBe(66300);
+    expect(roundDownToTick(199999)).toBe(199900);
+  });
+
+  test("20,000원 이상 50,000원 미만: 50원 단위", () => {
+    expect(roundDownToTick(20030)).toBe(20000);
+    expect(roundDownToTick(35075)).toBe(35050);
+    expect(roundDownToTick(49999)).toBe(49950);
+  });
+
+  test("5,000원 이상 20,000원 미만: 10원 단위", () => {
+    expect(roundDownToTick(5005)).toBe(5000);
+    expect(roundDownToTick(12345)).toBe(12340);
+    expect(roundDownToTick(19999)).toBe(19990);
+  });
+
+  test("2,000원 이상 5,000원 미만: 5원 단위", () => {
+    expect(roundDownToTick(2003)).toBe(2000);
+    expect(roundDownToTick(3457)).toBe(3455);
+    expect(roundDownToTick(4999)).toBe(4995);
+  });
+
+  test("2,000원 미만: 1원 단위", () => {
+    expect(roundDownToTick(1999)).toBe(1999);
+    expect(roundDownToTick(500)).toBe(500);
+    expect(roundDownToTick(1)).toBe(1);
+  });
+});
+
+describe("calculateChaseLimitPrice", () => {
+  test("미체결 0건: 현재가 × 0.95 (5% 할인)", () => {
+    // 66000 * 0.95 = 62700 → 100원 단위 내림 → 62700
+    expect(calculateChaseLimitPrice(66000, 0)).toBe(62700);
+  });
+
+  test("미체결 1건: 현재가 × 0.98 (2% 할인)", () => {
+    // 66000 * 0.98 = 64680 → 100원 단위 내림 → 64600
+    expect(calculateChaseLimitPrice(66000, 1)).toBe(64600);
+  });
+
+  test("미체결 2건: 현재가 × 0.99 (1% 할인)", () => {
+    // 66000 * 0.99 = 65340 → 100원 단위 내림 → 65300
+    expect(calculateChaseLimitPrice(66000, 2)).toBe(65300);
+  });
+
+  test("미체결 3건 이상: 2건과 동일 (마지막 할인율 유지)", () => {
+    expect(calculateChaseLimitPrice(66000, 5)).toBe(65300);
+  });
+
+  test("호가단위 경계 가격에서 정확히 내림", () => {
+    // 50000 * 0.95 = 47500 → 50원 단위 내림 → 47500
+    expect(calculateChaseLimitPrice(50000, 0)).toBe(47500);
+    // 200000 * 0.95 = 190000 → 100원 단위 내림 → 190000
+    expect(calculateChaseLimitPrice(200000, 0)).toBe(190000);
   });
 });
 

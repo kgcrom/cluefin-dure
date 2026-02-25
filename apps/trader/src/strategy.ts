@@ -98,3 +98,30 @@ export function updatePeakPrice(currentPeak: number | null, currentPrice: number
   if (currentPeak === null) return currentPrice;
   return Math.max(currentPeak, currentPrice);
 }
+
+// KRX 호가단위에 맞춰 내림 (지정가 주문 거부 방지)
+export function roundDownToTick(price: number): number {
+  const tick =
+    price >= 500000
+      ? 1000
+      : price >= 200000
+        ? 500
+        : price >= 50000
+          ? 100
+          : price >= 20000
+            ? 50
+            : price >= 5000
+              ? 10
+              : price >= 2000
+                ? 5
+                : 1;
+  return Math.floor(price / tick) * tick;
+}
+
+// 미체결 횟수에 따라 할인율 감소
+const CHASE_DISCOUNTS = [0.95, 0.98, 0.99];
+
+export function calculateChaseLimitPrice(currentPrice: number, unfilledCount: number): number {
+  const idx = Math.min(unfilledCount, CHASE_DISCOUNTS.length - 1);
+  return roundDownToTick(Math.floor(currentPrice * CHASE_DISCOUNTS[idx]));
+}

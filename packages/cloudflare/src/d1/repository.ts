@@ -125,6 +125,16 @@ export function createOrderRepository(db: D1Database) {
         .run();
     },
 
+    async getUnfilledCountForEntryOrder(entryOrderId: number): Promise<number> {
+      const result = await db
+        .prepare(
+          "SELECT COUNT(*) as cnt FROM trade_executions WHERE entry_order_id = ? AND status = 'ordered'",
+        )
+        .bind(entryOrderId)
+        .first<{ cnt: number }>();
+      return result?.cnt ?? 0;
+    },
+
     async getFilledQuantityForEntryOrder(entryOrderId: number): Promise<number> {
       const result = await db
         .prepare(
