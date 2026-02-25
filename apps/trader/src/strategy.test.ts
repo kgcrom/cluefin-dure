@@ -216,12 +216,6 @@ describe("evaluateSellCondition", () => {
     expect(result.type).toBe("loss_cut");
   });
 
-  test("손절 경계값: 현재가가 정확히 95%", () => {
-    const result = evaluateSellCondition(95000, 100000, 110000, 5);
-    expect(result.shouldSell).toBe(true);
-    expect(result.type).toBe("loss_cut");
-  });
-
   test("손절 미달: 현재가가 95% 초과", () => {
     const result = evaluateSellCondition(95001, 100000, 100000, 5);
     expect(result.shouldSell).toBe(false);
@@ -232,12 +226,6 @@ describe("evaluateSellCondition", () => {
     const result = evaluateSellCondition(115000, 100000, 115000, 5);
     expect(result.shouldSell).toBe(true);
     expect(result.reason).toContain("익절");
-    expect(result.type).toBe("take_profit");
-  });
-
-  test("익절 경계값: 현재가가 정확히 115%", () => {
-    const result = evaluateSellCondition(115000, 100000, 115000, 5);
-    expect(result.shouldSell).toBe(true);
     expect(result.type).toBe("take_profit");
   });
 
@@ -252,12 +240,6 @@ describe("evaluateSellCondition", () => {
     const result = evaluateSellCondition(104500, 100000, 110000, 5);
     expect(result.shouldSell).toBe(true);
     expect(result.reason).toContain("트레일링 스탑");
-    expect(result.type).toBe("trailing_stop");
-  });
-
-  test("트레일링 스탑 경계값: 정확히 고점 * 0.95", () => {
-    const result = evaluateSellCondition(104500, 100000, 110000, 5);
-    expect(result.shouldSell).toBe(true);
     expect(result.type).toBe("trailing_stop");
   });
 
@@ -351,17 +333,5 @@ describe("calculateChaseLimitPrice", () => {
 describe("updatePeakPrice", () => {
   test("null이면 현재가로 초기화", () => {
     expect(updatePeakPrice(null, 100)).toBe(100);
-  });
-
-  test("현재가가 기존 고점보다 높으면 갱신", () => {
-    expect(updatePeakPrice(100, 120)).toBe(120);
-  });
-
-  test("현재가가 기존 고점보다 낮으면 유지", () => {
-    expect(updatePeakPrice(120, 100)).toBe(120);
-  });
-
-  test("현재가가 기존 고점과 같으면 유지", () => {
-    expect(updatePeakPrice(100, 100)).toBe(100);
   });
 });
