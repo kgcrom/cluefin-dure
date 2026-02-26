@@ -25,6 +25,14 @@
         "@types/node": "^25.1.0",
       },
     },
+    "apps/dure": {
+      "name": "@cluefin/dure",
+      "version": "0.0.1",
+      "devDependencies": {
+        "@types/bun": "^1.3.8",
+        "@types/node": "^25.1.0",
+      },
+    },
     "apps/trader": {
       "name": "@cluefin/trader",
       "version": "0.0.1",
@@ -96,6 +104,8 @@
     "@cluefin/broker": ["@cluefin/broker@workspace:apps/broker"],
 
     "@cluefin/cloudflare": ["@cluefin/cloudflare@workspace:packages/cloudflare"],
+
+    "@cluefin/dure": ["@cluefin/dure@workspace:apps/dure"],
 
     "@cluefin/securities": ["@cluefin/securities@workspace:packages/securities"],
 

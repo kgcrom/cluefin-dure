@@ -1,6 +1,37 @@
 # Apps
 
-ClueFin FSD 애플리케이션 모음.
+ClueFin DURE 애플리케이션 모음. AI agent인 **dure**가 cluefin-rpc를 통해 시세·분석·계좌 데이터를 조회하고, **broker**가 주문을, **trader**가 체결을 담당합니다.
+
+## Dure
+
+cluefin-rpc JSON-RPC 서버를 조회하며 점진적으로 성장하는 AI agent. Python `cluefin` 프로세스를 자식으로 실행하고 stdin/stdout(NDJSON)으로 JSON-RPC 2.0 통신합니다.
+
+```sh
+cd apps/dure
+
+# 사용 가능한 RPC 메서드 목록 (Anthropic tool_use 형식)
+bun run start tools
+
+# RPC 메서드 직접 호출
+bun run start call rpc.ping
+bun run start call quote.kis.stock_current '{"stock_code":"005930"}'
+
+# KIS 주식 현재가 조회 (세션 자동 초기화)
+bun run start quote 005930
+```
+
+### RPC 메서드 카테고리
+
+| 카테고리 | 설명 | 예시 |
+|---|---|---|
+| `quote` | 시세 조회 (현재가, 차트) | `quote.kis.stock_current` |
+| `ta` | 기술적 분석 (이동평균, RSI 등) | `ta.moving_average` |
+| `account` | 계좌 조회 (잔고, 체결 내역) | `account.kis.balance` |
+| `dart` | DART 공시 데이터 | `dart.disclosure` |
+
+### AI Agent 통합
+
+`ToolRegistry`가 `rpc.list_methods`로 메서드를 자동 탐색하여 Anthropic `tool_use` 형식으로 변환합니다. 메서드명의 `.`을 `_`로 치환하여 tool name으로 사용합니다 (예: `quote.kis.stock_current` → `quote_kis_stock_current`).
 
 ## Broker
 
