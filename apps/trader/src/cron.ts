@@ -333,10 +333,9 @@ export async function handleFillCheck(env: Env): Promise<void> {
 
 async function handleDailyCleanup(env: Env): Promise<void> {
   const repo = createOrderRepository(env.cluefin_fsd_db);
-  const today = getTodayKst();
 
   // 삭제 전 요약 로그
-  const summary = await repo.getDailySummary(today);
+  const summary = await repo.getSummary();
   console.log(
     `[cleanup] entry_orders 요약: total=${summary.orders.total}`,
     summary.orders.byStatus,
@@ -347,7 +346,7 @@ async function handleDailyCleanup(env: Env): Promise<void> {
   );
 
   // 레코드 삭제
-  const result = await repo.deleteDailyRecords(today);
+  const result = await repo.deleteAllRecords();
   console.log(
     `[cleanup] 일일 정리 완료: orders=${result.deletedOrders}, executions=${result.deletedExecutions}`,
   );

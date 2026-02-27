@@ -169,25 +169,20 @@ export function createOrderRepository(db: D1Database) {
       return toEntryOrder(result);
     },
 
-    async getDailySummary(kstDate: string): Promise<{
+    async getSummary(): Promise<{
       orders: { total: number; byStatus: Record<string, number> };
       executions: { total: number; byStatus: Record<string, number> };
     }> {
       const orderRows = await db
-        .prepare(
-          "SELECT status, COUNT(*) as cnt FROM entry_orders WHERE strftime('%Y%m%d', created_at, '+9 hours') = ? GROUP BY status",
-        )
-        .bind(kstDate)
+        .prepare("SELECT status, COUNT(*) as cnt FROM entry_orders GROUP BY status")
         .all<{ status: string; cnt: number }>();
 
       const executionRows = await db
         .prepare(
           `SELECT te.status, COUNT(*) as cnt FROM trade_executions te
            JOIN entry_orders eo ON te.entry_order_id = eo.id
-           WHERE strftime('%Y%m%d', eo.created_at, '+9 hours') = ?
            GROUP BY te.status`,
         )
-        .bind(kstDate)
         .all<{ status: string; cnt: number }>();
 
       const ordersByStatus: Record<string, number> = {};
@@ -210,22 +205,11 @@ export function createOrderRepository(db: D1Database) {
       };
     },
 
-    async deleteDailyRecords(
-      kstDate: string,
-    ): Promise<{ deletedOrders: number; deletedExecutions: number }> {
+    async deleteAllRecords(): Promise<{ deletedOrders: number; deletedExecutions: number }> {
       // trade_executions 먼저 삭제 (FK 참조)
-      const execResult = await db
-        .prepare(
-          `DELETE FROM trade_executions WHERE entry_order_id IN
-           (SELECT id FROM entry_orders WHERE strftime('%Y%m%d', created_at, '+9 hours') = ?)`,
-        )
-        .bind(kstDate)
-        .run();
+      const execResult = await db.prepare("DELETE FROM trade_executions").run();
 
-      const orderResult = await db
-        .prepare("DELETE FROM entry_orders WHERE strftime('%Y%m%d', created_at, '+9 hours') = ?")
-        .bind(kstDate)
-        .run();
+      const orderResult = await db.prepare("DELETE FROM entry_orders").run();
 
       return {
         deletedOrders: orderResult.meta.changes,
