@@ -23,13 +23,12 @@ Phase 0 (Foundation) ✅ DONE
 Phase 1~4: 핸들러 구현 ✅ DONE (Phase 0에서 모두 구현 완료)
   ├── Quote (12 methods): KIS 시세 6 + Kiwoom 차트 4 + KRX 2
   ├── TA (11 methods): SMA, EMA, RSI, MACD, BBANDS, STOCH, ADX, ATR, OBV, MDD, SHARPE
-  ├── Account (7 methods): KIS 잔고/매수가능/매도가능 + Kiwoom 잔고/체결/미체결/손익
   └── DART (4 methods): 공시검색, 기업개황, 고유번호조회, 대주주
 ```
 
 ---
 
-## 등록된 RPC 메서드 (39개)
+## 등록된 RPC 메서드 (32개)
 
 ### Meta (5)
 | RPC 메서드 | 설명 | requires_session |
@@ -80,19 +79,6 @@ Phase 1~4: 핸들러 구현 ✅ DONE (Phase 0에서 모두 구현 완료)
 | `ta.obv` | `OBV(close, volume)` |
 | `ta.mdd` | `MDD(returns)` → scalar |
 | `ta.sharpe` | `SHARPE(returns, rf, periods)` → scalar |
-
-### Account (7, 읽기 전용)
-**주문 실행은 제외** — 조회 전용만 노출.
-
-| RPC 메서드 | Python 호출 |
-|---|---|
-| `account.kis.balance` | `kis.domestic_account.get_stock_balance(...)` |
-| `account.kis.tradable_buy` | `kis.domestic_account.get_buy_tradable_inquiry(...)` |
-| `account.kis.tradable_sell` | `kis.domestic_account.get_sell_tradable_inquiry(...)` |
-| `account.kiwoom.balance` | `kiwoom.account.get_execution_balance(dmst_stex_tp)` |
-| `account.kiwoom.executed` | `kiwoom.account.get_executed(qry_tp, sell_tp, stex_tp)` |
-| `account.kiwoom.unexecuted` | `kiwoom.account.get_unexecuted(all_stk_tp, trde_tp, stex_tp)` |
-| `account.kiwoom.profit_loss` | `kiwoom.account.get_daily_realized_profit_loss(strt_dt, end_dt)` |
 
 ### DART (4)
 | RPC 메서드 | Python 호출 |
