@@ -1,4 +1,6 @@
 import path from "node:path";
+import { JsonRpcRemoteError } from "./jsonrpc";
+import { detectBroker } from "./session";
 import { StdioJsonRpcClient } from "./stdio-jsonrpc-client";
 import { ToolRegistry } from "./tool-registry";
 
@@ -12,7 +14,7 @@ Commands:
 Examples:
   bun run start tools
   bun run start call rpc.ping
-  bun run start call quote.kis.stock_current '{"stock_code":"005930"}'
+  bun run start call kis.basic_quote.stock_current_price '{"stock_code":"005930"}'
   bun run start quote 005930`;
 
 function createClient(): StdioJsonRpcClient {
@@ -49,6 +51,12 @@ async function main(): Promise<void> {
         throw new Error("method is required. Example: bun run start call rpc.ping");
       }
       const params = args[1] ? JSON.parse(args[1]) : {};
+
+      const broker = detectBroker(method);
+      if (broker) {
+        await client.request("session.initialize", { broker });
+      }
+
       const result = await client.request(method, params);
       console.log(JSON.stringify(result, null, 2));
       return;
@@ -60,7 +68,7 @@ async function main(): Promise<void> {
         throw new Error("stock_code is required. Example: bun run start quote 005930");
       }
       await client.request("session.initialize", { broker: "kis" });
-      const result = await client.request("quote.kis.stock_current", {
+      const result = await client.request("kis.basic_quote.stock_current_price", {
         stock_code: stockCode,
       });
       console.log(JSON.stringify(result, null, 2));
@@ -73,4 +81,12 @@ async function main(): Promise<void> {
   }
 }
 
-await main();
+try {
+  await main();
+} catch (error) {
+  if (error instanceof JsonRpcRemoteError) {
+    console.error(JSON.stringify({ error: true, code: error.code, message: error.message }));
+    process.exit(1);
+  }
+  throw error;
+}

@@ -16,9 +16,22 @@ const METHODS = [
     requires_session: false,
   },
   {
-    name: "quote.kis.stock_current",
+    name: "session.initialize",
+    description: "Initialize broker session",
+    category: "session",
+    broker: null,
+    parameters: {
+      type: "object",
+      properties: { broker: { type: "string", enum: ["kis", "kiwoom", "krx", "dart"] } },
+      required: ["broker"],
+    },
+    returns: { type: "object" },
+    requires_session: false,
+  },
+  {
+    name: "kis.basic_quote.stock_current_price",
     description: "Get current stock price from KIS",
-    category: "quote",
+    category: "kis.basic_quote",
     broker: "kis",
     parameters: {
       type: "object",
@@ -112,7 +125,11 @@ async function dispatch(req: JsonRpcRequest): Promise<void> {
       break;
     }
 
-    case "quote.kis.stock_current":
+    case "session.initialize":
+      writeResponse(id, { initialized: true, broker: params?.broker ?? "unknown" });
+      break;
+
+    case "kis.basic_quote.stock_current_price":
       writeResponse(id, {
         stock_code: params?.stock_code ?? "000000",
         current_price: 72300,

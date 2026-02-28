@@ -59,7 +59,7 @@ describe("StdioJsonRpcClient integration", () => {
     const [ping, echo, quote] = await Promise.all([
       client.request<{ pong: boolean }>("rpc.ping"),
       client.request("test.echo", { key: "value" }),
-      client.request("quote.kis.stock_current", { stock_code: "005930" }),
+      client.request("kis.basic_quote.stock_current_price", { stock_code: "005930" }),
     ]);
 
     expect(ping).toEqual({ pong: true });
@@ -106,6 +106,18 @@ describe("StdioJsonRpcClient integration", () => {
     expect(client.request("rpc.ping")).rejects.toThrow("not started");
   });
 
+  test("session.initialize: broker session setup", async () => {
+    client = createTestClient();
+    client.start();
+
+    const result = await client.request<{ initialized: boolean; broker: string }>(
+      "session.initialize",
+      { broker: "kis" },
+    );
+
+    expect(result).toEqual({ initialized: true, broker: "kis" });
+  });
+
   test("ta.sma: computation via mock server", async () => {
     client = createTestClient();
     client.start();
@@ -139,7 +151,7 @@ describe("ToolRegistry integration", () => {
     expect(tools.length).toBeGreaterThanOrEqual(3);
     const names = tools.map((t) => t.name);
     expect(names).toContain("rpc_ping");
-    expect(names).toContain("quote_kis_stock_current");
+    expect(names).toContain("kis_basic_quote_stock_current_price");
     expect(names).toContain("ta_sma");
   });
 
@@ -148,12 +160,12 @@ describe("ToolRegistry integration", () => {
     client.start();
 
     const registry = new ToolRegistry(client);
-    await registry.discover({ category: "quote", broker: "kis" });
+    await registry.discover({ category: "kis.basic_quote", broker: "kis" });
 
     const tools = registry.toAnthropicTools();
 
     expect(tools).toHaveLength(1);
-    expect(tools[0].name).toBe("quote_kis_stock_current");
+    expect(tools[0].name).toBe("kis_basic_quote_stock_current_price");
   });
 
   test("callTool via real subprocess", async () => {
@@ -163,7 +175,7 @@ describe("ToolRegistry integration", () => {
     const registry = new ToolRegistry(client);
     await registry.discover();
 
-    const result = await registry.callTool("quote_kis_stock_current", {
+    const result = await registry.callTool("kis_basic_quote_stock_current_price", {
       stock_code: "005930",
     });
 
