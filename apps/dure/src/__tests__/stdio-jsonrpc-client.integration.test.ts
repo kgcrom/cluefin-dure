@@ -141,14 +141,14 @@ describe("ToolRegistry integration", () => {
     await client?.close();
   });
 
-  test("discover + toAnthropicTools via real subprocess", async () => {
+  test("discover + toPiTools via real subprocess", async () => {
     client = createTestClient();
     client.start();
 
     const registry = new ToolRegistry(client);
     await registry.discover();
 
-    const tools = registry.toAnthropicTools();
+    const tools = registry.toPiTools({ initializedBrokers: new Set() });
 
     expect(tools.length).toBeGreaterThanOrEqual(3);
     const names = tools.map((t) => t.name);
@@ -157,17 +157,16 @@ describe("ToolRegistry integration", () => {
     expect(names).toContain("ta_sma");
   });
 
-  test("discover with filter", async () => {
+  test("discover with filter + getCategories", async () => {
     client = createTestClient();
     client.start();
 
     const registry = new ToolRegistry(client);
     await registry.discover({ category: "kis.basic_quote", broker: "kis" });
 
-    const tools = registry.toAnthropicTools();
-
-    expect(tools).toHaveLength(1);
-    expect(tools[0].name).toBe("kis_basic_quote_stock_current_price");
+    const methods = registry.getMethods();
+    expect(methods).toHaveLength(1);
+    expect(methods[0].name).toBe("kis.basic_quote.stock_current_price");
   });
 
   test("callTool via real subprocess", async () => {
