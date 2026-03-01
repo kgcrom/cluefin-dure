@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
 import type { KisIntradayChartOutput2, KisStockPriceOutput } from "@cluefin/securities";
+import { describe, expect, test } from "vitest";
 import {
   calculateChaseLimitPrice,
   computeMA,
@@ -7,7 +7,7 @@ import {
   evaluateSellCondition,
   roundDownToTick,
   updatePeakPrice,
-} from "./strategy";
+} from "./strategy.js";
 
 function makeCandle(price: number): KisIntradayChartOutput2 {
   return {

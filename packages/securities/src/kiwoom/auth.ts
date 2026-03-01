@@ -1,5 +1,5 @@
-import type { AuthClient, AuthToken, BrokerEnv } from "../types";
-import type { KiwoomCredentials, KiwoomTokenRequest, KiwoomTokenResponse } from "./types";
+import type { AuthClient, AuthToken, BrokerEnv } from "../types.js";
+import type { KiwoomCredentials, KiwoomTokenRequest, KiwoomTokenResponse } from "./types.js";
 
 const BASE_URLS: Record<BrokerEnv, string> = {
   prod: "https://api.kiwoom.com",

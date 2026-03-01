@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
-import { detectBroker } from "./session";
+import { describe, expect, test } from "vitest";
+import { detectBroker } from "./session.js";
 
 describe("detectBroker", () => {
   test("kis broker methods", () => {

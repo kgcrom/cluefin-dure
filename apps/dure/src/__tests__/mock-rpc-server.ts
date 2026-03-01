@@ -2,8 +2,10 @@
  * Mock JSON-RPC server for integration testing.
  * Reads NDJSON from stdin, dispatches to mock handlers, writes responses to stdout.
  *
- * Usage: bun run src/__tests__/mock-rpc-server.ts
+ * Usage: node dist/__tests__/mock-rpc-server.js
  */
+import { createInterface } from "node:readline";
+import { setTimeout as sleep } from "node:timers/promises";
 
 const METHODS = [
   {
@@ -155,7 +157,7 @@ async function dispatch(req: JsonRpcRequest): Promise<void> {
 
     case "test.slow": {
       const delayMs = (params?.delay_ms as number) ?? 1000;
-      await Bun.sleep(delayMs);
+      await sleep(delayMs);
       writeResponse(id, { delayed: true, delay_ms: delayMs });
       break;
     }
@@ -166,30 +168,19 @@ async function dispatch(req: JsonRpcRequest): Promise<void> {
 }
 
 // Main loop: read NDJSON from stdin
-const reader = Bun.stdin.stream().getReader();
-const decoder = new TextDecoder();
-let buffer = "";
+const lineReader = createInterface({
+  input: process.stdin,
+  crlfDelay: Number.POSITIVE_INFINITY,
+});
 
-while (true) {
-  const { done, value } = await reader.read();
-  if (done) break;
-
-  buffer += decoder.decode(value, { stream: true });
-
-  let newlineIndex = buffer.indexOf("\n");
-  while (newlineIndex >= 0) {
-    const line = buffer.slice(0, newlineIndex).trim();
-    buffer = buffer.slice(newlineIndex + 1);
-
-    if (line.length > 0) {
-      try {
-        const req = JSON.parse(line) as JsonRpcRequest;
-        await dispatch(req);
-      } catch {
-        writeError(null, -32700, "Parse error");
-      }
+for await (const rawLine of lineReader) {
+  const line = rawLine.trim();
+  if (line.length > 0) {
+    try {
+      const req = JSON.parse(line) as JsonRpcRequest;
+      await dispatch(req);
+    } catch {
+      writeError(null, -32700, "Parse error");
     }
-
-    newlineIndex = buffer.indexOf("\n");
   }
 }

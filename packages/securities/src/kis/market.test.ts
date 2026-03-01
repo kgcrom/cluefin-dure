@@ -1,11 +1,11 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { createKisMarketClient } from "./market";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { createKisMarketClient } from "./market.js";
 import type {
   KisDailyPriceParams,
   KisIndexPriceParams,
   KisIntradayChartParams,
   KisStockPriceParams,
-} from "./types";
+} from "./types.js";
 
 const originalFetch = globalThis.fetch;
 
@@ -172,7 +172,7 @@ const rawStockPriceResponse = {
 };
 
 beforeEach(() => {
-  globalThis.fetch = mock(() =>
+  globalThis.fetch = vi.fn(() =>
     Promise.resolve(new Response(JSON.stringify(rawIntradayResponse), { status: 200 })),
   );
 });
@@ -236,7 +236,7 @@ describe("createKisMarketClient", () => {
     const client = createKisMarketClient("prod");
     await client.getIntradayChart(credentials, token, params);
 
-    const callArgs = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const url = new URL(callArgs[0] as string);
 
     expect(url.searchParams.get("FID_COND_MRKT_DIV_CODE")).toBe("J");
@@ -247,13 +247,13 @@ describe("createKisMarketClient", () => {
   });
 
   test("throws on HTTP error", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response("Forbidden", { status: 403, statusText: "Forbidden" })),
     );
 
     const client = createKisMarketClient("prod");
 
-    expect(client.getIntradayChart(credentials, token, params)).rejects.toThrow(
+    await expect(client.getIntradayChart(credentials, token, params)).rejects.toThrow(
       "KIS intraday chart request failed: 403 Forbidden",
     );
   });
@@ -261,14 +261,14 @@ describe("createKisMarketClient", () => {
 
 describe("getStockPrice", () => {
   test("sends correct query parameters", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify(rawStockPriceResponse), { status: 200 })),
     );
 
     const client = createKisMarketClient("prod");
     await client.getStockPrice(credentials, token, stockPriceParams);
 
-    const callArgs = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const url = new URL(callArgs[0] as string);
 
     expect(url.pathname).toBe("/uapi/domestic-stock/v1/quotations/inquire-price");
@@ -277,19 +277,19 @@ describe("getStockPrice", () => {
   });
 
   test("throws on HTTP error", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response("Forbidden", { status: 403, statusText: "Forbidden" })),
     );
 
     const client = createKisMarketClient("prod");
 
-    expect(client.getStockPrice(credentials, token, stockPriceParams)).rejects.toThrow(
+    await expect(client.getStockPrice(credentials, token, stockPriceParams)).rejects.toThrow(
       "KIS stock price request failed: 403 Forbidden",
     );
   });
 
   test("maps snake_case response to camelCase", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify(rawStockPriceResponse), { status: 200 })),
     );
 
@@ -313,14 +313,14 @@ describe("getStockPrice", () => {
 
 describe("getIndexPrice", () => {
   test("sends correct query parameters", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify(rawIndexPriceResponse), { status: 200 })),
     );
 
     const client = createKisMarketClient("prod");
     await client.getIndexPrice(credentials, token, indexPriceParams);
 
-    const callArgs = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const url = new URL(callArgs[0] as string);
 
     expect(url.pathname).toBe("/uapi/domestic-stock/v1/quotations/inquire-index-price");
@@ -329,19 +329,19 @@ describe("getIndexPrice", () => {
   });
 
   test("throws on HTTP error", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response("Forbidden", { status: 403, statusText: "Forbidden" })),
     );
 
     const client = createKisMarketClient("prod");
 
-    expect(client.getIndexPrice(credentials, token, indexPriceParams)).rejects.toThrow(
+    await expect(client.getIndexPrice(credentials, token, indexPriceParams)).rejects.toThrow(
       "KIS index price request failed: 403 Forbidden",
     );
   });
 
   test("maps snake_case response to camelCase", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify(rawIndexPriceResponse), { status: 200 })),
     );
 
@@ -365,14 +365,14 @@ describe("getIndexPrice", () => {
 
 describe("getDailyPrice", () => {
   test("sends correct query parameters", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify(rawDailyPriceResponse), { status: 200 })),
     );
 
     const client = createKisMarketClient("prod");
     await client.getDailyPrice(credentials, token, dailyPriceParams);
 
-    const callArgs = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const url = new URL(callArgs[0] as string);
 
     expect(url.pathname).toBe("/uapi/domestic-stock/v1/quotations/inquire-daily-price");
@@ -383,19 +383,19 @@ describe("getDailyPrice", () => {
   });
 
   test("throws on HTTP error", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response("Forbidden", { status: 403, statusText: "Forbidden" })),
     );
 
     const client = createKisMarketClient("prod");
 
-    expect(client.getDailyPrice(credentials, token, dailyPriceParams)).rejects.toThrow(
+    await expect(client.getDailyPrice(credentials, token, dailyPriceParams)).rejects.toThrow(
       "KIS daily price request failed: 403 Forbidden",
     );
   });
 
   test("maps snake_case response to camelCase", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify(rawDailyPriceResponse), { status: 200 })),
     );
 

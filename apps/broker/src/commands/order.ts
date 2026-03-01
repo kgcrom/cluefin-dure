@@ -1,6 +1,7 @@
+import { spawn } from "node:child_process";
 import { parseArgs } from "node:util";
 import { cancel, intro, isCancel, log, outro, select, text } from "@clack/prompts";
-import { escapeSQL, WRANGLER_CONFIG } from "../utils";
+import { escapeSQL, WRANGLER_CONFIG } from "../utils.js";
 
 const DB_NAME = "cluefin-fsd-db";
 
@@ -45,7 +46,6 @@ const CANCEL_HELP = `Usage: broker order cancel <id>
 
 async function execD1(sql: string, remote: boolean): Promise<string> {
   const args = [
-    "bunx",
     "wrangler",
     "d1",
     "execute",
@@ -57,11 +57,26 @@ async function execD1(sql: string, remote: boolean): Promise<string> {
   ];
   if (remote) args.push("--remote");
 
-  const proc = Bun.spawn(args, { stdout: "pipe", stderr: "pipe" });
+  const { exitCode, stdout, stderr } = await new Promise<{
+    exitCode: number;
+    stdout: string;
+    stderr: string;
+  }>((resolve, reject) => {
+    const proc = spawn("npx", args, { stdio: ["ignore", "pipe", "pipe"] });
+    const stdoutChunks: Uint8Array[] = [];
+    const stderrChunks: Uint8Array[] = [];
 
-  const exitCode = await proc.exited;
-  const stdout = await new Response(proc.stdout).text();
-  const stderr = await new Response(proc.stderr).text();
+    proc.stdout.on("data", (chunk: Uint8Array) => stdoutChunks.push(chunk));
+    proc.stderr.on("data", (chunk: Uint8Array) => stderrChunks.push(chunk));
+    proc.on("error", reject);
+    proc.on("close", (code) =>
+      resolve({
+        exitCode: code ?? 1,
+        stdout: Buffer.concat(stdoutChunks).toString("utf8"),
+        stderr: Buffer.concat(stderrChunks).toString("utf8"),
+      }),
+    );
+  });
 
   if (exitCode !== 0) {
     console.error(`D1 명령 실패:\n${stderr}`);

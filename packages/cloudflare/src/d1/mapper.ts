@@ -1,4 +1,4 @@
-import type { EntryOrder, EntryOrderRow, TradeExecution, TradeExecutionRow } from "./types";
+import type { EntryOrder, EntryOrderRow, TradeExecution, TradeExecutionRow } from "./types.js";
 
 export function toTradeExecution(row: TradeExecutionRow): TradeExecution {
   return {

@@ -1,4 +1,4 @@
-import { toEntryOrder, toTradeExecution } from "./mapper";
+import { toEntryOrder, toTradeExecution } from "./mapper.js";
 import type {
   CreateEntryOrderInput,
   CreateTradeExecutionInput,
@@ -9,7 +9,7 @@ import type {
   OrderStatus,
   TradeExecution,
   TradeExecutionRow,
-} from "./types";
+} from "./types.js";
 
 export function createOrderRepository(db: D1Database) {
   return {

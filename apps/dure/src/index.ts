@@ -1,8 +1,11 @@
 import path from "node:path";
-import { JsonRpcRemoteError } from "./jsonrpc";
-import { detectBroker } from "./session";
-import { StdioJsonRpcClient } from "./stdio-jsonrpc-client";
-import { ToolRegistry } from "./tool-registry";
+import { fileURLToPath } from "node:url";
+import { JsonRpcRemoteError } from "./jsonrpc.js";
+import { detectBroker } from "./session.js";
+import { StdioJsonRpcClient } from "./stdio-jsonrpc-client.js";
+import { ToolRegistry } from "./tool-registry.js";
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
 const HELP = `Usage: dure <command> [options]
 
@@ -12,15 +15,18 @@ Commands:
   quote <stock_code>            KIS 주식 현재가 조회
 
 Examples:
-  bun run start tools
-  bun run start call rpc.ping
-  bun run start call kis.basic_quote.stock_current_price '{"stock_code":"005930"}'
-  bun run start quote 005930`;
+  npm run start -- tools
+  npm run start -- call rpc.ping
+  npm run start -- call kis.basic_quote.stock_current_price '{"stock_code":"005930"}'
+  npm run start -- quote 005930`;
 
 function createClient(): StdioJsonRpcClient {
   return new StdioJsonRpcClient({
     cmd: ["uv", "run", "-m", "cluefin_rpc"],
-    cwd: path.resolve(import.meta.dir, "../../../../cluefin"),
+    cwd: path.resolve(currentDir, "../../../../cluefin"),
+    env: {
+      UV_CACHE_DIR: path.resolve(currentDir, "../.uv-cache"),
+    },
     defaultTimeoutMs: 30_000,
   });
 }
@@ -48,7 +54,7 @@ async function main(): Promise<void> {
     if (command === "call") {
       const method = args[0];
       if (!method) {
-        throw new Error("method is required. Example: bun run start call rpc.ping");
+        throw new Error("method is required. Example: npm run start -- call rpc.ping");
       }
       const params = args[1] ? JSON.parse(args[1]) : {};
 
@@ -65,7 +71,7 @@ async function main(): Promise<void> {
     if (command === "quote") {
       const stockCode = args[0];
       if (!stockCode) {
-        throw new Error("stock_code is required. Example: bun run start quote 005930");
+        throw new Error("stock_code is required. Example: npm run start -- quote 005930");
       }
       await client.request("session.initialize", { broker: "kis" });
       const result = await client.request("kis.basic_quote.stock_current_price", {

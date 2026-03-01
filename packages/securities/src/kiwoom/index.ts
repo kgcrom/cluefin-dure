@@ -1,6 +1,6 @@
-export { createKiwoomAuthClient } from "./auth";
-export { createKiwoomMarketClient } from "./market";
-export { createKiwoomOrderClient } from "./order";
+export { createKiwoomAuthClient } from "./auth.js";
+export { createKiwoomMarketClient } from "./market.js";
+export { createKiwoomOrderClient } from "./order.js";
 export type {
   KiwoomBuyOrderParams,
   KiwoomBuyOrderResponse,
@@ -17,4 +17,4 @@ export type {
   KiwoomVolumeSurgeItem,
   KiwoomVolumeSurgeParams,
   KiwoomVolumeSurgeResponse,
-} from "./types";
+} from "./types.js";

@@ -1,14 +1,16 @@
-import { afterEach, describe, expect, test } from "bun:test";
 import path from "node:path";
-import { JsonRpcRemoteError } from "../jsonrpc";
-import { StdioJsonRpcClient } from "../stdio-jsonrpc-client";
-import { ToolRegistry } from "../tool-registry";
+import { fileURLToPath } from "node:url";
+import { afterEach, describe, expect, test } from "vitest";
+import { JsonRpcRemoteError } from "../jsonrpc.js";
+import { StdioJsonRpcClient } from "../stdio-jsonrpc-client.js";
+import { ToolRegistry } from "../tool-registry.js";
 
-const MOCK_SERVER = path.resolve(import.meta.dir, "mock-rpc-server.ts");
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const MOCK_SERVER = path.resolve(currentDir, "../../dist/__tests__/mock-rpc-server.js");
 
 function createTestClient(timeoutMs = 5_000): StdioJsonRpcClient {
   return new StdioJsonRpcClient({
-    cmd: ["bun", "run", MOCK_SERVER],
+    cmd: ["node", MOCK_SERVER],
     defaultTimeoutMs: timeoutMs,
   });
 }
@@ -78,7 +80,7 @@ describe("StdioJsonRpcClient integration", () => {
 
     try {
       await client.request("nonexistent.method");
-      expect.unreachable("should have thrown");
+      expect.fail("should have thrown");
     } catch (error) {
       expect(error).toBeInstanceOf(JsonRpcRemoteError);
       const rpcError = error as JsonRpcRemoteError;
@@ -93,17 +95,17 @@ describe("StdioJsonRpcClient integration", () => {
 
     try {
       await client.request("test.slow", { delay_ms: 2000 }, 200);
-      expect.unreachable("should have thrown");
+      expect.fail("should have thrown");
     } catch (error) {
       expect(error).toBeInstanceOf(Error);
       expect((error as Error).message).toContain("timeout");
     }
   });
 
-  test("request before start throws", () => {
+  test("request before start throws", async () => {
     client = createTestClient();
 
-    expect(client.request("rpc.ping")).rejects.toThrow("not started");
+    await expect(client.request("rpc.ping")).rejects.toThrow("not started");
   });
 
   test("session.initialize: broker session setup", async () => {

@@ -1,6 +1,6 @@
-import { describe, expect, mock, test } from "bun:test";
-import { createOrderRepository } from "./repository";
-import type { EntryOrderRow } from "./types";
+import { describe, expect, test, vi } from "vitest";
+import { createOrderRepository } from "./repository.js";
+import type { EntryOrderRow } from "./types.js";
 
 const sampleRow: EntryOrderRow = {
   id: 1,
@@ -17,17 +17,17 @@ const sampleRow: EntryOrderRow = {
 };
 
 function createMockDB(overrides: Record<string, unknown> = {}) {
-  const bindFn = mock(() => mockStmt);
+  const bindFn = vi.fn(() => mockStmt);
   const mockStmt: Record<string, unknown> = {
     bind: bindFn,
-    all: mock(() => Promise.resolve({ results: [sampleRow] })),
-    first: mock(() => Promise.resolve(sampleRow)),
-    run: mock(() => Promise.resolve()),
+    all: vi.fn(() => Promise.resolve({ results: [sampleRow] })),
+    first: vi.fn(() => Promise.resolve(sampleRow)),
+    run: vi.fn(() => Promise.resolve()),
     ...overrides,
   };
 
   return {
-    db: { prepare: mock(() => mockStmt) } as unknown as D1Database,
+    db: { prepare: vi.fn(() => mockStmt) } as unknown as D1Database,
     mockStmt,
     bindFn,
   };
@@ -56,7 +56,7 @@ describe("createOrderRepository", () => {
 
   test("getEntryOrderById returns null when not found", async () => {
     const { db } = createMockDB({
-      first: mock(() => Promise.resolve(null)),
+      first: vi.fn(() => Promise.resolve(null)),
     });
     const repo = createOrderRepository(db);
 

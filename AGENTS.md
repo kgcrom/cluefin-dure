@@ -4,11 +4,11 @@
 
 ## 도구 실행 방법
 
-    cd apps/dure && bun run start call <method> '<json_params>'
+    cd apps/dure && npm run start -- call <method> '<json_params>'
 
 메서드 목록 확인:
 
-    cd apps/dure && bun run start tools
+    cd apps/dure && npm run start -- tools
 
 ## 메서드 명명 규칙
 

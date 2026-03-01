@@ -1,4 +1,4 @@
-import type { BrokerEnv } from "../types";
+import type { BrokerEnv } from "../types.js";
 import type {
   KisBalanceItem,
   KisBalanceParams,
@@ -12,7 +12,7 @@ import type {
   KisOrderOutput,
   KisOrderParams,
   KisOrderResponse,
-} from "./types";
+} from "./types.js";
 
 const BASE_URLS: Record<BrokerEnv, string> = {
   prod: "https://openapi.koreainvestment.com:9443",

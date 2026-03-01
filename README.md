@@ -13,8 +13,8 @@ ClueFin DURE는 cluefin-rpc를 통해 시세·분석·계좌 데이터를 조회
 ## Built With
 
 - [TypeScript](https://www.typescriptlang.org/)
-- [Bun](https://bun.sh/) (런타임 & 패키지 매니저)
-- Bun Workspaces (모노레포 관리)
+- [Node.js](https://nodejs.org/) (런타임)
+- npm Workspaces (모노레포 관리)
 - [Hono](https://hono.dev/) (trader 웹 프레임워크)
 - [Cloudflare Workers](https://workers.cloudflare.com/) (trader 배포)
 - [@clack/prompts](https://github.com/bombshell-dev/clack) (인터랙티브 CLI 프롬프트)
@@ -47,18 +47,14 @@ cluefin-dure/
 
 ### Prerequisites
 
-- [Bun](https://bun.sh/) v1.0 이상
-
-```sh
-curl -fsSL https://bun.sh/install | bash
-```
+- [Node.js](https://nodejs.org/) 20 LTS 이상
 
 ### Installation
 
 ```sh
 git clone https://github.com/<username>/cluefin-dure.git
 cd cluefin-dure
-bun install
+npm install
 ```
 
 ### Environment Variables
@@ -79,18 +75,18 @@ bun install
 
 ```sh
 # 전체 검사 (lint + format)
-bun run check
+npm run check
 
 # 자동 수정
-bun run check:fix
+npm run check:fix
 
 # lint만
-bun run lint
-bun run lint:fix
+npm run lint
+npm run lint:fix
 
 # format만
-bun run format
-bun run format:fix
+npm run format
+npm run format:fix
 ```
 
 앱별 상세 설정(D1, 로컬 개발, API 사용법 등)은 [apps/README.md](apps/README.md)를 참고하세요.
@@ -99,8 +95,8 @@ bun run format:fix
 
 ```sh
 # 전체 테스트
-bun test
+npm test
 
 # securities 패키지 테스트
-bun test packages/securities
+npm run test --workspace @cluefin/securities
 ```

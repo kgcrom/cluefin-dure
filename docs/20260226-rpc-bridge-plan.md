@@ -3,11 +3,11 @@
 ## Architecture
 
 ```
-cluefin-fsd (Bun/TypeScript)              cluefin (Python/uv)
+cluefin-fsd (Node.js/TypeScript)              cluefin (Python/uv)
 ================================          ================================
 apps/dure/                       apps/cluefin-rpc/
   tool-registry.ts (AI tool 변환)           server.py (main loop)
-  stdio-jsonrpc-client.ts (Bun.spawn)       dispatcher.py (routing)
+  stdio-jsonrpc-client.ts (child_process.spawn)       dispatcher.py (routing)
   index.ts (CLI)                            handlers/ (quote, ta, account, dart)
         ─── stdin/stdout NDJSON ───>          middleware/ (auth, errors)
         <───────────────────────              config.py (settings)
@@ -123,11 +123,11 @@ echo '{"jsonrpc":"2.0","id":1,"method":"rpc.ping"}' | uv run -m cluefin_rpc
 ### TS → Python 연동
 ```sh
 cd cluefin-fsd/apps/dure
-bun run start tools                                              # 사용 가능한 메서드 목록
-bun run start call rpc.ping                                      # 핑
-bun run start call session.initialize '{"broker":"kis"}'         # KIS 세션 초기화
-bun run start call quote.kis.stock_current '{"stock_code":"005930"}'  # 삼성전자 현재가
-bun run start quote 005930                                       # 위와 동일 (단축 커맨드)
+npm run start -- tools                                              # 사용 가능한 메서드 목록
+npm run start -- call rpc.ping                                      # 핑
+npm run start -- call session.initialize '{"broker":"kis"}'         # KIS 세션 초기화
+npm run start -- call quote.kis.stock_current '{"stock_code":"005930"}'  # 삼성전자 현재가
+npm run start -- quote 005930                                       # 위와 동일 (단축 커맨드)
 ```
 
 ### AI Agent 통합 예시

@@ -1,6 +1,6 @@
 import type { AuthToken, BrokerEnv } from "@cluefin/securities";
 import { createKisAuthClient, createKiwoomAuthClient } from "@cluefin/securities";
-import type { Env } from "./bindings";
+import type { Env } from "./bindings.js";
 
 export type BrokerName = "kis" | "kiwoom";
 

@@ -1,5 +1,10 @@
-import { describe, expect, test } from "bun:test";
-import { createErrorResponse, createRequest, parseMessageLine, serializeMessage } from "./jsonrpc";
+import { describe, expect, test } from "vitest";
+import {
+  createErrorResponse,
+  createRequest,
+  parseMessageLine,
+  serializeMessage,
+} from "./jsonrpc.js";
 
 describe("jsonrpc helpers", () => {
   test("createRequest builds JSON-RPC 2.0 request", () => {

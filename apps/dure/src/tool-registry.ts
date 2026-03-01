@@ -1,4 +1,4 @@
-import type { StdioJsonRpcClient } from "./stdio-jsonrpc-client";
+import type { StdioJsonRpcClient } from "./stdio-jsonrpc-client.js";
 
 type RpcMethodSchema = {
   name: string;

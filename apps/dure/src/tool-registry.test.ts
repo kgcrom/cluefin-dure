@@ -1,14 +1,14 @@
-import { describe, expect, mock, test } from "bun:test";
-import { ToolRegistry } from "./tool-registry";
+import { describe, expect, test, vi } from "vitest";
+import { ToolRegistry } from "./tool-registry.js";
 
 // Mock client that returns predefined method schemas
 function createMockClient(methods: unknown[] = []) {
   return {
-    request: mock(async (_method: string, _params?: unknown) => methods),
-    start: mock(() => {}),
-    close: mock(async () => {}),
-    notify: mock((_method: string, _params?: unknown) => {}),
-  } as unknown as import("./stdio-jsonrpc-client").StdioJsonRpcClient;
+    request: vi.fn(async (_method: string, _params?: unknown) => methods),
+    start: vi.fn(() => {}),
+    close: vi.fn(async () => {}),
+    notify: vi.fn((_method: string, _params?: unknown) => {}),
+  } as unknown as import("./stdio-jsonrpc-client.js").StdioJsonRpcClient;
 }
 
 const SAMPLE_METHODS = [
@@ -83,7 +83,7 @@ describe("ToolRegistry", () => {
   test("callTool reverse-maps tool name to RPC method", async () => {
     const client = createMockClient(SAMPLE_METHODS);
     // Override request to return different results based on method
-    client.request = mock(async (method: string, _params?: unknown) => {
+    client.request = vi.fn(async (method: string, _params?: unknown) => {
       if (method === "rpc.list_methods") return SAMPLE_METHODS;
       if (method === "quote.kis.stock_current") return { current_price: 72300 };
       throw new Error(`Unexpected method: ${method}`);
@@ -107,7 +107,9 @@ describe("ToolRegistry", () => {
     const registry = new ToolRegistry(client);
     await registry.discover();
 
-    expect(registry.callTool("unknown_tool", {})).rejects.toThrow("Unknown tool: unknown_tool");
+    await expect(registry.callTool("unknown_tool", {})).rejects.toThrow(
+      "Unknown tool: unknown_tool",
+    );
   });
 
   test("getMethodByName returns correct method", async () => {

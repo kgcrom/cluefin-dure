@@ -1,19 +1,19 @@
-import { afterEach, describe, expect, mock, test } from "bun:test";
 import type { KisIntradayChartOutput2 } from "@cluefin/securities";
+import { afterEach, describe, expect, test, vi } from "vitest";
 
-const mockGetActiveOrders = mock(() => Promise.resolve([]));
-const mockGetRequestedQuantity = mock(() => Promise.resolve(0));
-const mockCreateExecution = mock(() => Promise.resolve({}));
-const mockUpdateOrderStatus = mock(() => Promise.resolve());
-const mockGetUnfilledExecutions = mock(() => Promise.resolve([]));
-const mockUpdateExecutionFill = mock(() => Promise.resolve());
-const mockUpdatePeakPrice = mock(() => Promise.resolve());
-const mockGetUnfilledCountForEntryOrder = mock(() => Promise.resolve(0));
-const mockGetFilledQuantityForEntryOrder = mock(() => Promise.resolve(0));
-const mockCreateEntryOrder = mock(() => Promise.resolve({}));
-const mockBuyOrder = mock(() => Promise.resolve({ output: { odno: "001", ordTmd: "121000" } }));
-const mockSellOrder = mock(() => Promise.resolve({ output: { odno: "002", ordTmd: "121001" } }));
-const mockGetDailyOrdersKis = mock(() =>
+const mockGetActiveOrders = vi.fn(() => Promise.resolve([]));
+const mockGetRequestedQuantity = vi.fn(() => Promise.resolve(0));
+const mockCreateExecution = vi.fn(() => Promise.resolve({}));
+const mockUpdateOrderStatus = vi.fn(() => Promise.resolve());
+const mockGetUnfilledExecutions = vi.fn(() => Promise.resolve([]));
+const mockUpdateExecutionFill = vi.fn(() => Promise.resolve());
+const mockUpdatePeakPrice = vi.fn(() => Promise.resolve());
+const mockGetUnfilledCountForEntryOrder = vi.fn(() => Promise.resolve(0));
+const mockGetFilledQuantityForEntryOrder = vi.fn(() => Promise.resolve(0));
+const mockCreateEntryOrder = vi.fn(() => Promise.resolve({}));
+const mockBuyOrder = vi.fn(() => Promise.resolve({ output: { odno: "001", ordTmd: "121000" } }));
+const mockSellOrder = vi.fn(() => Promise.resolve({ output: { odno: "002", ordTmd: "121001" } }));
+const mockGetDailyOrdersKis = vi.fn(() =>
   Promise.resolve({
     rtCd: "0",
     msgCd: "MCA00000",
@@ -23,8 +23,8 @@ const mockGetDailyOrdersKis = mock(() =>
   }),
 );
 
-const mockGetStockPrice = mock(() => Promise.resolve({ output: makeBullishStockInfo("66000") }));
-const mockGetIntradayChart = mock(() =>
+const mockGetStockPrice = vi.fn(() => Promise.resolve({ output: makeBullishStockInfo("66000") }));
+const mockGetIntradayChart = vi.fn(() =>
   Promise.resolve({
     rtCd: "0",
     msgCd: "MCA00000",
@@ -34,7 +34,7 @@ const mockGetIntradayChart = mock(() =>
   }),
 );
 
-mock.module("@cluefin/cloudflare", () => ({
+vi.mock("@cluefin/cloudflare", () => ({
   createOrderRepository: () => ({
     getActiveOrders: mockGetActiveOrders,
     getRequestedQuantity: mockGetRequestedQuantity,
@@ -49,12 +49,12 @@ mock.module("@cluefin/cloudflare", () => ({
   }),
 }));
 
-mock.module("@cluefin/securities", () => ({
+vi.mock("@cluefin/securities", () => ({
   createKisAuthClient: () => ({
-    getToken: mock(),
+    getToken: vi.fn(),
   }),
   createKiwoomAuthClient: () => ({
-    getToken: mock(),
+    getToken: vi.fn(),
   }),
   createKisMarketClient: () => ({
     getStockPrice: mockGetStockPrice,
@@ -67,7 +67,7 @@ mock.module("@cluefin/securities", () => ({
   }),
 }));
 
-const { handleOrderExecution, handleFillCheck } = await import("./cron");
+const { handleOrderExecution, handleFillCheck } = await import("./cron.js");
 
 function makeCandle(price: number): KisIntradayChartOutput2 {
   return {

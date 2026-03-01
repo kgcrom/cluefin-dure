@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { createKisOrderClient } from "./order";
-import type { KisBalanceParams, KisDailyOrderParams, KisOrderParams } from "./types";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { createKisOrderClient } from "./order.js";
+import type { KisBalanceParams, KisDailyOrderParams, KisOrderParams } from "./types.js";
 
 const originalFetch = globalThis.fetch;
 
@@ -16,7 +16,7 @@ const rawResponse = {
 };
 
 beforeEach(() => {
-  globalThis.fetch = mock(() =>
+  globalThis.fetch = vi.fn(() =>
     Promise.resolve(new Response(JSON.stringify(rawResponse), { status: 200 })),
   );
 });
@@ -38,13 +38,13 @@ const params: KisOrderParams = {
 
 describe("createKisOrderClient", () => {
   test("throws on HTTP error", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response("Forbidden", { status: 403, statusText: "Forbidden" })),
     );
 
     const client = createKisOrderClient("prod");
 
-    expect(client.buyOrder(credentials, token, params)).rejects.toThrow(
+    await expect(client.buyOrder(credentials, token, params)).rejects.toThrow(
       "KIS order request failed: 403 Forbidden",
     );
   });
@@ -108,7 +108,7 @@ const dailyOrderParams: KisDailyOrderParams = {
 
 describe("getDailyOrders", () => {
   test("fetches daily orders with correct URL and headers (production, recent)", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify(rawDailyOrderResponse), { status: 200 })),
     );
 
@@ -121,7 +121,7 @@ describe("getDailyOrders", () => {
     expect(result.output1[0].ordQty).toBe("10");
     expect(result.output2.totCcldAmt).toBe("660000");
 
-    const fetchCall = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const url = fetchCall[0] as string;
     const options = fetchCall[1] as RequestInit;
 
@@ -132,41 +132,41 @@ describe("getDailyOrders", () => {
   });
 
   test("uses dev TR ID for dev environment", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify(rawDailyOrderResponse), { status: 200 })),
     );
 
     const client = createKisOrderClient("dev");
     await client.getDailyOrders(credentials, token, dailyOrderParams);
 
-    const fetchCall = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const options = fetchCall[1] as RequestInit;
 
     expect(options.headers).toHaveProperty("tr_id", "VTTC0081R");
   });
 
   test("uses old TR ID when withinThreeMonths is false", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify(rawDailyOrderResponse), { status: 200 })),
     );
 
     const client = createKisOrderClient("prod");
     await client.getDailyOrders(credentials, token, dailyOrderParams, false);
 
-    const fetchCall = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const options = fetchCall[1] as RequestInit;
 
     expect(options.headers).toHaveProperty("tr_id", "CTSC9215R");
   });
 
   test("throws on HTTP error", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response("Forbidden", { status: 403, statusText: "Forbidden" })),
     );
 
     const client = createKisOrderClient("prod");
 
-    expect(client.getDailyOrders(credentials, token, dailyOrderParams)).rejects.toThrow(
+    await expect(client.getDailyOrders(credentials, token, dailyOrderParams)).rejects.toThrow(
       "KIS daily order inquiry failed: 403 Forbidden",
     );
   });
@@ -246,7 +246,7 @@ const balanceParams: KisBalanceParams = {
 
 describe("getBalance", () => {
   test("fetches balance with correct URL and headers (production)", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify(rawBalanceResponse), { status: 200 })),
     );
 
@@ -263,7 +263,7 @@ describe("getBalance", () => {
     expect(result.output2.totEvluAmt).toBe("1670000");
     expect(result.output2.evluPflsSmtlAmt).toBe("10000");
 
-    const fetchCall = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const url = fetchCall[0] as string;
     const options = fetchCall[1] as RequestInit;
 
@@ -274,33 +274,33 @@ describe("getBalance", () => {
   });
 
   test("uses dev TR ID for dev environment", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify(rawBalanceResponse), { status: 200 })),
     );
 
     const client = createKisOrderClient("dev");
     await client.getBalance(credentials, token, balanceParams);
 
-    const fetchCall = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const options = fetchCall[1] as RequestInit;
 
     expect(options.headers).toHaveProperty("tr_id", "VTTC8434R");
   });
 
   test("throws on HTTP error", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response("Forbidden", { status: 403, statusText: "Forbidden" })),
     );
 
     const client = createKisOrderClient("prod");
 
-    expect(client.getBalance(credentials, token, balanceParams)).rejects.toThrow(
+    await expect(client.getBalance(credentials, token, balanceParams)).rejects.toThrow(
       "KIS balance inquiry failed: 403 Forbidden",
     );
   });
 
   test("maps snake_case response to camelCase", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify(rawBalanceResponse), { status: 200 })),
     );
 
