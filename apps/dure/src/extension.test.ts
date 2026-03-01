@@ -3,9 +3,9 @@ import type { ExtensionAPI, ToolDefinition } from "@mariozechner/pi-coding-agent
 
 const MOCK_METHODS = [
   {
-    name: "basic_quote.stock_current_price",
+    name: "stock.current_price",
     description: "Get current stock price",
-    category: "basic_quote",
+    category: "stock",
     broker: "kis",
     parameters: { type: "object", properties: { stock_code: { type: "string" } } },
     returns: { type: "object" },
@@ -39,7 +39,7 @@ vi.mock("./stdio-jsonrpc-client.js", () => ({
     request: vi.fn(async (method: string, params?: unknown) => {
       if (method === "rpc.list_methods") return MOCK_METHODS;
       if (method === "session.initialize") return { initialized: true };
-      if (method === "basic_quote.stock_current_price") return { current_price: 72300 };
+      if (method === "stock.current_price") return { current_price: 72300 };
       if (method === "ta.sma") return { result: [50, 51] };
       throw new Error(`Unknown method: ${method}`);
     }),
@@ -113,7 +113,7 @@ describe("cluefin extension", () => {
     const categories = JSON.parse(result.content[0].text);
     const categoryNames = categories.map((c: { category: string }) => c.category);
 
-    expect(categoryNames).toContain("basic_quote");
+    expect(categoryNames).toContain("stock");
     expect(categoryNames).toContain("ta");
     expect(categoryNames).not.toContain("rpc");
     expect(categoryNames).not.toContain("session");
@@ -124,11 +124,11 @@ describe("cluefin extension", () => {
     await triggerEvent("session_start");
 
     const tool = registeredTools.get("load_category_tools")!;
-    const result = await tool.execute("id", { category: "basic_quote" }, undefined, undefined, {} as never);
+    const result = await tool.execute("id", { category: "stock" }, undefined, undefined, {} as never);
 
-    expect(registeredTools.has("basic_quote_stock_current_price")).toBe(true);
+    expect(registeredTools.has("stock_current_price")).toBe(true);
     expect(result.content[0].text).toContain("1 tools");
-    expect(result.content[0].text).toContain("basic_quote");
+    expect(result.content[0].text).toContain("stock");
   });
 
   test("load_category_tools skips already loaded categories", async () => {

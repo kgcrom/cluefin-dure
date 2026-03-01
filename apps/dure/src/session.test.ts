@@ -2,18 +2,7 @@ import { describe, expect, test } from "vitest";
 import { detectBroker } from "./session.js";
 
 describe("detectBroker", () => {
-  test("kis broker methods", () => {
-    expect(detectBroker("kis.basic_quote.stock_current_price")).toBe("kis");
-    expect(detectBroker("kis.stock_info.product_basic_info")).toBe("kis");
-    expect(detectBroker("kis.ranking.trading_volume")).toBe("kis");
-  });
-
-  test("kiwoom broker methods", () => {
-    expect(detectBroker("kiwoom.chart.stock_daily")).toBe("kiwoom");
-    expect(detectBroker("kiwoom.etf.return_rate")).toBe("kiwoom");
-  });
-
-  test("dart broker methods", () => {
+  test("dart broker methods (still use broker prefix)", () => {
     expect(detectBroker("dart.disclosure_search")).toBe("dart");
     expect(detectBroker("dart.company_overview")).toBe("dart");
   });
@@ -37,11 +26,16 @@ describe("detectBroker", () => {
     expect(detectBroker("test.echo")).toBeNull();
   });
 
-  test("quote.krx methods skip session", () => {
-    expect(detectBroker("quote.krx.kospi")).toBeNull();
+  test("new semantic method names return null (broker from schema instead)", () => {
+    // New naming scheme: broker prefix removed, broker comes from RpcMethodSchema.broker
+    expect(detectBroker("stock.current_price")).toBeNull();
+    expect(detectBroker("chart.daily")).toBeNull();
+    expect(detectBroker("ranking.trading_volume")).toBeNull();
+    expect(detectBroker("sector.current_price")).toBeNull();
+    expect(detectBroker("etf.return_rate")).toBeNull();
   });
 
-  test("unknown broker returns null", () => {
+  test("unknown methods return null", () => {
     expect(detectBroker("unknown.method")).toBeNull();
   });
 });

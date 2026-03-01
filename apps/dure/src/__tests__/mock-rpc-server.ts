@@ -31,9 +31,9 @@ const METHODS = [
     requires_session: false,
   },
   {
-    name: "kis.basic_quote.stock_current_price",
-    description: "Get current stock price from KIS",
-    category: "kis.basic_quote",
+    name: "stock.current_price",
+    description: "Get current stock price",
+    category: "stock",
     broker: "kis",
     parameters: {
       type: "object",
@@ -61,6 +61,22 @@ const METHODS = [
     },
     returns: { type: "object" },
     requires_session: false,
+  },
+  {
+    name: "chart.daily",
+    description: "Daily OHLCV chart data",
+    category: "chart",
+    broker: "kiwoom",
+    parameters: {
+      type: "object",
+      properties: {
+        stock_code: { type: "string" },
+        start_date: { type: "string" },
+      },
+      required: ["stock_code"],
+    },
+    returns: { type: "object" },
+    requires_session: true,
   },
   {
     name: "test.echo",
@@ -131,12 +147,21 @@ async function dispatch(req: JsonRpcRequest): Promise<void> {
       writeResponse(id, { initialized: true, broker: params?.broker ?? "unknown" });
       break;
 
-    case "kis.basic_quote.stock_current_price":
+    case "stock.current_price":
       writeResponse(id, {
         stock_code: params?.stock_code ?? "000000",
         current_price: 72300,
         volume: 1234567,
         change_rate: 1.25,
+      });
+      break;
+
+    case "chart.daily":
+      writeResponse(id, {
+        stock_code: params?.stock_code ?? "000000",
+        data: [
+          { date: "20260301", open: 72000, high: 73000, low: 71500, close: 72300, volume: 100000 },
+        ],
       });
       break;
 

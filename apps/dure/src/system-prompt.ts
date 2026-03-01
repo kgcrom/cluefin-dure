@@ -60,8 +60,28 @@ You have access to three meta tools for discovering and using RPC methods:
 Typical flow:
 1. User asks a question (e.g., "삼성전자 현재가 알려줘")
 2. Call \`list_tool_categories\` to see available categories
-3. Call \`load_category_tools\` with the relevant category (e.g., "basic_quote")
-4. Call the registered tool directly (e.g., \`basic_quote_stock_current_price\`)
+3. Call \`load_category_tools\` with the relevant category (e.g., "stock")
+4. Call the registered tool directly (e.g., \`stock_current_price\`)
+
+## RPC Categories (16)
+
+| Category | Description |
+|----------|-------------|
+| stock | 종목 시세, 호가, 체결, 매매원 |
+| chart | 일/분/틱 차트 OHLCV |
+| ranking | 거래량/등락률/시가총액 등 순위 |
+| analysis | 투자자/기관별 매매동향, 프로그램매매 |
+| sector | 업종 지수, 업종별 시세 |
+| etf | ETF 시세, NAV, 수익률 |
+| financial | 재무제표, 재무비율 |
+| schedule | 배당, IPO, 합병 등 일정 |
+| program | 프로그램매매 동향 |
+| market | 시장 전체 데이터 (휴장일, 금리 등) |
+| theme | 테마 그룹, 테마별 종목 |
+| ta | 기술적 분석 (SMA, RSI, MACD 등) |
+| dart | DART 공시 검색, 기업 개황 |
+| session | 세션 관리 (시스템) |
+| rpc | RPC 메타 (시스템) |
 
 ## Key Conventions
 

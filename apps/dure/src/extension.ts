@@ -89,7 +89,7 @@ function registerMetaTools(
     description:
       "Load all tools from a specific RPC category, making them available for direct calls. Use list_tool_categories first to see available categories.",
     parameters: Type.Object({
-      category: Type.String({ description: "Category name to load (e.g. 'basic_quote', 'ta')" }),
+      category: Type.String({ description: "Category name to load (e.g. 'stock', 'chart', 'ta')" }),
     }),
     async execute(_toolCallId, params) {
       const { category } = params;
@@ -142,7 +142,7 @@ function registerMetaTools(
     description:
       "Call any RPC method directly by name and parameters. Use this as a fallback when a specific tool is not loaded.",
     parameters: Type.Object({
-      method: Type.String({ description: "RPC method name (e.g. 'kis.basic_quote.stock_current_price')" }),
+      method: Type.String({ description: "RPC method name (e.g. 'stock.current_price')" }),
       params: Type.Optional(
         Type.Record(Type.String(), Type.Unknown(), {
           description: "Method parameters as key-value pairs",
@@ -151,9 +151,10 @@ function registerMetaTools(
     }),
     async execute(_toolCallId, toolParams) {
       const { method: rpcMethod, params: rpcParams } = toolParams;
-      const { detectBroker } = await import("./session.js");
 
-      const broker = detectBroker(rpcMethod);
+      // Look up broker from registry (method schema has broker field)
+      const methodSchema = registry.getMethodByName(rpcMethod);
+      const broker = methodSchema?.broker ?? null;
       if (broker && !initializedBrokers.has(broker)) {
         await client.request("session.initialize", { broker });
         initializedBrokers.add(broker);

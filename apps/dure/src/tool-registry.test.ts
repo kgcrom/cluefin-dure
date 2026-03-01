@@ -13,9 +13,9 @@ function createMockClient(methods: unknown[] = []) {
 
 const SAMPLE_METHODS = [
   {
-    name: "basic_quote.stock_current_price",
-    description: "Get current stock price from KIS",
-    category: "basic_quote",
+    name: "stock.current_price",
+    description: "Get current stock price",
+    category: "stock",
     broker: "kis",
     parameters: {
       type: "object",
@@ -42,9 +42,9 @@ const SAMPLE_METHODS = [
     requires_session: false,
   },
   {
-    name: "basic_quote.stock_period_quote",
+    name: "stock.period_quote",
     description: "Get OHLCV data",
-    category: "basic_quote",
+    category: "stock",
     broker: "kis",
     parameters: {
       type: "object",
@@ -71,10 +71,10 @@ describe("ToolRegistry", () => {
     const client = createMockClient([SAMPLE_METHODS[0]]);
     const registry = new ToolRegistry(client);
 
-    await registry.discover({ category: "basic_quote", broker: "kis" });
+    await registry.discover({ category: "stock", broker: "kis" });
 
     expect(client.request).toHaveBeenCalledWith("rpc.list_methods", {
-      category: "basic_quote",
+      category: "stock",
       broker: "kis",
     });
   });
@@ -86,7 +86,7 @@ describe("ToolRegistry", () => {
 
     const categories = registry.getCategories();
 
-    expect(categories).toEqual(["basic_quote", "ta"]);
+    expect(categories).toEqual(["stock", "ta"]);
   });
 
   test("getMethodsByCategory filters correctly", async () => {
@@ -94,11 +94,11 @@ describe("ToolRegistry", () => {
     const registry = new ToolRegistry(client);
     await registry.discover();
 
-    const quoteTools = registry.getMethodsByCategory("basic_quote");
+    const stockTools = registry.getMethodsByCategory("stock");
     const taTools = registry.getMethodsByCategory("ta");
     const emptyTools = registry.getMethodsByCategory("nonexistent");
 
-    expect(quoteTools).toHaveLength(2);
+    expect(stockTools).toHaveLength(2);
     expect(taTools).toHaveLength(1);
     expect(emptyTools).toHaveLength(0);
   });
@@ -112,8 +112,8 @@ describe("ToolRegistry", () => {
     const tools = registry.toPiTools({ initializedBrokers });
 
     expect(tools).toHaveLength(3);
-    expect(tools[0].name).toBe("basic_quote_stock_current_price");
-    expect(tools[0].description).toBe("Get current stock price from KIS");
+    expect(tools[0].name).toBe("stock_current_price");
+    expect(tools[0].description).toBe("Get current stock price");
     expect(tools[0].parameters).toBeDefined();
     expect(typeof tools[0].execute).toBe("function");
     expect(tools[1].name).toBe("ta_sma");
@@ -124,7 +124,7 @@ describe("ToolRegistry", () => {
     client.request = vi.fn(async (method: string, _params?: unknown) => {
       if (method === "rpc.list_methods") return SAMPLE_METHODS;
       if (method === "session.initialize") return { initialized: true };
-      if (method === "basic_quote.stock_current_price") return { current_price: 72300 };
+      if (method === "stock.current_price") return { current_price: 72300 };
       throw new Error(`Unexpected method: ${method}`);
     });
 
@@ -133,14 +133,14 @@ describe("ToolRegistry", () => {
 
     const initializedBrokers = new Set<string>();
     const tools = registry.toPiTools({
-      methods: registry.getMethodsByCategory("basic_quote"),
+      methods: registry.getMethodsByCategory("stock"),
       initializedBrokers,
     });
 
     const result = await tools[0].execute("call-1", { stock_code: "005930" }, undefined, undefined, {} as never);
 
     expect(client.request).toHaveBeenCalledWith("session.initialize", { broker: "kis" });
-    expect(client.request).toHaveBeenCalledWith("basic_quote.stock_current_price", { stock_code: "005930" });
+    expect(client.request).toHaveBeenCalledWith("stock.current_price", { stock_code: "005930" });
     expect(result.content[0]).toEqual({
       type: "text",
       text: JSON.stringify({ current_price: 72300 }, null, 2),
@@ -175,19 +175,19 @@ describe("ToolRegistry", () => {
     const client = createMockClient(SAMPLE_METHODS);
     client.request = vi.fn(async (method: string, _params?: unknown) => {
       if (method === "rpc.list_methods") return SAMPLE_METHODS;
-      if (method === "basic_quote.stock_current_price") return { current_price: 72300 };
+      if (method === "stock.current_price") return { current_price: 72300 };
       throw new Error(`Unexpected method: ${method}`);
     });
 
     const registry = new ToolRegistry(client);
     await registry.discover();
 
-    const result = await registry.callTool("basic_quote_stock_current_price", {
+    const result = await registry.callTool("stock_current_price", {
       stock_code: "005930",
     });
 
     expect(result).toEqual({ current_price: 72300 });
-    expect(client.request).toHaveBeenCalledWith("basic_quote.stock_current_price", {
+    expect(client.request).toHaveBeenCalledWith("stock.current_price", {
       stock_code: "005930",
     });
   });

@@ -61,7 +61,7 @@ describe("StdioJsonRpcClient integration", () => {
     const [ping, echo, quote] = await Promise.all([
       client.request<{ pong: boolean }>("rpc.ping"),
       client.request("test.echo", { key: "value" }),
-      client.request("kis.basic_quote.stock_current_price", { stock_code: "005930" }),
+      client.request("stock.current_price", { stock_code: "005930" }),
     ]);
 
     expect(ping).toEqual({ pong: true });
@@ -153,7 +153,7 @@ describe("ToolRegistry integration", () => {
     expect(tools.length).toBeGreaterThanOrEqual(3);
     const names = tools.map((t) => t.name);
     expect(names).toContain("rpc_ping");
-    expect(names).toContain("kis_basic_quote_stock_current_price");
+    expect(names).toContain("stock_current_price");
     expect(names).toContain("ta_sma");
   });
 
@@ -162,11 +162,11 @@ describe("ToolRegistry integration", () => {
     client.start();
 
     const registry = new ToolRegistry(client);
-    await registry.discover({ category: "kis.basic_quote", broker: "kis" });
+    await registry.discover({ category: "stock", broker: "kis" });
 
     const methods = registry.getMethods();
     expect(methods).toHaveLength(1);
-    expect(methods[0].name).toBe("kis.basic_quote.stock_current_price");
+    expect(methods[0].name).toBe("stock.current_price");
   });
 
   test("callTool via real subprocess", async () => {
@@ -176,7 +176,7 @@ describe("ToolRegistry integration", () => {
     const registry = new ToolRegistry(client);
     await registry.discover();
 
-    const result = await registry.callTool("kis_basic_quote_stock_current_price", {
+    const result = await registry.callTool("stock_current_price", {
       stock_code: "005930",
     });
 
