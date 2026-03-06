@@ -1,37 +1,77 @@
 # Apps
 
-ClueFin DURE 애플리케이션 모음. AI agent인 **dure**가 cluefin-rpc를 통해 시세·분석·계좌 데이터를 조회하고, **broker**가 주문을, **trader**가 체결을 담당합니다.
+ClueFin DURE 애플리케이션 모음. AI agent인 **dure**가 cluefin-rpc를 통해 시세·분석·공시 데이터를 조회하고, **broker**가 주문을, **trader**가 체결을 담당합니다.
 
 ## Dure
 
-cluefin-rpc JSON-RPC 서버를 조회하며 점진적으로 성장하는 AI agent. Python `cluefin` 프로세스를 자식으로 실행하고 stdin/stdout(NDJSON)으로 JSON-RPC 2.0 통신합니다.
+pi-coding-agent 확장으로 구현된 AI agent. Python `cluefin-rpc` 프로세스를 자식으로 실행하고 stdin/stdout(NDJSON)으로 JSON-RPC 2.0 통신합니다.
 
 ```sh
 cd apps/dure
 
-# 사용 가능한 RPC 메서드 목록 (Anthropic tool_use 형식)
-npm run start -- tools
-
-# RPC 메서드 직접 호출
-npm run start -- call rpc.ping
-npm run start -- call quote.kis.stock_current '{"stock_code":"005930"}'
-
-# KIS 주식 현재가 조회 (세션 자동 초기화)
-npm run start -- quote 005930
+# pi-coding-agent 실행
+npm run start
 ```
 
-### RPC 메서드 카테고리
+### 아키텍처
 
-| 카테고리 | 설명 | 예시 |
-|---|---|---|
-| `quote` | 시세 조회 (현재가, 차트) | `quote.kis.stock_current` |
-| `ta` | 기술적 분석 (이동평균, RSI 등) | `ta.moving_average` |
-| `account` | 계좌 조회 (잔고, 체결 내역) | `account.kis.balance` |
-| `dart` | DART 공시 데이터 | `dart.disclosure` |
+dure는 `@mariozechner/pi-coding-agent`의 `ExtensionFactory`를 구현합니다.
 
-### AI Agent 통합
+| 파일 | 역할 |
+|---|---|
+| `index.ts` | pi-coding-agent 진입점 |
+| `extension.ts` | 확장 팩토리 — 라이프사이클, 메타 도구 등록 |
+| `tool-registry.ts` | `rpc.list_methods`로 메서드 탐색 → 카테고리별 도구 변환 |
+| `system-prompt.ts` | SOUL.md + skill 요약 + 분석 프로토콜 조합 |
+| `stdio-jsonrpc-client.ts` | JSON-RPC 2.0 over NDJSON (child_process.spawn) |
+| `session.ts` | 브로커 세션 초기화 관리 |
 
-`ToolRegistry`가 `rpc.list_methods`로 메서드를 자동 탐색하여 Anthropic `tool_use` 형식으로 변환합니다. 메서드명의 `.`을 `_`로 치환하여 tool name으로 사용합니다 (예: `quote.kis.stock_current` → `quote_kis_stock_current`).
+### 도구 로딩 흐름
+
+1. `session_start` → `ToolRegistry.discover()` (rpc.list_methods 호출)
+2. 에이전트가 `list_tool_categories`로 카테고리 확인
+3. `load_category_tools`로 필요한 카테고리의 도구를 동적 등록
+4. 등록된 도구를 직접 호출 (또는 `call_rpc_method` 폴백)
+
+### 스킬 (`.agents/skills/`)
+
+도메인별 SKILL.md로 에이전트에 도구 사용 지침을 제공합니다.
+
+| 스킬 | 설명 |
+|---|---|
+| `stock` | 종목 시세, 호가, 체결, 투자의견, 수급 동향 |
+| `chart` | OHLCV 차트 데이터 (일/주/월/분봉/틱) |
+| `financial` | 재무제표, 재무비율, 100점 정량 분석 |
+| `ranking-analysis` | 순위, 수급 분석, 공매도, 프로그램 매매 |
+| `sector-market` | 업종 지수, 거시 지표, ETF, 테마 |
+| `dart` | DART 공시 검색, 기업 개황 |
+| `technical-analysis` | 기술적 분석 (SMA, RSI, MACD 등) 100점 스코어링 |
+
+### 페르소나 (`.agents/SOUL.md`)
+
+에이전트의 정체성·분석 철학·가치관을 정의합니다. 시스템 프롬프트 최상단에 주입됩니다.
+
+### RPC 카테고리 (16)
+
+2026-03-01 기준 `rpc.list_methods` 등록 메서드 수는 237개이며, 런타임에 동적 탐색합니다.
+
+| 카테고리 | 설명 |
+|---|---|
+| `stock` | 종목 시세, 호가, 체결, 매매원 |
+| `chart` | 일/분/틱 차트 OHLCV |
+| `ranking` | 거래량/등락률/시가총액 등 순위 |
+| `analysis` | 투자자/기관별 매매동향, 프로그램매매 |
+| `sector` | 업종 지수, 업종별 시세 |
+| `etf` | ETF 시세, NAV, 수익률 |
+| `financial` | 재무제표, 재무비율 |
+| `schedule` | 배당, IPO, 합병 등 일정 |
+| `program` | 프로그램매매 동향 |
+| `market` | 시장 전체 데이터 (휴장일, 금리 등) |
+| `theme` | 테마 그룹, 테마별 종목 |
+| `ta` | 기술적 분석 (SMA, RSI, MACD 등) |
+| `dart` | DART 공시 검색, 기업 개황 |
+| `session` | 세션 관리 (시스템) |
+| `rpc` | RPC 메타 (시스템) |
 
 ## Broker
 
