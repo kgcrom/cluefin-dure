@@ -29,15 +29,15 @@ function loadSkillSummaries(): string {
       const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
       if (!fmMatch) continue;
 
-      const descMatch = fmMatch[1].match(/description:\s*>\s*\n([\s\S]*?)(?=\n\w|\n---)/);
+      const descMatch = fmMatch[1].match(/description:\s*>\s*\n([\s\S]*?)(?=\n\w|\n---|$)/);
       const nameMatch = fmMatch[1].match(/name:\s*(.+)/);
       const name = nameMatch?.[1]?.trim() ?? entry.name;
-      const desc = descMatch?.[1]
-        ?.split("\n")
-        .map((l) => l.trim())
-        .filter(Boolean)
-        .join(" ")
-        ?? "";
+      const desc =
+        descMatch?.[1]
+          ?.split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean)
+          .join(" ") ?? "";
 
       if (desc) {
         summaries.push(`- **${name}**: ${desc}`);
@@ -157,6 +157,34 @@ financial skill의 5단계 스코어링 프레임워크에 따라 수행:
 3. 최종 종합 점수 및 판단
 4. 주요 리스크 요인
 5. 핵심 근거 요약 (2-3문장)
+
+## 동종업종 비교 프로토콜
+
+단일 종목 분석 시 반드시 업종 내 상대 순위(백분위)를 확인한다.
+절대 수치만으로 판단하지 않고, 동일 업종 피어 그룹 대비 위치를 파악한다.
+
+1. \`stock.basic_info\`로 업종코드를 확인한다
+2. \`ranking.market_value\`, \`ranking.profitability\`, \`ranking.finance_ratio\`로 업종 내 순위를 조회한다
+3. 보고 시 "업종 내 상위 N%" 형태의 백분위로 표현한다
+4. PER/PBR/ROE 등 밸류에이션 지표는 업종 평균 대비 괴리율도 함께 제시한다
+
+## 데이터 품질 검증
+
+RPC에서 수신한 데이터를 분석에 사용하기 전 품질을 검증한다.
+
+1. **OHLCV 배열 길이**: 요청 기간 대비 수신 데이터 길이가 80% 미만이면 경고 표시
+2. **거래량 0일 비율**: 전체 거래일 중 거래량 0인 날이 10% 이상이면 "저유동성 종목" 경고
+3. **재무 데이터 누락**: 핵심 항목(매출액, 영업이익, 순이익) 중 하나라도 null/0이면 해당 분기 데이터 신뢰도 경고
+4. 품질 문제 발견 시 분석 결과에 "[데이터 품질 주의]" 태그를 붙인다
+
+## 추세 지속성 원칙
+
+단일 시점의 스냅샷이 아닌 최근 추이를 확인하여 신호의 신뢰도를 판단한다.
+
+1. 모든 기술적 신호(RSI, MACD, OBV 등)는 최근 **5거래일** 방향성을 함께 확인한다
+2. **3거래일 미만** 연속된 신호는 "[미확인]"으로 표시하고 신뢰도를 낮춘다
+3. 5거래일 이상 일관된 방향의 신호만 "[확인됨]"으로 표시한다
+4. 추세 전환 판단 시 최소 3일 연속 반전 신호를 요구한다
 
 ## Response Guidelines
 
