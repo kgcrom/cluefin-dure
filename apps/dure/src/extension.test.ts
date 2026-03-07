@@ -1,5 +1,5 @@
-import { describe, expect, test, vi, beforeEach } from "vitest";
 import type { ExtensionAPI, ToolDefinition } from "@mariozechner/pi-coding-agent";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 
 const MOCK_METHODS = [
   {
@@ -124,7 +124,13 @@ describe("cluefin extension", () => {
     await triggerEvent("session_start");
 
     const tool = registeredTools.get("load_category_tools")!;
-    const result = await tool.execute("id", { category: "stock" }, undefined, undefined, {} as never);
+    const result = await tool.execute(
+      "id",
+      { category: "stock" },
+      undefined,
+      undefined,
+      {} as never,
+    );
 
     expect(registeredTools.has("stock_current_price")).toBe(true);
     expect(result.content[0].text).toContain("1 tools");
@@ -147,7 +153,13 @@ describe("cluefin extension", () => {
     await triggerEvent("session_start");
 
     const tool = registeredTools.get("load_category_tools")!;
-    const result = await tool.execute("id", { category: "nonexistent" }, undefined, undefined, {} as never);
+    const result = await tool.execute(
+      "id",
+      { category: "nonexistent" },
+      undefined,
+      undefined,
+      {} as never,
+    );
 
     expect(result.content[0].text).toContain("not found");
   });

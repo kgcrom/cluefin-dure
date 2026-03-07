@@ -137,7 +137,13 @@ describe("ToolRegistry", () => {
       initializedBrokers,
     });
 
-    const result = await tools[0].execute("call-1", { stock_code: "005930" }, undefined, undefined, {} as never);
+    const result = await tools[0].execute(
+      "call-1",
+      { stock_code: "005930" },
+      undefined,
+      undefined,
+      {} as never,
+    );
 
     expect(client.request).toHaveBeenCalledWith("session.initialize", { broker: "kis" });
     expect(client.request).toHaveBeenCalledWith("stock.current_price", { stock_code: "005930" });
@@ -165,7 +171,13 @@ describe("ToolRegistry", () => {
       initializedBrokers,
     });
 
-    await tools[0].execute("call-2", { close: [50, 51, 52, 53, 54] }, undefined, undefined, {} as never);
+    await tools[0].execute(
+      "call-2",
+      { close: [50, 51, 52, 53, 54] },
+      undefined,
+      undefined,
+      {} as never,
+    );
 
     expect(client.request).not.toHaveBeenCalledWith("session.initialize", expect.anything());
     expect(initializedBrokers.size).toBe(0);

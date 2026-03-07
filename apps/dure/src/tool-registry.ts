@@ -1,5 +1,9 @@
-import { Type, type TSchema } from "@sinclair/typebox";
-import type { AgentToolResult, ExtensionContext, ToolDefinition } from "@mariozechner/pi-coding-agent";
+import type {
+  AgentToolResult,
+  ExtensionContext,
+  ToolDefinition,
+} from "@mariozechner/pi-coding-agent";
+import { type TSchema, Type } from "@sinclair/typebox";
 import { JsonRpcRemoteError } from "./jsonrpc.js";
 import type { StdioJsonRpcClient } from "./stdio-jsonrpc-client.js";
 

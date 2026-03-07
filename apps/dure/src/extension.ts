@@ -1,11 +1,11 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Type } from "@sinclair/typebox";
 import type { ExtensionAPI, ExtensionFactory } from "@mariozechner/pi-coding-agent";
+import { Type } from "@sinclair/typebox";
 import { JsonRpcRemoteError } from "./jsonrpc.js";
 import { StdioJsonRpcClient } from "./stdio-jsonrpc-client.js";
-import { ToolRegistry } from "./tool-registry.js";
 import { buildSystemPrompt } from "./system-prompt.js";
+import { ToolRegistry } from "./tool-registry.js";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -38,7 +38,10 @@ const cluefinExtension: ExtensionFactory = (pi: ExtensionAPI) => {
       console.error("[cluefin] RPC client started");
       registry = new ToolRegistry(client);
       await registry.discover();
-      console.error("[cluefin] registry discovered, categories:", registry.getCategories().join(", "));
+      console.error(
+        "[cluefin] registry discovered, categories:",
+        registry.getCategories().join(", "),
+      );
       registerMetaTools(pi, registry, client, initializedBrokers, loadedCategories);
       console.error("[cluefin] meta tools registered");
     } catch (err) {
@@ -111,9 +114,7 @@ function registerMetaTools(
 
       if (loadedCategories.has(category)) {
         return {
-          content: [
-            { type: "text" as const, text: `Category '${category}' is already loaded.` },
-          ],
+          content: [{ type: "text" as const, text: `Category '${category}' is already loaded.` }],
           details: null,
         };
       }
