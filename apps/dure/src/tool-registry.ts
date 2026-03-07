@@ -1,5 +1,6 @@
 import { Type, type TSchema } from "@sinclair/typebox";
 import type { AgentToolResult, ExtensionContext, ToolDefinition } from "@mariozechner/pi-coding-agent";
+import { JsonRpcRemoteError } from "./jsonrpc.js";
 import type { StdioJsonRpcClient } from "./stdio-jsonrpc-client.js";
 
 export type RpcMethodSchema = {
@@ -76,18 +77,32 @@ export class ToolRegistry {
           _onUpdate: undefined,
           _ctx: ExtensionContext,
         ): Promise<AgentToolResult<null>> {
-          // Auto-initialize broker session if needed
-          const broker = method.broker;
-          if (broker && !initializedBrokers.has(broker)) {
-            await client.request("session.initialize", { broker });
-            initializedBrokers.add(broker);
-          }
+          try {
+            // Auto-initialize broker session if needed
+            const broker = method.broker;
+            if (broker && !initializedBrokers.has(broker)) {
+              await client.request("session.initialize", { broker });
+              initializedBrokers.add(broker);
+            }
 
-          const result = await client.request(method.name, toolParams);
-          return {
-            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-            details: null,
-          };
+            const result = await client.request(method.name, toolParams);
+            return {
+              content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+              details: null,
+            };
+          } catch (err) {
+            const msg =
+              err instanceof JsonRpcRemoteError
+                ? `RPC error (${err.code}): ${err.message}${err.data ? `\n${JSON.stringify(err.data)}` : ""}`
+                : err instanceof Error
+                  ? err.message
+                  : String(err);
+            return {
+              content: [{ type: "text", text: `[ERROR] ${method.name}: ${msg}` }],
+
+              details: null,
+            };
+          }
         },
       } satisfies ToolDefinition;
     });

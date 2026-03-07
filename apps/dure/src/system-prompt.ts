@@ -6,6 +6,10 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const SKILLS_DIR = path.resolve(currentDir, "../.agents/skills");
 const SOUL_PATH = path.resolve(currentDir, "../.agents/SOUL.md");
 
+console.error("[cluefin] currentDir:", currentDir);
+console.error("[cluefin] SOUL_PATH:", SOUL_PATH, "exists:", fs.existsSync(SOUL_PATH));
+console.error("[cluefin] SKILLS_DIR:", SKILLS_DIR, "exists:", fs.existsSync(SKILLS_DIR));
+
 function loadSoul(): string {
   try {
     return fs.readFileSync(SOUL_PATH, "utf-8");
@@ -75,25 +79,27 @@ Typical flow:
 3. Call \`load_category_tools\` with the relevant category (e.g., "stock")
 4. Call the registered tool directly (e.g., \`stock_current_price\`)
 
-## RPC Categories (16)
+## RPC Categories (17)
 
-| Category | Description |
-|----------|-------------|
-| stock | 종목 시세, 호가, 체결, 매매원 |
-| chart | 일/분/틱 차트 OHLCV |
-| ranking | 거래량/등락률/시가총액 등 순위 |
-| analysis | 투자자/기관별 매매동향, 프로그램매매 |
-| sector | 업종 지수, 업종별 시세 |
-| etf | ETF 시세, NAV, 수익률 |
-| financial | 재무제표, 재무비율 |
-| schedule | 배당, IPO, 합병 등 일정 |
-| program | 프로그램매매 동향 |
-| market | 시장 전체 데이터 (휴장일, 금리 등) |
-| theme | 테마 그룹, 테마별 종목 |
-| ta | 기술적 분석 (SMA, RSI, MACD 등) |
-| dart | DART 공시 검색, 기업 개황 |
-| session | 세션 관리 (시스템) |
-| rpc | RPC 메타 (시스템) |
+| Category | Count | Description |
+|----------|-------|-------------|
+| kis.basic_quote | 21 | 종목/ETF 현재가, 호가, 체결, 일별/분별 시세, 시간외 시세 |
+| kis.stock_info | 26 | 종목 기본정보, 재무제표, 재무비율, 배당/IPO/합병 일정 (KSD) |
+| kis.market_analysis | 29 | 투자자/외국인/기관 매매동향, 프로그램매매, 공매도, 신용잔고 |
+| kis.ranking | 22 | 거래량/등락률/시가총액/배당수익률/PER 등 순위 |
+| kis.issue_other | 14 | 업종지수, 휴장일, 금리, VI 발동현황 |
+| kiwoom.stock_info | 28 | 종목 기본정보, 체결, 프로그램매매, 상한가/하한가, VI |
+| kiwoom.market_condition | 20 | 현재가, 호가, 투자자별 매매, 프로그램매매, 시간외 |
+| kiwoom.rank_info | 23 | 등락률/거래량/외국인 순매수/신용비율 등 순위 |
+| kiwoom.chart | 14 | 일/주/월/년/분/틱 차트, 업종 차트, 투자자별 차트 |
+| kiwoom.etf | 9 | ETF 시세, 수익률, 일별/시간별 추이 |
+| kiwoom.sector | 6 | 업종 지수, 업종별 종목시세, 투자자 순매수 |
+| kiwoom.foreign | 3 | 외국인/기관 연속 순매수, 투자자 매매동향 |
+| kiwoom.theme | 2 | 테마 그룹 목록, 테마별 종목 |
+| ta | 11 | 기술적 분석 (SMA, EMA, RSI, MACD, BBands, ATR, ADX, OBV, Stoch, MDD, Sharpe) |
+| dart | 4 | DART 공시 검색, 기업 개황, 대주주 현황 |
+| session | 3 | 브로커 세션 초기화/종료/상태 (시스템) |
+| rpc | 2 | 메서드 목록 조회, 헬스체크 (시스템) |
 
 ## Key Conventions
 

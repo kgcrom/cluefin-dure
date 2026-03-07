@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "start": "npm run build && node dist/index.js",
+    "start": "npm run build && node dist/index.js --no-skills --skill .agents/skills",
     "test": "npm run build && vitest run"
   },
   "dependencies": {
-    "@mariozechner/pi-coding-agent": "^0.55.3"
+    "@mariozechner/pi-coding-agent": "^0.57.0"
   },
   "devDependencies": {
     "@types/node": "^25.1.0"

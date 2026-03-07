@@ -2,6 +2,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Type } from "@sinclair/typebox";
 import type { ExtensionAPI, ExtensionFactory } from "@mariozechner/pi-coding-agent";
+import { JsonRpcRemoteError } from "./jsonrpc.js";
 import { StdioJsonRpcClient } from "./stdio-jsonrpc-client.js";
 import { ToolRegistry } from "./tool-registry.js";
 import { buildSystemPrompt } from "./system-prompt.js";
@@ -22,20 +23,32 @@ function createClient(): StdioJsonRpcClient {
 const SYSTEM_CATEGORIES = new Set(["rpc", "session"]);
 
 const cluefinExtension: ExtensionFactory = (pi: ExtensionAPI) => {
+  console.error("[cluefin] extension factory called");
+
   let client: StdioJsonRpcClient | null = null;
   let registry: ToolRegistry | null = null;
   const initializedBrokers = new Set<string>();
   const loadedCategories = new Set<string>();
 
   pi.on("session_start", async () => {
-    client = createClient();
-    client.start();
-    registry = new ToolRegistry(client);
-    await registry.discover();
-    registerMetaTools(pi, registry, client, initializedBrokers, loadedCategories);
+    console.error("[cluefin] session_start fired");
+    try {
+      client = createClient();
+      client.start();
+      console.error("[cluefin] RPC client started");
+      registry = new ToolRegistry(client);
+      await registry.discover();
+      console.error("[cluefin] registry discovered, categories:", registry.getCategories().join(", "));
+      registerMetaTools(pi, registry, client, initializedBrokers, loadedCategories);
+      console.error("[cluefin] meta tools registered");
+    } catch (err) {
+      console.error("[cluefin] session_start ERROR:", err);
+      throw err;
+    }
   });
 
   pi.on("session_shutdown", async () => {
+    console.error("[cluefin] session_shutdown fired");
     await client?.close();
     client = null;
     registry = null;
@@ -44,7 +57,9 @@ const cluefinExtension: ExtensionFactory = (pi: ExtensionAPI) => {
   });
 
   pi.on("before_agent_start", async () => {
-    return { systemPrompt: buildSystemPrompt() };
+    const systemPrompt = buildSystemPrompt();
+    console.error("[cluefin] before_agent_start fired, prompt length:", systemPrompt.length);
+    return { systemPrompt };
   });
 };
 
@@ -152,19 +167,33 @@ function registerMetaTools(
     async execute(_toolCallId, toolParams) {
       const { method: rpcMethod, params: rpcParams } = toolParams;
 
-      // Look up broker from registry (method schema has broker field)
-      const methodSchema = registry.getMethodByName(rpcMethod);
-      const broker = methodSchema?.broker ?? null;
-      if (broker && !initializedBrokers.has(broker)) {
-        await client.request("session.initialize", { broker });
-        initializedBrokers.add(broker);
-      }
+      try {
+        // Look up broker from registry (method schema has broker field)
+        const methodSchema = registry.getMethodByName(rpcMethod);
+        const broker = methodSchema?.broker ?? null;
+        if (broker && !initializedBrokers.has(broker)) {
+          await client.request("session.initialize", { broker });
+          initializedBrokers.add(broker);
+        }
 
-      const result = await client.request(rpcMethod, rpcParams ?? {});
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
-        details: null,
-      };
+        const result = await client.request(rpcMethod, rpcParams ?? {});
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+          details: null,
+        };
+      } catch (err) {
+        const msg =
+          err instanceof JsonRpcRemoteError
+            ? `RPC error (${err.code}): ${err.message}${err.data ? `\n${JSON.stringify(err.data)}` : ""}`
+            : err instanceof Error
+              ? err.message
+              : String(err);
+        return {
+          content: [{ type: "text" as const, text: `[ERROR] ${rpcMethod}: ${msg}` }],
+
+          details: null,
+        };
+      }
     },
   });
 }
