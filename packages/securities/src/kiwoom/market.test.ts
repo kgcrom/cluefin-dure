@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { createKiwoomMarketClient } from "./market";
-import type { KiwoomRankParams, KiwoomVolumeSurgeParams } from "./types";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { createKiwoomMarketClient } from "./market.js";
+import type { KiwoomRankParams, KiwoomVolumeSurgeParams } from "./types.js";
 
 const originalFetch = globalThis.fetch;
 
@@ -28,7 +28,7 @@ const rawResponse = {
 };
 
 beforeEach(() => {
-  globalThis.fetch = mock(() =>
+  globalThis.fetch = vi.fn(() =>
     Promise.resolve(new Response(JSON.stringify(rawResponse), { status: 200 })),
   );
 });
@@ -50,7 +50,7 @@ describe("createKiwoomMarketClient", () => {
     const client = createKiwoomMarketClient("prod");
     await client.getRank(token, params);
 
-    const callArgs = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const init = callArgs[1] as RequestInit;
     const body = JSON.parse(init.body as string);
 
@@ -64,19 +64,19 @@ describe("createKiwoomMarketClient", () => {
   });
 
   test("throws on HTTP error", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response("Forbidden", { status: 403, statusText: "Forbidden" })),
     );
 
     const client = createKiwoomMarketClient("prod");
 
-    expect(client.getRank(token, params)).rejects.toThrow(
+    await expect(client.getRank(token, params)).rejects.toThrow(
       "Kiwoom rank request failed: 403 Forbidden",
     );
   });
 
   test("returns empty array when response has no frgnr_orgn_trde_upper field", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify({}), { status: 200 })),
     );
 
@@ -116,14 +116,14 @@ const volumeSurgeParams: KiwoomVolumeSurgeParams = {
 
 describe("getVolumeSurge", () => {
   test("omits tm from body when not provided", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify(volumeSurgeRawResponse), { status: 200 })),
     );
 
     const client = createKiwoomMarketClient("prod");
     await client.getVolumeSurge(token, volumeSurgeParams);
 
-    const callArgs = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const init = callArgs[1] as RequestInit;
     const body = JSON.parse(init.body as string);
 
@@ -131,14 +131,14 @@ describe("getVolumeSurge", () => {
   });
 
   test("includes tm in body when provided", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify(volumeSurgeRawResponse), { status: 200 })),
     );
 
     const client = createKiwoomMarketClient("prod");
     await client.getVolumeSurge(token, { ...volumeSurgeParams, tm: "10" });
 
-    const callArgs = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const init = callArgs[1] as RequestInit;
     const body = JSON.parse(init.body as string);
 
@@ -146,19 +146,19 @@ describe("getVolumeSurge", () => {
   });
 
   test("throws on HTTP error", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response("Forbidden", { status: 403, statusText: "Forbidden" })),
     );
 
     const client = createKiwoomMarketClient("prod");
 
-    expect(client.getVolumeSurge(token, volumeSurgeParams)).rejects.toThrow(
+    await expect(client.getVolumeSurge(token, volumeSurgeParams)).rejects.toThrow(
       "Kiwoom volume surge request failed: 403 Forbidden",
     );
   });
 
   test("returns empty array when response has no trde_qty_sdnin field", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify({}), { status: 200 })),
     );
 

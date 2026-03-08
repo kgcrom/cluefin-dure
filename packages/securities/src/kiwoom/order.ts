@@ -1,4 +1,4 @@
-import type { BrokerEnv } from "../types";
+import type { BrokerEnv } from "../types.js";
 import type {
   KiwoomBuyOrderParams,
   KiwoomBuyOrderResponse,
@@ -7,7 +7,7 @@ import type {
   KiwoomDailyOrderResponse,
   KiwoomSellOrderParams,
   KiwoomSellOrderResponse,
-} from "./types";
+} from "./types.js";
 
 const BASE_URLS: Record<BrokerEnv, string> = {
   prod: "https://api.kiwoom.com",

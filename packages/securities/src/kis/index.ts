@@ -1,6 +1,6 @@
-export { createKisAuthClient } from "./auth";
-export { createKisMarketClient } from "./market";
-export { createKisOrderClient } from "./order";
+export { createKisAuthClient } from "./auth.js";
+export { createKisMarketClient } from "./market.js";
+export { createKisOrderClient } from "./order.js";
 export type {
   KisBalanceItem,
   KisBalanceParams,
@@ -28,4 +28,4 @@ export type {
   KisStockPriceParams,
   KisStockPriceResponse,
   KisTokenResponse,
-} from "./types";
+} from "./types.js";

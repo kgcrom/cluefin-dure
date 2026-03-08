@@ -1,6 +1,8 @@
+import { spawn } from "node:child_process";
+import { readFile, writeFile } from "node:fs/promises";
 import type { AuthToken } from "@cluefin/securities";
 import { createKisAuthClient, createKiwoomAuthClient } from "@cluefin/securities";
-import { DEV_VARS_PATH, escapeSQL, parseBrokerEnv, requireEnv, WRANGLER_CONFIG } from "../utils";
+import { DEV_VARS_PATH, escapeSQL, parseBrokerEnv, requireEnv, WRANGLER_CONFIG } from "../utils.js";
 
 export type RunTokenPersistMode = "all" | "token-only";
 export type RunTokenOptions = {
@@ -21,16 +23,17 @@ export type RunTokenOptions = {
 async function putSecret(key: string, value: string): Promise<void> {
   console.log(`wrangler secret put ${key} 실행 중...`);
 
-  const proc = Bun.spawn(["bunx", "wrangler", "secret", "put", key, "--config", WRANGLER_CONFIG], {
-    stdin: "pipe",
-    stdout: "inherit",
-    stderr: "inherit",
+  const exitCode = await new Promise<number>((resolve, reject) => {
+    const proc = spawn("npx", ["wrangler", "secret", "put", key, "--config", WRANGLER_CONFIG], {
+      stdio: ["pipe", "inherit", "inherit"],
+    });
+
+    proc.on("error", reject);
+    proc.on("close", (code) => resolve(code ?? 1));
+    proc.stdin.write(value, "utf8");
+    proc.stdin.end();
   });
 
-  proc.stdin.write(value);
-  proc.stdin.end();
-
-  const exitCode = await proc.exited;
   if (exitCode !== 0) {
     console.error(`wrangler secret put ${key} 실패 (exit code: ${exitCode})`);
     process.exit(1);
@@ -42,13 +45,14 @@ async function putSecret(key: string, value: string): Promise<void> {
 // Cloudflare Worker 크론(런타임)에서는 파일/시크릿을 직접 수정할 수 없으므로
 // 스케줄링은 apps/trader 쪽에서 D1 등에 저장하는 방식으로 처리한다.
 async function upsertDevVar(key: string, value: string): Promise<void> {
-  const devVarsFile = Bun.file(DEV_VARS_PATH);
-  const devVarsExists = await devVarsFile.exists();
-
   let lines: string[] = [];
-  if (devVarsExists) {
-    const content = await devVarsFile.text();
+  try {
+    const content = await readFile(DEV_VARS_PATH, "utf8");
     lines = content.split("\n");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw error;
+    }
   }
 
   const prefix = `${key}=`;
@@ -65,7 +69,7 @@ async function upsertDevVar(key: string, value: string): Promise<void> {
     }
   }
 
-  await Bun.write(DEV_VARS_PATH, lines.join("\n"));
+  await writeFile(DEV_VARS_PATH, lines.join("\n"), "utf8");
   console.log(`.dev.vars에 ${key} 저장 완료\n`);
 }
 
@@ -79,23 +83,27 @@ async function upsertD1Token(broker: string, token: AuthToken): Promise<void> {
       expires_at = excluded.expires_at,
       updated_at = excluded.updated_at`;
 
-  const proc = Bun.spawn(
-    [
-      "bunx",
-      "wrangler",
-      "d1",
-      "execute",
-      "cluefin-fsd-db",
-      "--remote",
-      "--command",
-      sql,
-      "--config",
-      WRANGLER_CONFIG,
-    ],
-    { stdout: "inherit", stderr: "inherit" },
-  );
+  const exitCode = await new Promise<number>((resolve, reject) => {
+    const proc = spawn(
+      "npx",
+      [
+        "wrangler",
+        "d1",
+        "execute",
+        "cluefin-fsd-db",
+        "--remote",
+        "--command",
+        sql,
+        "--config",
+        WRANGLER_CONFIG,
+      ],
+      { stdio: ["ignore", "inherit", "inherit"] },
+    );
 
-  const exitCode = await proc.exited;
+    proc.on("error", reject);
+    proc.on("close", (code) => resolve(code ?? 1));
+  });
+
   if (exitCode !== 0) {
     console.error(`D1 broker_auth_tokens upsert 실패 (exit code: ${exitCode})`);
     process.exit(1);
@@ -117,7 +125,7 @@ async function saveSecret(
 // TODO: broker에서 토큰 발급하는게 아니라 cloudflare cron으로 실행
 export async function runToken(broker: string, options: RunTokenOptions = {}): Promise<void> {
   if (!["kis", "kiwoom"].includes(broker)) {
-    console.error("Usage: bun run src/index.ts token <kis|kiwoom>");
+    console.error("Usage: npm run start -- token <kis|kiwoom>");
     process.exit(1);
   }
 

@@ -1,3 +1,3 @@
-export * from "./d1";
-export * from "./r2";
-export * from "./types";
+export * from "./d1/index.js";
+export * from "./r2/index.js";
+export * from "./types.js";

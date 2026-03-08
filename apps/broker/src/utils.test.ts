@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
-import { escapeSQL, parseBrokerEnv, requireEnv } from "./utils";
+import { describe, expect, test } from "vitest";
+import { escapeSQL, parseBrokerEnv, requireEnv } from "./utils.js";
 
 describe("parseBrokerEnv", () => {
   test("잘못된 값이면 에러", () => {

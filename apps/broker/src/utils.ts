@@ -1,7 +1,9 @@
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { BrokerEnv } from "@cluefin/securities";
 
-export const PROJECT_ROOT_DIR = path.resolve(import.meta.dir, "../../..");
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+export const PROJECT_ROOT_DIR = path.resolve(currentDir, "../../..");
 export const WRANGLER_CONFIG = path.join(PROJECT_ROOT_DIR, "apps/trader/wrangler.jsonc");
 export const DEV_VARS_PATH = path.join(PROJECT_ROOT_DIR, "apps/trader/.dev.vars");
 

@@ -1,6 +1,6 @@
-import { describe, expect, test } from "bun:test";
-import { toEntryOrder, toTradeExecution } from "./mapper";
-import type { EntryOrderRow, TradeExecutionRow } from "./types";
+import { describe, expect, test } from "vitest";
+import { toEntryOrder, toTradeExecution } from "./mapper.js";
+import type { EntryOrderRow, TradeExecutionRow } from "./types.js";
 
 describe("toEntryOrder", () => {
   test("snake_case를 camelCase로 변환", () => {

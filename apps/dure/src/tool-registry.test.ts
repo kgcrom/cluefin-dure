@@ -1,21 +1,21 @@
-import { describe, expect, mock, test } from "bun:test";
-import { ToolRegistry } from "./tool-registry";
+import { describe, expect, test, vi } from "vitest";
+import { ToolRegistry } from "./tool-registry.js";
 
 // Mock client that returns predefined method schemas
 function createMockClient(methods: unknown[] = []) {
   return {
-    request: mock(async (_method: string, _params?: unknown) => methods),
-    start: mock(() => {}),
-    close: mock(async () => {}),
-    notify: mock((_method: string, _params?: unknown) => {}),
-  } as unknown as import("./stdio-jsonrpc-client").StdioJsonRpcClient;
+    request: vi.fn(async (_method: string, _params?: unknown) => methods),
+    start: vi.fn(() => {}),
+    close: vi.fn(async () => {}),
+    notify: vi.fn((_method: string, _params?: unknown) => {}),
+  } as unknown as import("./stdio-jsonrpc-client.js").StdioJsonRpcClient;
 }
 
 const SAMPLE_METHODS = [
   {
-    name: "quote.kis.stock_current",
-    description: "Get current stock price from KIS",
-    category: "quote",
+    name: "stock.current_price",
+    description: "Get current stock price",
+    category: "stock",
     broker: "kis",
     parameters: {
       type: "object",
@@ -41,6 +41,19 @@ const SAMPLE_METHODS = [
     returns: { type: "object" },
     requires_session: false,
   },
+  {
+    name: "stock.period_quote",
+    description: "Get OHLCV data",
+    category: "stock",
+    broker: "kis",
+    parameters: {
+      type: "object",
+      properties: { stock_code: { type: "string" } },
+      required: ["stock_code"],
+    },
+    returns: { type: "object" },
+    requires_session: true,
+  },
 ];
 
 describe("ToolRegistry", () => {
@@ -51,53 +64,142 @@ describe("ToolRegistry", () => {
     await registry.discover();
 
     expect(client.request).toHaveBeenCalledWith("rpc.list_methods", {});
-    expect(registry.getMethods()).toHaveLength(2);
+    expect(registry.getMethods()).toHaveLength(3);
   });
 
   test("discover with filter passes params", async () => {
     const client = createMockClient([SAMPLE_METHODS[0]]);
     const registry = new ToolRegistry(client);
 
-    await registry.discover({ category: "quote", broker: "kis" });
+    await registry.discover({ category: "stock", broker: "kis" });
 
     expect(client.request).toHaveBeenCalledWith("rpc.list_methods", {
-      category: "quote",
+      category: "stock",
       broker: "kis",
     });
   });
 
-  test("toAnthropicTools converts method names", async () => {
+  test("getCategories returns unique sorted categories", async () => {
     const client = createMockClient(SAMPLE_METHODS);
     const registry = new ToolRegistry(client);
     await registry.discover();
 
-    const tools = registry.toAnthropicTools();
+    const categories = registry.getCategories();
 
-    expect(tools).toHaveLength(2);
-    expect(tools[0].name).toBe("quote_kis_stock_current");
-    expect(tools[0].description).toBe("Get current stock price from KIS");
-    expect(tools[0].input_schema).toEqual(SAMPLE_METHODS[0].parameters);
+    expect(categories).toEqual(["stock", "ta"]);
+  });
+
+  test("getMethodsByCategory filters correctly", async () => {
+    const client = createMockClient(SAMPLE_METHODS);
+    const registry = new ToolRegistry(client);
+    await registry.discover();
+
+    const stockTools = registry.getMethodsByCategory("stock");
+    const taTools = registry.getMethodsByCategory("ta");
+    const emptyTools = registry.getMethodsByCategory("nonexistent");
+
+    expect(stockTools).toHaveLength(2);
+    expect(taTools).toHaveLength(1);
+    expect(emptyTools).toHaveLength(0);
+  });
+
+  test("toPiTools converts methods to ToolDefinition format", async () => {
+    const client = createMockClient(SAMPLE_METHODS);
+    const registry = new ToolRegistry(client);
+    await registry.discover();
+
+    const initializedBrokers = new Set<string>();
+    const tools = registry.toPiTools({ initializedBrokers });
+
+    expect(tools).toHaveLength(3);
+    expect(tools[0].name).toBe("stock_current_price");
+    expect(tools[0].description).toBe("Get current stock price");
+    expect(tools[0].parameters).toBeDefined();
+    expect(typeof tools[0].execute).toBe("function");
     expect(tools[1].name).toBe("ta_sma");
   });
 
-  test("callTool reverse-maps tool name to RPC method", async () => {
+  test("toPiTools execute calls RPC and auto-initializes broker session", async () => {
     const client = createMockClient(SAMPLE_METHODS);
-    // Override request to return different results based on method
-    client.request = mock(async (method: string, _params?: unknown) => {
+    client.request = vi.fn(async (method: string, _params?: unknown) => {
       if (method === "rpc.list_methods") return SAMPLE_METHODS;
-      if (method === "quote.kis.stock_current") return { current_price: 72300 };
+      if (method === "session.initialize") return { initialized: true };
+      if (method === "stock.current_price") return { current_price: 72300 };
       throw new Error(`Unexpected method: ${method}`);
     });
 
     const registry = new ToolRegistry(client);
     await registry.discover();
 
-    const result = await registry.callTool("quote_kis_stock_current", {
+    const initializedBrokers = new Set<string>();
+    const tools = registry.toPiTools({
+      methods: registry.getMethodsByCategory("stock"),
+      initializedBrokers,
+    });
+
+    const result = await tools[0].execute(
+      "call-1",
+      { stock_code: "005930" },
+      undefined,
+      undefined,
+      {} as never,
+    );
+
+    expect(client.request).toHaveBeenCalledWith("session.initialize", { broker: "kis" });
+    expect(client.request).toHaveBeenCalledWith("stock.current_price", { stock_code: "005930" });
+    expect(result.content[0]).toEqual({
+      type: "text",
+      text: JSON.stringify({ current_price: 72300 }, null, 2),
+    });
+    expect(initializedBrokers.has("kis")).toBe(true);
+  });
+
+  test("toPiTools skips session init for non-broker methods", async () => {
+    const client = createMockClient(SAMPLE_METHODS);
+    client.request = vi.fn(async (method: string, _params?: unknown) => {
+      if (method === "rpc.list_methods") return SAMPLE_METHODS;
+      if (method === "ta.sma") return { result: [50, 51, 52] };
+      throw new Error(`Unexpected method: ${method}`);
+    });
+
+    const registry = new ToolRegistry(client);
+    await registry.discover();
+
+    const initializedBrokers = new Set<string>();
+    const tools = registry.toPiTools({
+      methods: registry.getMethodsByCategory("ta"),
+      initializedBrokers,
+    });
+
+    await tools[0].execute(
+      "call-2",
+      { close: [50, 51, 52, 53, 54] },
+      undefined,
+      undefined,
+      {} as never,
+    );
+
+    expect(client.request).not.toHaveBeenCalledWith("session.initialize", expect.anything());
+    expect(initializedBrokers.size).toBe(0);
+  });
+
+  test("callTool reverse-maps tool name to RPC method", async () => {
+    const client = createMockClient(SAMPLE_METHODS);
+    client.request = vi.fn(async (method: string, _params?: unknown) => {
+      if (method === "rpc.list_methods") return SAMPLE_METHODS;
+      if (method === "stock.current_price") return { current_price: 72300 };
+      throw new Error(`Unexpected method: ${method}`);
+    });
+
+    const registry = new ToolRegistry(client);
+    await registry.discover();
+
+    const result = await registry.callTool("stock_current_price", {
       stock_code: "005930",
     });
 
     expect(result).toEqual({ current_price: 72300 });
-    expect(client.request).toHaveBeenCalledWith("quote.kis.stock_current", {
+    expect(client.request).toHaveBeenCalledWith("stock.current_price", {
       stock_code: "005930",
     });
   });
@@ -107,7 +209,9 @@ describe("ToolRegistry", () => {
     const registry = new ToolRegistry(client);
     await registry.discover();
 
-    expect(registry.callTool("unknown_tool", {})).rejects.toThrow("Unknown tool: unknown_tool");
+    await expect(registry.callTool("unknown_tool", {})).rejects.toThrow(
+      "Unknown tool: unknown_tool",
+    );
   });
 
   test("getMethodByName returns correct method", async () => {

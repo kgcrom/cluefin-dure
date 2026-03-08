@@ -17,7 +17,7 @@ export {
   type KisStockPriceParams,
   type KisStockPriceResponse,
   type KisTokenResponse,
-} from "./kis";
+} from "./kis/index.js";
 export {
   createKiwoomAuthClient,
   createKiwoomMarketClient,
@@ -33,5 +33,5 @@ export {
   type KiwoomVolumeSurgeItem,
   type KiwoomVolumeSurgeParams,
   type KiwoomVolumeSurgeResponse,
-} from "./kiwoom";
-export type { AuthClient, AuthToken, BrokerEnv } from "./types";
+} from "./kiwoom/index.js";
+export type { AuthClient, AuthToken, BrokerEnv } from "./types.js";

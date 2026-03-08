@@ -1,5 +1,5 @@
-import { runOrder } from "./commands/order";
-import { runToken } from "./commands/token";
+import { runOrder } from "./commands/order.js";
+import { runToken } from "./commands/token.js";
 
 const HELP = `Usage: broker <command> [options]
 

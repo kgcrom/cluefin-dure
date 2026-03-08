@@ -11,15 +11,15 @@ import {
   type KisIntradayChartResponse,
   type KisStockPriceResponse,
 } from "@cluefin/securities";
-import type { Env } from "./bindings";
+import type { Env } from "./bindings.js";
 import {
   calculateChaseLimitPrice,
   evaluateBuyCondition,
   evaluateSellCondition,
   updatePeakPrice,
-} from "./strategy";
-import { getTodayKst } from "./time-utils";
-import { getBrokerToken, refreshBrokerToken } from "./token-store";
+} from "./strategy.js";
+import { getTodayKst } from "./time-utils.js";
+import { getBrokerToken, refreshBrokerToken } from "./token-store.js";
 
 const TOKEN_REFRESH_CRON = "0 */6 * * *";
 const ORDER_EXECUTION_CRON = "0,9,20,30,39,50 0-6 * * 2-6";

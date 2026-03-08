@@ -4,11 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
     "dev": "npx wrangler dev"
   },
   "dependencies": {
-    "@cluefin/cloudflare": "workspace:*",
-    "@cluefin/securities": "workspace:*",
+    "@cluefin/cloudflare": "0.0.1",
+    "@cluefin/securities": "0.0.1",
     "hono": "^4"
   },
   "devDependencies": {

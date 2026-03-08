@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
-import { getTodayKst } from "./time-utils";
+import { describe, expect, test } from "vitest";
+import { getTodayKst } from "./time-utils.js";
 
 describe("getTodayKst", () => {
   test("UTC 2025-01-05 23:00 → KST 2025-01-06 08:00", () => {

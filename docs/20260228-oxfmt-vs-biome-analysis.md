@@ -1,7 +1,7 @@
 # Oxfmt vs Biome 기술 비교 분석
 
 > 작성일: 2026-02-28
-> 대상 프로젝트: cluefin-dure (Bun workspace monorepo)
+> 대상 프로젝트: cluefin-dure (npm workspace monorepo)
 
 ## Context
 
@@ -14,7 +14,7 @@
 - **설정**: `biome.json` (schema v2.2.2) — formatter + linter + import organize 통합
 - **포맷터**: space indent 2, line width 100
 - **린터**: recommended rules, `useLiteralKeys: off`
-- **스크립트**: `bun run check` / `bun run check:fix` (lint + format 통합)
+- **스크립트**: `npm run check` / `npm run check:fix` (lint + format 통합)
 - **CI/Hook**: 미설정 (수동 실행)
 
 ---

@@ -1,6 +1,13 @@
-import type { StdioJsonRpcClient } from "./stdio-jsonrpc-client";
+import type {
+  AgentToolResult,
+  ExtensionContext,
+  ToolDefinition,
+} from "@mariozechner/pi-coding-agent";
+import { type TSchema, Type } from "@sinclair/typebox";
+import { JsonRpcRemoteError } from "./jsonrpc.js";
+import type { StdioJsonRpcClient } from "./stdio-jsonrpc-client.js";
 
-type RpcMethodSchema = {
+export type RpcMethodSchema = {
   name: string;
   description: string;
   category: string;
@@ -8,12 +15,6 @@ type RpcMethodSchema = {
   parameters: Record<string, unknown>;
   returns: Record<string, unknown>;
   requires_session: boolean;
-};
-
-type AnthropicTool = {
-  name: string;
-  description: string;
-  input_schema: Record<string, unknown>;
 };
 
 export class ToolRegistry {
@@ -34,20 +35,85 @@ export class ToolRegistry {
   }
 
   /**
-   * Convert discovered RPC methods to Anthropic tool_use format.
-   * Method names are transformed: "quote.kis.stock_current" → "quote_kis_stock_current"
+   * Get unique category names from discovered methods.
    */
-  toAnthropicTools(): AnthropicTool[] {
-    return this.methods.map((method) => ({
-      name: method.name.replaceAll(".", "_"),
-      description: method.description,
-      input_schema: method.parameters,
-    }));
+  getCategories(): string[] {
+    const categories = new Set<string>();
+    for (const method of this.methods) {
+      categories.add(method.category);
+    }
+    return [...categories].sort();
   }
 
   /**
-   * Call an RPC method by its Anthropic tool name.
-   * Reverse-maps "quote_kis_stock_current" → "quote.kis.stock_current"
+   * Get methods belonging to a specific category.
+   */
+  getMethodsByCategory(category: string): RpcMethodSchema[] {
+    return this.methods.filter((m) => m.category === category);
+  }
+
+  /**
+   * Convert RPC methods to pi-mono ToolDefinition[].
+   * Method names are transformed: "basic_quote.stock_current_price" → "basic_quote_stock_current_price"
+   * Parameters JSON Schema is wrapped with Type.Unsafe() for TypeBox compatibility.
+   */
+  toPiTools(options: {
+    methods?: RpcMethodSchema[];
+    initializedBrokers: Set<string>;
+  }): ToolDefinition[] {
+    const methods = options.methods ?? this.methods;
+    const client = this.client;
+    const { initializedBrokers } = options;
+
+    return methods.map((method) => {
+      const toolName = method.name.replaceAll(".", "_");
+      const params = Type.Unsafe(method.parameters as TSchema);
+
+      return {
+        name: toolName,
+        label: toolName,
+        description: method.description,
+        parameters: params,
+        async execute(
+          _toolCallId: string,
+          toolParams: Record<string, unknown>,
+          _signal: AbortSignal | undefined,
+          _onUpdate: undefined,
+          _ctx: ExtensionContext,
+        ): Promise<AgentToolResult<null>> {
+          try {
+            // Auto-initialize broker session if needed
+            const broker = method.broker;
+            if (broker && !initializedBrokers.has(broker)) {
+              await client.request("session.initialize", { broker });
+              initializedBrokers.add(broker);
+            }
+
+            const result = await client.request(method.name, toolParams);
+            return {
+              content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+              details: null,
+            };
+          } catch (err) {
+            const msg =
+              err instanceof JsonRpcRemoteError
+                ? `RPC error (${err.code}): ${err.message}${err.data ? `\n${JSON.stringify(err.data)}` : ""}`
+                : err instanceof Error
+                  ? err.message
+                  : String(err);
+            return {
+              content: [{ type: "text", text: `[ERROR] ${method.name}: ${msg}` }],
+
+              details: null,
+            };
+          }
+        },
+      } satisfies ToolDefinition;
+    });
+  }
+
+  /**
+   * Call an RPC method by its tool name (dots replaced with underscores).
    */
   async callTool(toolName: string, params: unknown): Promise<unknown> {
     const method = this.getMethodByToolName(toolName);
@@ -65,7 +131,7 @@ export class ToolRegistry {
   }
 
   /**
-   * Get method schema by its Anthropic tool name (dots replaced with underscores).
+   * Get method schema by its tool name (dots replaced with underscores).
    */
   getMethodByToolName(toolName: string): RpcMethodSchema | undefined {
     return this.methods.find((m) => m.name.replaceAll(".", "_") === toolName);

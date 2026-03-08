@@ -1,3 +1,7 @@
+import { type ChildProcessByStdio, spawn } from "node:child_process";
+import { createInterface } from "node:readline";
+import type { Readable, Writable } from "node:stream";
+import { setTimeout as sleep } from "node:timers/promises";
 import {
   createRequest,
   type JsonRpcId,
@@ -5,7 +9,7 @@ import {
   type JsonRpcResponse,
   parseMessageLine,
   serializeMessage,
-} from "./jsonrpc";
+} from "./jsonrpc.js";
 
 type PendingRequest = {
   resolve: (value: unknown) => void;
@@ -28,7 +32,7 @@ function isResponse(message: unknown): message is JsonRpcResponse {
 
 export class StdioJsonRpcClient {
   private readonly options: StdioJsonRpcClientOptions;
-  private process: Bun.Subprocess<"pipe", "pipe", "inherit"> | null = null;
+  private process: ChildProcessByStdio<Writable, Readable, null> | null = null;
   private pending = new Map<JsonRpcId, PendingRequest>();
   private nextId = 1;
   private stdoutLoop: Promise<void> | null = null;
@@ -43,12 +47,21 @@ export class StdioJsonRpcClient {
   start(): void {
     if (this.process) return;
 
-    this.process = Bun.spawn(this.options.cmd, {
+    const [command, ...args] = this.options.cmd;
+    if (!command) {
+      throw new Error("JSON-RPC command is required");
+    }
+
+    this.process = spawn(command, args, {
       cwd: this.options.cwd,
-      env: this.options.env,
-      stdin: "pipe",
-      stdout: "pipe",
-      stderr: "inherit",
+      env: { ...process.env, ...this.options.env },
+      stdio: ["pipe", "pipe", "inherit"],
+    });
+
+    this.process.on("error", (error) => {
+      this.rejectAll(
+        error instanceof Error ? error : new Error("Failed to spawn JSON-RPC process"),
+      );
     });
 
     this.stdoutLoop = this.readStdoutLoop();
@@ -58,7 +71,7 @@ export class StdioJsonRpcClient {
     if (!this.process) return;
 
     this.notify("rpc.shutdown");
-    await Bun.sleep(100);
+    await sleep(100);
 
     this.process.kill();
     await this.stdoutLoop;
@@ -88,7 +101,7 @@ export class StdioJsonRpcClient {
       });
     });
 
-    this.process.stdin.write(serializeMessage(message));
+    this.process.stdin.write(serializeMessage(message), "utf8");
     return promise;
   }
 
@@ -97,40 +110,28 @@ export class StdioJsonRpcClient {
       throw new Error("JSON-RPC process is not started");
     }
 
-    this.process.stdin.write(serializeMessage({ jsonrpc: "2.0", method, params }));
+    this.process.stdin.write(serializeMessage({ jsonrpc: "2.0", method, params }), "utf8");
   }
 
   private async readStdoutLoop(): Promise<void> {
     if (!this.process) return;
 
-    const stream = this.process.stdout;
-    const reader = stream.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
+    const lineReader = createInterface({
+      input: this.process.stdout,
+      crlfDelay: Number.POSITIVE_INFINITY,
+    });
 
     try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex = buffer.indexOf("\n");
-        while (newlineIndex >= 0) {
-          const line = buffer.slice(0, newlineIndex).trim();
-          buffer = buffer.slice(newlineIndex + 1);
-
-          if (line.length > 0) {
-            this.handleLine(line);
-          }
-
-          newlineIndex = buffer.indexOf("\n");
+      for await (const rawLine of lineReader) {
+        const line = rawLine.trim();
+        if (line.length > 0) {
+          this.handleLine(line);
         }
       }
     } catch (error) {
       this.rejectAll(error instanceof Error ? error : new Error("Failed to read JSON-RPC stream"));
     } finally {
-      reader.releaseLock();
+      lineReader.close();
     }
   }
 

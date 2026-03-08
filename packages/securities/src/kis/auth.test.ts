@@ -1,10 +1,10 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { createKisAuthClient } from "./auth";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { createKisAuthClient } from "./auth.js";
 
 const originalFetch = globalThis.fetch;
 
 beforeEach(() => {
-  globalThis.fetch = mock(() =>
+  globalThis.fetch = vi.fn(() =>
     Promise.resolve(
       new Response(
         JSON.stringify({
@@ -30,7 +30,7 @@ describe("createKisAuthClient", () => {
     const client = createKisAuthClient("prod");
     await client.getToken(credentials);
 
-    const callArgs = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const init = callArgs[1] as RequestInit;
     const body = JSON.parse(init.body as string);
 
@@ -59,13 +59,13 @@ describe("createKisAuthClient", () => {
   });
 
   test("throws on HTTP error", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(null, { status: 401, statusText: "Unauthorized" })),
     );
 
     const client = createKisAuthClient("prod");
 
-    expect(client.getToken(credentials)).rejects.toThrow(
+    await expect(client.getToken(credentials)).rejects.toThrow(
       "KIS token request failed: 401 Unauthorized",
     );
   });

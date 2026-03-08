@@ -1,10 +1,10 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { createKiwoomAuthClient } from "./auth";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { createKiwoomAuthClient } from "./auth.js";
 
 const originalFetch = globalThis.fetch;
 
 beforeEach(() => {
-  globalThis.fetch = mock(() =>
+  globalThis.fetch = vi.fn(() =>
     Promise.resolve(
       new Response(
         JSON.stringify({
@@ -31,7 +31,7 @@ describe("createKiwoomAuthClient", () => {
     const client = createKiwoomAuthClient("prod");
     await client.getToken(credentials);
 
-    const callArgs = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const init = callArgs[1] as RequestInit;
     const body = JSON.parse(init.body as string);
 
@@ -60,13 +60,13 @@ describe("createKiwoomAuthClient", () => {
   });
 
   test("throws on HTTP error", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(null, { status: 403, statusText: "Forbidden" })),
     );
 
     const client = createKiwoomAuthClient("prod");
 
-    expect(client.getToken(credentials)).rejects.toThrow(
+    await expect(client.getToken(credentials)).rejects.toThrow(
       "Kiwoom token request failed: 403 Forbidden",
     );
   });

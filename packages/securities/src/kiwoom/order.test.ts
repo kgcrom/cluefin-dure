@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { createKiwoomOrderClient } from "./order";
-import type { KiwoomBuyOrderParams, KiwoomDailyOrderParams } from "./types";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { createKiwoomOrderClient } from "./order.js";
+import type { KiwoomBuyOrderParams, KiwoomDailyOrderParams } from "./types.js";
 
 const originalFetch = globalThis.fetch;
 
@@ -10,7 +10,7 @@ const rawResponse = {
 };
 
 beforeEach(() => {
-  globalThis.fetch = mock(() =>
+  globalThis.fetch = vi.fn(() =>
     Promise.resolve(new Response(JSON.stringify(rawResponse), { status: 200 })),
   );
 });
@@ -32,7 +32,7 @@ describe("createKiwoomOrderClient", () => {
     const client = createKiwoomOrderClient("prod");
     await client.buyOrder(token, { ...params, ordUv: "72000" });
 
-    const callArgs = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const init = callArgs[1] as RequestInit;
     const body = JSON.parse(init.body as string);
 
@@ -43,7 +43,7 @@ describe("createKiwoomOrderClient", () => {
     const client = createKiwoomOrderClient("prod");
     await client.buyOrder(token, { ...params, condUv: "71000" });
 
-    const callArgs = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const init = callArgs[1] as RequestInit;
     const body = JSON.parse(init.body as string);
 
@@ -54,7 +54,7 @@ describe("createKiwoomOrderClient", () => {
     const client = createKiwoomOrderClient("prod");
     await client.buyOrder(token, params);
 
-    const callArgs = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const init = callArgs[1] as RequestInit;
     const body = JSON.parse(init.body as string);
 
@@ -63,19 +63,19 @@ describe("createKiwoomOrderClient", () => {
   });
 
   test("throws on HTTP error", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response("Forbidden", { status: 403, statusText: "Forbidden" })),
     );
 
     const client = createKiwoomOrderClient("prod");
 
-    expect(client.buyOrder(token, params)).rejects.toThrow(
+    await expect(client.buyOrder(token, params)).rejects.toThrow(
       "Kiwoom buy order request failed: 403 Forbidden",
     );
   });
 
   test("returns empty strings when response fields are missing", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify({}), { status: 200 })),
     );
 
@@ -123,14 +123,14 @@ describe("getDailyOrders", () => {
   };
 
   test("calls correct endpoint with required params", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify(rawDailyOrderResponse), { status: 200 })),
     );
 
     const client = createKiwoomOrderClient("prod");
     await client.getDailyOrders(token, dailyOrderParams);
 
-    const callArgs = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const url = callArgs[0] as string;
     const init = callArgs[1] as RequestInit;
     const headers = init.headers as Record<string, string>;
@@ -144,7 +144,7 @@ describe("getDailyOrders", () => {
   });
 
   test("includes optional params in body when provided", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify(rawDailyOrderResponse), { status: 200 })),
     );
 
@@ -155,7 +155,7 @@ describe("getDailyOrders", () => {
       ordNo: "0001234",
     });
 
-    const callArgs = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const init = callArgs[1] as RequestInit;
     const body = JSON.parse(init.body as string);
 
@@ -164,7 +164,7 @@ describe("getDailyOrders", () => {
   });
 
   test("includes pagination headers when provided", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify(rawDailyOrderResponse), { status: 200 })),
     );
 
@@ -175,7 +175,7 @@ describe("getDailyOrders", () => {
       nextKey: "abc123",
     });
 
-    const callArgs = (globalThis.fetch as ReturnType<typeof mock>).mock.calls[0];
+    const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const init = callArgs[1] as RequestInit;
     const headers = init.headers as Record<string, string>;
 
@@ -184,7 +184,7 @@ describe("getDailyOrders", () => {
   });
 
   test("maps response data correctly", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify(rawDailyOrderResponse), { status: 200 })),
     );
 
@@ -220,7 +220,7 @@ describe("getDailyOrders", () => {
     headers.set("cont-yn", "Y");
     headers.set("next-key", "next123");
 
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(
         new Response(JSON.stringify(rawDailyOrderResponse), { status: 200, headers }),
       ),
@@ -234,19 +234,19 @@ describe("getDailyOrders", () => {
   });
 
   test("throws on HTTP error", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response("Forbidden", { status: 403, statusText: "Forbidden" })),
     );
 
     const client = createKiwoomOrderClient("prod");
 
-    expect(client.getDailyOrders(token, dailyOrderParams)).rejects.toThrow(
+    await expect(client.getDailyOrders(token, dailyOrderParams)).rejects.toThrow(
       "Kiwoom daily order query failed: 403 Forbidden",
     );
   });
 
   test("returns empty array when cntr is missing", async () => {
-    globalThis.fetch = mock(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify({}), { status: 200 })),
     );
 
