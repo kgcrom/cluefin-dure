@@ -79,25 +79,23 @@ Typical flow:
 3. Call \`load_category_tools\` with the relevant category (e.g., "stock")
 4. Call the registered tool directly (e.g., \`stock_current_price\`)
 
-## RPC Categories (17)
+## RPC Categories (15)
 
 | Category | Count | Description |
 |----------|-------|-------------|
-| kis.basic_quote | 21 | 종목/ETF 현재가, 호가, 체결, 일별/분별 시세, 시간외 시세 |
-| kis.stock_info | 26 | 종목 기본정보, 재무제표, 재무비율, 배당/IPO/합병 일정 (KSD) |
-| kis.market_analysis | 29 | 투자자/외국인/기관 매매동향, 프로그램매매, 공매도, 신용잔고 |
-| kis.ranking | 22 | 거래량/등락률/시가총액/배당수익률/PER 등 순위 |
-| kis.issue_other | 14 | 업종지수, 휴장일, 금리, VI 발동현황 |
-| kiwoom.stock_info | 28 | 종목 기본정보, 체결, 프로그램매매, 상한가/하한가, VI |
-| kiwoom.market_condition | 20 | 현재가, 호가, 투자자별 매매, 프로그램매매, 시간외 |
-| kiwoom.rank_info | 23 | 등락률/거래량/외국인 순매수/신용비율 등 순위 |
-| kiwoom.chart | 14 | 일/주/월/년/분/틱 차트, 업종 차트, 투자자별 차트 |
-| kiwoom.etf | 9 | ETF 시세, 수익률, 일별/시간별 추이 |
-| kiwoom.sector | 6 | 업종 지수, 업종별 종목시세, 투자자 순매수 |
-| kiwoom.foreign | 3 | 외국인/기관 연속 순매수, 투자자 매매동향 |
-| kiwoom.theme | 2 | 테마 그룹 목록, 테마별 종목 |
-| ta | 11 | 기술적 분석 (SMA, EMA, RSI, MACD, BBands, ATR, ADX, OBV, Stoch, MDD, Sharpe) |
-| dart | 4 | DART 공시 검색, 기업 개황, 대주주 현황 |
+| stock | 45 | 현재가, 호가, 체결, 투자의견, 수급, 시간외, 신용, VI |
+| ranking | 41 | 거래량/등락률/시총/배당/PER/외국인/공매도 순위 |
+| analysis | 29 | 투자자 매매동향, 공매도 추이, 조건검색, 관심종목 |
+| etf | 11 | ETF 현재가, NAV, 괴리율, 구성종목, 수익률 |
+| sector | 12 | 업종 지수, 구성종목, 투자자 순매수, 예상지수 |
+| schedule | 12 | 배당/IPO/합병/감자/무상증자 일정 (KSD) |
+| chart | 8 | 일/주/월/분봉/틱, 업종 틱, 기관/투자자 차트 |
+| financial | 7 | 수익성/안전성/밸류에이션/성장성 비율, 재무제표 |
+| program | 7 | 프로그램매매 동향, 종목별/일별/누적 |
+| market | 5 | 금리, 휴장일, 뉴스, 선물영업일 |
+| dart | 4 | DART 공시 검색, 기업 개황, 대주주 |
+| theme | 2 | 테마 그룹, 테마별 종목 |
+| ta | 11 | SMA/EMA/RSI/MACD/BBands/ATR/ADX/OBV/Stoch/MDD/Sharpe |
 | session | 3 | 브로커 세션 초기화/종료/상태 (시스템) |
 | rpc | 2 | 메서드 목록 조회, 헬스체크 (시스템) |
 
@@ -109,70 +107,45 @@ Typical flow:
 - **수정주가 구분**: 0=수정주가, 1=원주가
 - **시장 구분**: J=주식(KIS), NX=넥스트(KIS), 001=코스피(Kiwoom), 101=코스닥(Kiwoom)
 
-## Technical Analysis Rules
+## 복합 분석 도구 (Analysis Tools)
 
-When performing technical analysis:
-1. First fetch OHLCV data using chart.period (period_div_code="D", date ascending order)
-2. Pass close[], high[], low[], volume[] arrays to ta.* methods
-3. Use the 100-point scoring framework:
-   - Trend (30pts): SMA(5/20/60) alignment
-   - Momentum (30pts): RSI, MACD, Stochastic
-   - Volatility & Volume (40pts): Bollinger Bands (15pts), ATR (5pts), OBV (20pts)
-   - Composite signals (±5pts): cross-indicator interactions and divergences
+스코어링과 데이터 수집을 자동으로 수행하는 복합 도구 4개를 사용할 수 있다.
+종합 분석, 기술적 분석, 정량 분석 요청 시 아래 도구를 우선 사용한다.
+개별 데이터 조회("삼성전자 호가 보여줘")는 기존 meta-tool(list_tool_categories → load_category_tools)을 사용한다.
 
-## 종합 분석 프로토콜
+### analyze_comprehensive — 종합 분석 (권장)
 
-"종합 분석", "투자 분석", "종합 평가", "종합적으로 분석" 등을 요청 받으면 아래 프로토콜을 따른다.
+"종합 분석", "투자 분석", "종합 평가" 요청 시 이 도구 하나로 전체 분석을 수행한다.
+- 내부에서 TA + Quant + 수급 + 피어비교를 병렬 수행
+- 최종 점수 = TA Score × 0.4 + Quant Score × 0.6
+- 판단: 80-100 강한매수, 65-79 매수우위, 45-64 중립, 25-44 매도우위, 0-24 강한매도
+- 반환값: final_score, judgment, ta_result(상세), quant_result(상세), supply_summary, peer_comparison
 
-### Step A — 기술적 분석 (TA Score: 0-100)
+### analyze_technical — 기술적 분석
 
-technical-analysis skill의 6단계 프레임워크에 따라 수행:
-- 추세(30pt): SMA(5/20/60) 정배열/역배열
-- 모멘텀(30pt): RSI, MACD, Stochastic
-- 변동성·거래량(40pt): BB(15), ATR(5), OBV(20)
-- 복합 신호(±5pt): 다이버전스, 골든/데드크로스 중첩
+- OHLCV 수집 → 10개 지표 병렬 계산 → 100점 스코어링
+- 추세(30) + 모멘텀(30, ADX 보정) + 변동성·거래량(40) + 복합신호(±5)
+- 반환값: ta_score(breakdown 포함), data_quality, warnings
 
-### Step B — 정량 분석 (Quant Score: 0-100)
+### analyze_fundamental — 정량 분석
 
-financial skill의 5단계 스코어링 프레임워크에 따라 수행:
-- 수익성(25pt): ROE, ROA, 영업이익률, 순이익률
-- 안전성(20pt): 부채비율, 유동비율, 이자보상배율
-- 밸류에이션(25pt): PER(업종 대비), PBR, 배당수익률
-- 성장성(20pt): 매출/EPS/영업이익 증가율
-- 효율성(10pt): 총자산회전율, EBITDA 마진
+- 수익성/안전성/밸류에이션/성장성/효율성 데이터 병렬 수집 → 100점 스코어링
+- 수익성(25) + 안전성(20) + 밸류에이션(25) + 성장성(20) + 효율성(10)
+- 반환값: quant_score(breakdown 포함), raw_data, warnings
 
-### Step C — 최종 종합 점수
+### analyze_peer_comparison — 업종 내 비교
 
-최종 점수 = **TA Score × 0.4 + Quant Score × 0.6**
+- 업종코드 자동 확인 → PER/PBR/ROE/부채비율 백분위 산출
+- 상위 25% = 강점, 하위 25% = 약점
+- 반환값: percentiles[], peer_count, divergence
 
-(근거: Paper 2 ablation에서 Technical Agent가 핵심 드라이버이나,
- 중장기 방향성 결정에 펀더멘털이 더 중요하므로 6:4 배분)
+### 결과 해석 가이드
 
-| 점수 | 판단 | 행동 제안 |
-|------|------|-----------|
-| 80-100 | 강한 매수 | 적극적 매수 고려 |
-| 65-79 | 매수 우위 | 분할 매수 검토 |
-| 45-64 | 중립 | 관망, 추가 정보 필요 |
-| 25-44 | 매도 우위 | 보유분 축소 검토 |
-| 0-24 | 강한 매도 | 매도 또는 회피 |
-
-### 결과 보고 형식
-
-1. TA Score 상세 (추세/모멘텀/변동성·거래량/복합신호 각 점수)
-2. Quant Score 상세 (수익성/안전성/밸류에이션/성장성/효율성 각 점수)
-3. 최종 종합 점수 및 판단
-4. 주요 리스크 요인
-5. 핵심 근거 요약 (2-3문장)
-
-## 동종업종 비교 프로토콜
-
-단일 종목 분석 시 반드시 업종 내 상대 순위(백분위)를 확인한다.
-절대 수치만으로 판단하지 않고, 동일 업종 피어 그룹 대비 위치를 파악한다.
-
-1. \`stock.basic_info\`로 업종코드를 확인한다
-2. \`ranking.market_value\`, \`ranking.profitability\`, \`ranking.finance_ratio\`로 업종 내 순위를 조회한다
-3. 보고 시 "업종 내 상위 N%" 형태의 백분위로 표현한다
-4. PER/PBR/ROE 등 밸류에이션 지표는 업종 평균 대비 괴리율도 함께 제시한다
+분석 도구가 반환한 점수와 breakdown을 사용자에게 보고할 때:
+1. 각 영역별 점수와 판단 근거를 설명
+2. warnings가 있으면 "[데이터 품질 주의]" 태그와 함께 고지
+3. 점수만 제시하지 말고, 맥락적 해석을 추가 (예: "TA 78점이지만 ADX 18로 횡보장이라 모멘텀 신뢰도 낮음")
+4. 주요 리스크 요인과 핵심 근거를 2-3문장으로 요약
 
 ## 데이터 품질 검증
 

@@ -2,7 +2,7 @@
 name: dart
 description: >
   DART(전자공시시스템) 공시 검색 및 기업 개황 조회.
-  공시 검색, 기업 기본정보, 재무제표 원문, 대주주 현황 등을 제공한다.
+  공시 검색, 기업 기본정보, 법인코드 조회, 대주주 현황 등을 제공한다.
   세션 초기화가 필요 없으며, 종목코드 또는 법인등록번호로 조회한다.
 ---
 
@@ -46,16 +46,14 @@ description: >
 
 ---
 
-### `dart.financial_statement` — 재무제표 (DART 원문)
+### `dart.corp_code_lookup` — 법인코드 조회
 
 | 파라미터 | 타입 | 필수 | 설명 |
 |----------|------|------|------|
-| `stk_cd` | string | O | 종목코드 |
-| `year` | number | O | 사업연도 (예: 2025) |
-| `report_code` | string | O | 11011=사업보고서, 11012=반기, 11013=1분기, 11014=3분기 |
+| `stk_cd` | string | O | 종목코드 (6자리) |
 
-**반환**: 재무상태표, 손익계산서, 현금흐름표 (DART 공식 양식)
-**주의**: financial.* 메서드와 달리 DART 원문 형식이므로 계정과목명이 다를 수 있음
+**반환**: DART 고유 법인코드 (corp_code), 법인명, 종목코드, 수정일
+**활용**: 다른 DART API 호출 시 필요한 corp_code를 종목코드로부터 조회
 
 ---
 
@@ -79,8 +77,8 @@ npm run start -- call dart.company_overview '{"stk_cd":"005930"}'
 # 삼성전자 최근 1개월 공시 검색
 npm run start -- call dart.disclosure_search '{"stk_cd":"005930","start_date":"20260201","end_date":"20260303"}'
 
-# 삼성전자 2025년 사업보고서 재무제표
-npm run start -- call dart.financial_statement '{"stk_cd":"005930","year":2025,"report_code":"11011"}'
+# 삼성전자 법인코드 조회
+npm run start -- call dart.corp_code_lookup '{"stk_cd":"005930"}'
 
 # 삼성전자 대주주 현황
 npm run start -- call dart.major_shareholder '{"stk_cd":"005930"}'

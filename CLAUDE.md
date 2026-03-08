@@ -73,7 +73,7 @@ apps/dure/                                  apps/cluefin-rpc/
 
 - dure가 `uv run -m cluefin_rpc` (외부 `cluefin` 리포)를 subprocess로 spawn
 - JSON-RPC 2.0 over NDJSON (stdin/stdout), stderr는 로그
-- RPC 서버는 237개 메서드 제공 (2026-03-01 `rpc.list_methods` 기준): `rpc`(2), `session`(3), `kis`(112), `kiwoom`(105), `ta`(11), `dart`(4)
+- RPC 서버는 200개 메서드 제공 (2026-03-08 기준): `stock`(45), `ranking`(41), `analysis`(29), `schedule`(12), `sector`(12), `etf`(11), `ta`(11), `chart`(8), `financial`(7), `program`(7), `market`(5), `dart`(4), `session`(3), `theme`(2), `rpc`(2)
 - Python 전용 라이브러리 의존 (cluefin-openapi, cluefin-ta, numpy, pydantic)
 
 ### AI Agent (pi-coding-agent Extension)
@@ -96,4 +96,4 @@ apps/dure/                                  apps/cluefin-rpc/
 - Root `.env` referenced via `--env-file=../../.env` from app dirs
 - JSON-RPC 2.0 (NDJSON via stdin/stdout) for dure ↔ cluefin-rpc communication
 - `uv run` for Python RPC server (외부 `cluefin` 리포)
-- RPC 메서드 명명: 카테고리 기반 (`{category}.{action}`), 시스템/공통은 `rpc.*`, `session.*`, `ta.*`, `dart.*`
+- RPC 메서드 명명: 도메인 기반 (`{domain}.{action}`), 15개 카테고리 (stock, ranking, analysis, etf, sector, schedule, chart, financial, program, market, dart, theme, ta, session, rpc)
