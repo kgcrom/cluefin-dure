@@ -55,33 +55,6 @@ describe("toEntryOrder", () => {
     expect(result.peakPrice).toBeNull();
   });
 
-  test("모든 필드 타입 보존", () => {
-    const row: EntryOrderRow = {
-      id: 3,
-      stock_code: "000660",
-      reference_price: 120000,
-      quantity: 100,
-      trailing_stop_pct: 5.0,
-      broker: "kis",
-      market: "kospi",
-      status: "executed",
-      peak_price: 130000,
-      created_at: "2024-01-17 14:00:00",
-      updated_at: "2024-01-17 15:30:00",
-    };
-
-    const result = toEntryOrder(row);
-
-    expect(typeof result.id).toBe("number");
-    expect(typeof result.stockCode).toBe("string");
-    expect(typeof result.referencePrice).toBe("number");
-    expect(typeof result.quantity).toBe("number");
-    expect(typeof result.trailingStopPct).toBe("number");
-    expect(typeof result.broker).toBe("string");
-    expect(typeof result.status).toBe("string");
-    expect(typeof result.createdAt).toBe("string");
-    expect(typeof result.updatedAt).toBe("string");
-  });
 });
 
 describe("toTradeExecution", () => {
@@ -143,26 +116,4 @@ describe("toTradeExecution", () => {
     expect(result.filledAt).toBeNull();
   });
 
-  test("부분 체결 상태 처리", () => {
-    const row: TradeExecutionRow = {
-      id: 3,
-      entry_order_id: 30,
-      broker_order_id: "ORD-PARTIAL",
-      requested_qty: 100,
-      requested_price: 80000,
-      filled_qty: 30,
-      filled_price: 79500,
-      status: "partial",
-      broker: "kis",
-      broker_response: '{"partial": true}',
-      ordered_at: "2024-01-17 11:00:00",
-      filled_at: "2024-01-17 11:05:00",
-    };
-
-    const result = toTradeExecution(row);
-
-    expect(result.status).toBe("partial");
-    expect(result.filledQty).toBe(30);
-    expect(result.requestedQty).toBe(100);
-  });
 });

@@ -334,4 +334,25 @@ describe("updatePeakPrice", () => {
   test("null이면 현재가로 초기화", () => {
     expect(updatePeakPrice(null, 100)).toBe(100);
   });
+
+  test("기존 고점보다 높으면 갱신", () => {
+    expect(updatePeakPrice(100, 110)).toBe(110);
+  });
+
+  test("기존 고점보다 낮으면 유지", () => {
+    expect(updatePeakPrice(110, 100)).toBe(110);
+  });
+});
+
+describe("evaluateSellCondition — 트레일링 스탑 단독 트리거", () => {
+  test("peakPrice 상승 후 하락 시 트레일링 스탑만 트리거 (익절 미달)", () => {
+    // ref=100000, peak=115000, trailing=10%, price=103500
+    // lossCutPrice = 100000 * 0.95 = 95000 → 103500 > 95000 (손절 안 걸림)
+    // takeProfitPrice = 100000 * 1.15 = 115000 → 103500 < 115000 (익절 안 걸림)
+    // trailingStopPrice = 115000 * 0.90 = 103500 → 103500 <= 103500 (트레일링 스탑 트리거)
+    const result = evaluateSellCondition(103500, 100000, 115000, 10);
+    expect(result.shouldSell).toBe(true);
+    expect(result.type).toBe("trailing_stop");
+    expect(result.reason).toContain("트레일링 스탑");
+  });
 });

@@ -349,6 +349,81 @@ describe("handleOrderExecution", () => {
     expect(mockUpdateOrderStatus).toHaveBeenCalledWith(4, "executed");
   });
 
+  test("분할 주문: 30만원 기준 수량 분할", async () => {
+    // referencePrice=150000 → maxQty = floor(300000/150000) = 2
+    // quantity=10이지만 2주만 주문
+    mockGetActiveOrders.mockResolvedValueOnce([
+      {
+        id: 10,
+        stockCode: "005930",
+        referencePrice: 150000,
+        quantity: 10,
+        broker: "kis",
+        status: "pending",
+        trailingStopPct: 5,
+        peakPrice: null,
+        market: "kospi",
+      },
+    ]);
+    mockGetStockPrice.mockResolvedValueOnce({
+      output: makeBullishStockInfo("155000"),
+    });
+    mockGetIntradayChart.mockResolvedValueOnce({
+      rtCd: "0",
+      msgCd: "MCA00000",
+      msg1: "성공",
+      output1: {},
+      output2: makeBullishCandles(),
+    });
+    mockGetRequestedQuantity.mockResolvedValueOnce(0);
+
+    await handleOrderExecution(mockEnv);
+
+    expect(mockBuyOrder).toHaveBeenCalledTimes(1);
+    expect(mockCreateExecution).toHaveBeenCalledTimes(1);
+    // requestedQty가 2인지 확인 (maxQty = floor(300000/150000) = 2)
+    expect(mockCreateExecution.mock.calls[0][0]).toMatchObject({
+      entryOrderId: 10,
+      requestedQty: 2,
+    });
+  });
+
+  test("monitoring 상태에서 매도 조건 미충족 시에도 peakPrice 업데이트", async () => {
+    mockGetActiveOrders.mockResolvedValueOnce([
+      {
+        id: 11,
+        stockCode: "005930",
+        referencePrice: 66000,
+        quantity: 10,
+        broker: "kis",
+        status: "monitoring",
+        trailingStopPct: 5,
+        peakPrice: 68000,
+        market: "kospi",
+      },
+    ]);
+    // 현재가 70000 > peakPrice 68000 → peak 갱신
+    // 매도 조건 미충족 (손절 62700, 익절 75900, 트레일링 66500)
+    mockGetStockPrice.mockResolvedValueOnce({
+      output: makeBullishStockInfo("70000"),
+    });
+    mockGetIntradayChart.mockResolvedValueOnce({
+      rtCd: "0",
+      msgCd: "MCA00000",
+      msg1: "성공",
+      output1: {},
+      output2: makeBullishCandles(),
+    });
+    mockGetRequestedQuantity.mockResolvedValueOnce(10);
+
+    await handleOrderExecution(mockEnv);
+
+    // peakPrice가 70000으로 업데이트되어야 함
+    expect(mockUpdatePeakPrice).toHaveBeenCalledWith(11, 70000);
+    // 매도는 실행되지 않아야 함
+    expect(mockSellOrder).not.toHaveBeenCalled();
+  });
+
   test("트레일링 스탑 트리거 시 지정가 매도 실행", async () => {
     mockGetActiveOrders.mockResolvedValueOnce([
       {
@@ -574,6 +649,41 @@ describe("handleFillCheck", () => {
     expect(mockUpdateExecutionFill).toHaveBeenCalledTimes(2);
     expect(mockUpdateExecutionFill).toHaveBeenCalledWith(7, 10, 50000, "filled");
     expect(mockUpdateExecutionFill).toHaveBeenCalledWith(8, 5, 60000, "filled");
+  });
+
+  test("체결수량 0, 거부수량 0이면 미체결 상태 유지 (스킵)", async () => {
+    mockGetUnfilledExecutions.mockResolvedValueOnce([
+      {
+        id: 13,
+        entryOrderId: 130,
+        brokerOrderId: "KIS500",
+        requestedQty: 10,
+        requestedPrice: 50000,
+        broker: "kis",
+        status: "ordered",
+        createdAt: new Date(),
+      },
+    ]);
+
+    mockGetDailyOrdersKis.mockResolvedValueOnce({
+      rtCd: "0",
+      msgCd: "MCA00000",
+      msg1: "성공",
+      output1: [
+        {
+          odno: "KIS500",
+          totCcldQty: "0",
+          avgPrvs: "0",
+          rjctQty: "0",
+        },
+      ],
+      output2: {},
+    });
+
+    await handleFillCheck(mockEnv);
+
+    // filledQty=0, rjctQty=0 → continue (cron.ts line 301)
+    expect(mockUpdateExecutionFill).not.toHaveBeenCalled();
   });
 
   test("KIS 실패하면 에러 발생", async () => {
