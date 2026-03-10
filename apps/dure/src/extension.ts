@@ -60,7 +60,7 @@ const cluefinExtension: ExtensionFactory = (pi: ExtensionAPI) => {
   });
 
   pi.on("before_agent_start", async () => {
-    const systemPrompt = buildSystemPrompt();
+    const systemPrompt = buildSystemPrompt(registry ?? undefined);
     console.error("[cluefin] before_agent_start fired, prompt length:", systemPrompt.length);
     return { systemPrompt };
   });
@@ -81,18 +81,15 @@ function registerMetaTools(
       "List available RPC tool categories. Call this first to see what categories of financial data tools are available before loading them.",
     parameters: Type.Object({}),
     async execute() {
-      const categories = registry.getCategories();
-      const result = categories
-        .filter((c) => !SYSTEM_CATEGORIES.has(c))
-        .map((category) => {
-          const methods = registry.getMethodsByCategory(category);
-          return {
-            category,
-            method_count: methods.length,
-            loaded: loadedCategories.has(category),
-            sample_methods: methods.slice(0, 3).map((m) => m.name),
-          };
-        });
+      const result = registry
+        .getCategorySummary()
+        .filter((s) => !SYSTEM_CATEGORIES.has(s.category))
+        .map((s) => ({
+          category: s.category,
+          method_count: s.count,
+          loaded: loadedCategories.has(s.category),
+          methods: s.methods,
+        }));
       return {
         content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
         details: null,
@@ -138,12 +135,19 @@ function registerMetaTools(
       }
       loadedCategories.add(category);
 
-      const toolNames = tools.map((t) => t.name);
+      const toolSummaries = methods
+        .map((m) => {
+          const toolName = m.name.replaceAll(".", "_");
+          const params = registry.getParamSummary(m);
+          return `### ${toolName}\n${m.description}\n${params}`;
+        })
+        .join("\n\n");
+
       return {
         content: [
           {
             type: "text" as const,
-            text: `Loaded ${tools.length} tools from category '${category}':\n${toolNames.join("\n")}`,
+            text: `Loaded ${tools.length} tools from category '${category}':\n\n${toolSummaries}`,
           },
         ],
         details: null,
@@ -166,11 +170,43 @@ function registerMetaTools(
       ),
     }),
     async execute(_toolCallId, toolParams) {
-      const { method: rpcMethod, params: rpcParams } = toolParams;
+      const { method, params: explicitParams, ...flatParams } = toolParams;
+      let rpcMethod = method;
+      // 에이전트가 { method, stock_code } 형태로 flat하게 전달하는 경우 처리
+      const rpcParams =
+        Object.keys(flatParams).length > 0
+          ? { ...flatParams, ...(explicitParams ?? {}) }
+          : (explicitParams ?? {});
+
+      // 언더스코어 표기법이면 도트 표기법으로 변환 시도
+      if (!rpcMethod.includes(".") && rpcMethod.includes("_")) {
+        const resolved = registry.getMethodByToolName(rpcMethod);
+        if (resolved) {
+          rpcMethod = resolved.name;
+        }
+      }
+
+      // 필수 파라미터 누락 시 사전 검증
+      const methodSchema = registry.getMethodByName(rpcMethod);
+      if (methodSchema) {
+        const schema = methodSchema.parameters as { required?: string[] };
+        const required = schema.required ?? [];
+        const missing = required.filter((k) => !(k in (rpcParams ?? {})));
+        if (missing.length > 0) {
+          const paramInfo = registry.getParamSummary(methodSchema);
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `[ERROR] ${rpcMethod}: 필수 파라미터 누락: ${missing.join(", ")}\n\nParameters:\n${paramInfo}`,
+              },
+            ],
+            details: null,
+          };
+        }
+      }
 
       try {
-        // Look up broker from registry (method schema has broker field)
-        const methodSchema = registry.getMethodByName(rpcMethod);
         const broker = methodSchema?.broker ?? null;
         if (broker && !initializedBrokers.has(broker)) {
           await client.request("session.initialize", { broker });
@@ -191,7 +227,6 @@ function registerMetaTools(
               : String(err);
         return {
           content: [{ type: "text" as const, text: `[ERROR] ${rpcMethod}: ${msg}` }],
-
           details: null,
         };
       }

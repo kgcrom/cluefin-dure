@@ -143,4 +143,50 @@ export class ToolRegistry {
   getMethods(): RpcMethodSchema[] {
     return [...this.methods];
   }
+
+  /**
+   * Get category summary with method names and descriptions.
+   */
+  getCategorySummary(): {
+    category: string;
+    count: number;
+    methods: { name: string; description: string }[];
+  }[] {
+    const categoryMap = new Map<string, RpcMethodSchema[]>();
+    for (const method of this.methods) {
+      const list = categoryMap.get(method.category) ?? [];
+      list.push(method);
+      categoryMap.set(method.category, list);
+    }
+
+    return [...categoryMap.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([category, methods]) => ({
+        category,
+        count: methods.length,
+        methods: methods.map((m) => ({ name: m.name, description: m.description })),
+      }));
+  }
+
+  /**
+   * Get compact parameter summary text for a method.
+   */
+  getParamSummary(method: RpcMethodSchema): string {
+    const schema = method.parameters as {
+      properties?: Record<string, { type?: string; description?: string }>;
+      required?: string[];
+    };
+    const props = schema.properties;
+    if (!props || Object.keys(props).length === 0) return "(파라미터 없음)";
+
+    const required = new Set(schema.required ?? []);
+    return Object.entries(props)
+      .map(([key, val]) => {
+        const opt = required.has(key) ? "" : "?";
+        const type = val.type ?? "unknown";
+        const desc = val.description ? ` — ${val.description}` : "";
+        return `  ${key}${opt}: ${type}${desc}`;
+      })
+      .join("\n");
+  }
 }

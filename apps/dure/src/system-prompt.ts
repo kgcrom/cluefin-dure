@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import type { ToolRegistry } from "./tool-registry.js";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const SKILLS_DIR = path.resolve(currentDir, "../.agents/skills");
@@ -54,9 +55,30 @@ function loadSkillSummaries(): string {
   }
 }
 
-export function buildSystemPrompt(): string {
+const SYSTEM_CATEGORIES = new Set(["rpc", "session"]);
+
+function buildCategoryTable(registry?: ToolRegistry): string {
+  if (!registry) {
+    return "## RPC Categories\n\n`list_tool_categories`를 호출하여 사용 가능한 카테고리를 확인하세요.";
+  }
+
+  const summaries = registry.getCategorySummary().filter((s) => !SYSTEM_CATEGORIES.has(s.category));
+  const totalCount = summaries.reduce((sum, s) => sum + s.count, 0);
+
+  const rows = summaries.map((s) => `| ${s.category} | ${s.count} |`).join("\n");
+
+  return `## RPC Categories (${summaries.length}, ${totalCount} methods)
+
+| Category | Count |
+|----------|-------|
+${rows}`;
+}
+
+export function buildSystemPrompt(registry?: ToolRegistry): string {
   const soul = loadSoul();
   const skillSummaries = loadSkillSummaries();
+
+  const categoryTable = buildCategoryTable(registry);
 
   return `${soul}
 
@@ -79,25 +101,7 @@ Typical flow:
 3. Call \`load_category_tools\` with the relevant category (e.g., "stock")
 4. Call the registered tool directly (e.g., \`stock_current_price\`)
 
-## RPC Categories (15)
-
-| Category | Count | Description |
-|----------|-------|-------------|
-| stock | 45 | 현재가, 호가, 체결, 투자의견, 수급, 시간외, 신용, VI |
-| ranking | 41 | 거래량/등락률/시총/배당/PER/외국인/공매도 순위 |
-| analysis | 29 | 투자자 매매동향, 공매도 추이, 조건검색, 관심종목 |
-| etf | 11 | ETF 현재가, NAV, 괴리율, 구성종목, 수익률 |
-| sector | 12 | 업종 지수, 구성종목, 투자자 순매수, 예상지수 |
-| schedule | 12 | 배당/IPO/합병/감자/무상증자 일정 (KSD) |
-| chart | 8 | 일/주/월/분봉/틱, 업종 틱, 기관/투자자 차트 |
-| financial | 7 | 수익성/안전성/밸류에이션/성장성 비율, 재무제표 |
-| program | 7 | 프로그램매매 동향, 종목별/일별/누적 |
-| market | 5 | 금리, 휴장일, 뉴스, 선물영업일 |
-| dart | 4 | DART 공시 검색, 기업 개황, 대주주 |
-| theme | 2 | 테마 그룹, 테마별 종목 |
-| ta | 11 | SMA/EMA/RSI/MACD/BBands/ATR/ADX/OBV/Stoch/MDD/Sharpe |
-| session | 3 | 브로커 세션 초기화/종료/상태 (시스템) |
-| rpc | 2 | 메서드 목록 조회, 헬스체크 (시스템) |
+${categoryTable}
 
 ## Key Conventions
 
