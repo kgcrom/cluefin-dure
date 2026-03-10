@@ -1,10 +1,13 @@
 # Apps
 
-ClueFin DURE 애플리케이션 모음. AI agent인 **dure**가 cluefin-rpc를 통해 시세·분석·공시 데이터를 조회하고, **broker**가 주문을, **trader**가 체결을 담당합니다.
+ClueFin DURE 애플리케이션 모음. 
+AI agent인 **dure**는 [cluefin-rpc](https://github.com/kgcrom/cluefin/tree/main/apps/cluefin-rpc)를 통해 시세·분석·공시 데이터를 조회해서 기업/산업분석을 진행하고, **broker**로 Cloudflare D1에 주문정보 저장, Cloudflare Worker 배포된 **trader**가 체결을 담당합니다.
 
 ## Dure
 
-pi-coding-agent 확장으로 구현된 AI agent. Python `cluefin-rpc` 프로세스를 자식으로 실행하고 stdin/stdout(NDJSON)으로 JSON-RPC 2.0 통신합니다.
+pi-coding-agent로 구현된 AI agent.
+
+Python `cluefin-rpc` 프로세스를 자식으로 실행하고 stdin/stdout(NDJSON)으로 JSON-RPC 2.0 통신합니다.
 
 ```sh
 cd apps/dure
@@ -24,7 +27,9 @@ dure는 `@mariozechner/pi-coding-agent`의 `ExtensionFactory`를 구현합니다
 | `tool-registry.ts` | `rpc.list_methods`로 메서드 탐색 → 카테고리별 도구 변환 |
 | `system-prompt.ts` | SOUL.md + skill 요약 + 분석 프로토콜 조합 |
 | `stdio-jsonrpc-client.ts` | JSON-RPC 2.0 over NDJSON (child_process.spawn) |
-| `session.ts` | 브로커 세션 초기화 관리 |
+| `jsonrpc.ts` | JSON-RPC 요청/응답 타입 및 유틸리티 |
+| `analysis/` | 분석 관련 모듈 |
+| `scoring/` | 스코어링 관련 모듈 |
 
 ### 도구 로딩 흐름
 
@@ -46,14 +51,15 @@ dure는 `@mariozechner/pi-coding-agent`의 `ExtensionFactory`를 구현합니다
 | `sector-market` | 업종 지수, 거시 지표, ETF, 테마 |
 | `dart` | DART 공시 검색, 기업 개황 |
 | `technical-analysis` | 기술적 분석 (SMA, RSI, MACD 등) 100점 스코어링 |
+| `peer-comparison` | 동종 업종 비교 분석 |
 
 ### 페르소나 (`.agents/SOUL.md`)
 
 에이전트의 정체성·분석 철학·가치관을 정의합니다. 시스템 프롬프트 최상단에 주입됩니다.
 
-### RPC 카테고리 (16)
+### RPC 카테고리 (15)
 
-2026-03-01 기준 `rpc.list_methods` 등록 메서드 수는 237개이며, 런타임에 동적 탐색합니다.
+2026-03-10 기준 `rpc.list_methods` 등록 메서드 수는 237개이며, 런타임에 동적 탐색합니다.
 
 | 카테고리 | 설명 |
 |---|---|
@@ -103,29 +109,20 @@ Hono + Cloudflare Workers 기반 트레이딩 API + 자동 매매 Cron 서비스
 Trader 앱은 Cloudflare D1을 사용하여 주문 데이터를 관리합니다.
 
 ```sh
-# 0. apps/trader 이동
 cd apps/trader
 
-# 1. D1 데이터베이스 생성
+# D1 데이터베이스 생성
 npx wrangler d1 create cluefin-fsd-db
 
-# 2. 출력된 database_id를 apps/trader/wrangler.jsonc에 입력
-#    "database_id": "<생성된 database_id>"
-
-# 3. 마이그레이션 실행 (리모트)
+# 출력된 database_id를 apps/trader/wrangler.jsonc에 입력
+# 마이그레이션 실행 (리모트)
 npx wrangler d1 migrations apply cluefin-fsd-db --remote
 
-# 로컬 개발용 마이그레이션 실행
+# 로컬 개발용
 npx wrangler d1 migrations apply cluefin-fsd-db --local
 ```
 
 마이그레이션 파일은 `apps/trader/migrations/` 디렉토리에 위치합니다.
-
-새로운 마이그레이션을 추가하려면:
-
-```sh
-npx wrangler d1 migrations create cluefin-fsd-db <마이그레이션_이름>
-```
 
 ### 로컬 개발
 
@@ -134,17 +131,9 @@ npx wrangler d1 migrations create cluefin-fsd-db <마이그레이션_이름>
 cp apps/trader/.dev.vars.example apps/trader/.dev.vars
 
 # 2. .dev.vars에 증권사 앱키 및 계좌 정보 입력
-#    KIS_APP_KEY=<한국투자증권 앱키>
-#    KIS_SECRET_KEY=<한국투자증권 시크릿키>
-#    KIS_ACCOUNT_NO=<계좌번호 앞 8자리>
-#    KIS_ACCOUNT_PRODUCT_CODE=<계좌 상품코드 뒤 2자리>
-#    KIWOOM_APP_KEY=<키움증권 앱키>
-#    KIWOOM_SECRET_KEY=<키움증권 시크릿키>
 
 # 3. 토큰 발급 후 .dev.vars에 설정
 cd ../broker && npm run start -- kis
-npm run start -- kiwoom
-#    BROKER_TOKEN_KIWOOM=<토큰>
 
 # 4. 로컬 D1 마이그레이션 적용
 npx wrangler d1 migrations apply cluefin-fsd-db --local
@@ -166,22 +155,4 @@ curl "http://localhost:8787/kiwoom/rank?mrkt_tp=000&amt_qty_tp=1&qry_dt_tp=0&ste
 
 # Kiwoom 거래량급증
 curl "http://localhost:8787/kiwoom/volume-surge?mrkt_tp=000&sort_tp=1&tm_tp=1&trde_qty_tp=5&stk_cnd=0&pric_tp=0&stex_tp=1"
-```
-
-### Cron 자동 매매
-
-Trader는 Cloudflare Workers Cron Triggers를 통해 자동 매매를 실행합니다.
-
-| KST 시간 | 동작 | 간격 |
-|-----------|------|------|
-| 09:10~15:00 (평일) | `entry_orders` 기반 주문 실행 | 5분 |
-| 16:00~17:59 (평일) | 체결 정보 갱신 | 5분 |
-
-`broker CLI`의 `order add` 인터랙티브 프롬프트로 등록된 주문(`entry_orders`)을 cron이 읽어 증권사에 주문을 보내고, 실행 내역을 `trade_executions` 테이블에 기록합니다.
-
-로컬에서 cron을 수동 트리거하려면:
-
-```sh
-cd apps/trader && npm run dev
-curl "http://localhost:8787/__scheduled?cron=*+*+*+*+*"
 ```

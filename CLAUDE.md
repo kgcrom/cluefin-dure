@@ -48,11 +48,14 @@ npm workspace monorepo (`workspace:*` protocol).
 ```
 cluefin-dure (this repo)                    cluefin (external repo)
 ═══════════════════════                     ═══════════════════════
-apps/dure/                                  apps/cluefin-rpc/
+apps/dure/src/                              apps/cluefin-rpc/
   index.ts (pi-coding-agent 진입점)           server.py (JSON-RPC main loop)
   extension.ts (ExtensionFactory)             dispatcher.py (method routing)
   tool-registry.ts (메서드 발견 & 도구 변환)    handlers/ (kis, kiwoom, ta, dart, session)
   system-prompt.ts (SOUL + skill 기반 프롬프트)  middleware/ (auth, session)
+  jsonrpc.ts (JSON-RPC 타입 & 유틸리티)
+  analysis/ (분석 모듈)
+  scoring/ (스코어링 모듈)
   .agents/SOUL.md (에이전트 페르소나)
   .agents/skills/ (도메인별 스킬 정의)
        ─── stdin/stdout NDJSON ───>
@@ -67,23 +70,22 @@ apps/dure/                                  apps/cluefin-rpc/
 | `@cluefin/securities` | KIS/Kiwoom API client library (TypeScript) |
 | `@cluefin/cloudflare` | Cloudflare runtime utils (D1, R2, Secrets Store) |
 | `@cluefin/broker` | Auth token & order management CLI (`@clack/prompts`) |
-| `apps/trader` | Hono + Cloudflare Workers. Cron: token refresh 6h, order exec & fill check KST 9-15 |
+| `apps/trader` | Hono + Cloudflare Workers. Cron: order exec & fill check KST 9-15 |
 
 ### dure ↔ cluefin-rpc
 
 - dure가 `uv run -m cluefin_rpc` (외부 `cluefin` 리포)를 subprocess로 spawn
 - JSON-RPC 2.0 over NDJSON (stdin/stdout), stderr는 로그
-- RPC 서버는 200개 메서드 제공 (2026-03-08 기준): `stock`(45), `ranking`(41), `analysis`(29), `schedule`(12), `sector`(12), `etf`(11), `ta`(11), `chart`(8), `financial`(7), `program`(7), `market`(5), `dart`(4), `session`(3), `theme`(2), `rpc`(2)
+- RPC 서버는 237개 메서드 제공 (2026-03-10 기준), 15개 카테고리: `stock`, `ranking`, `analysis`, `schedule`, `sector`, `etf`, `ta`, `chart`, `financial`, `program`, `market`, `dart`, `session`, `theme`, `rpc`
 - Python 전용 라이브러리 의존 (cluefin-openapi, cluefin-ta, numpy, pydantic)
 
 ### AI Agent (pi-coding-agent Extension)
 
-- Agent: pi-coding-agent (`@mariozechner/pi-coding-agent`)
 - Extension: `extension.ts`가 `ExtensionFactory`를 구현, `session_start`/`session_shutdown` 라이프사이클 관리
 - Tool Discovery: `ToolRegistry`가 `rpc.list_methods`로 메서드 자동 탐색, 카테고리별 동적 로딩
 - Meta Tools: `list_tool_categories` → `load_category_tools` → 개별 도구 호출
 - System Prompt: `SOUL.md` (페르소나) + `skills/` (도메인별 지침) + 분석 프로토콜을 조합
-- Skill: `.agents/skills/` 하위 SKILL.md로 도메인별 도구 지침 정의 (stock, chart, financial, ranking-analysis, sector-market, dart, technical-analysis)
+- Skills: `.agents/skills/` 하위 SKILL.md — stock, chart, financial, ranking-analysis, sector-market, dart, technical-analysis, peer-comparison
 
 ## Conventions
 
@@ -96,4 +98,4 @@ apps/dure/                                  apps/cluefin-rpc/
 - Root `.env` referenced via `--env-file=../../.env` from app dirs
 - JSON-RPC 2.0 (NDJSON via stdin/stdout) for dure ↔ cluefin-rpc communication
 - `uv run` for Python RPC server (외부 `cluefin` 리포)
-- RPC 메서드 명명: 도메인 기반 (`{domain}.{action}`), 15개 카테고리 (stock, ranking, analysis, etf, sector, schedule, chart, financial, program, market, dart, theme, ta, session, rpc)
+- RPC 메서드 명명: 도메인 기반 (`{domain}.{action}`), 15개 카테고리
