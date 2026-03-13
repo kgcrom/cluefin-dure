@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { CATEGORY_DESCRIPTIONS } from "./category-descriptions.js";
 import type { ToolRegistry } from "./tool-registry.js";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
@@ -65,12 +66,14 @@ function buildCategoryTable(registry?: ToolRegistry): string {
   const summaries = registry.getCategorySummary().filter((s) => !SYSTEM_CATEGORIES.has(s.category));
   const totalCount = summaries.reduce((sum, s) => sum + s.count, 0);
 
-  const rows = summaries.map((s) => `| ${s.category} | ${s.count} |`).join("\n");
+  const rows = summaries
+    .map((s) => `| ${s.category} | ${s.count} | ${CATEGORY_DESCRIPTIONS[s.category] ?? ""} |`)
+    .join("\n");
 
   return `## RPC Categories (${summaries.length}, ${totalCount} methods)
 
-| Category | Count |
-|----------|-------|
+| Category | Count | Description |
+|----------|-------|-------------|
 ${rows}`;
 }
 
