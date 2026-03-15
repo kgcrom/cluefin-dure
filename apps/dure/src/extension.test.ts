@@ -38,7 +38,13 @@ vi.mock("./stdio-jsonrpc-client.js", () => ({
     start: vi.fn(),
     close: vi.fn(async () => {}),
     request: vi.fn(async (method: string, params?: unknown) => {
-      if (method === "rpc.list_methods") return MOCK_METHODS;
+      if (method === "rpc.list_methods") {
+        const p = params as { category?: string } | undefined;
+        if (p?.category) {
+          return MOCK_METHODS.filter((m) => m.category === p.category);
+        }
+        return MOCK_METHODS;
+      }
       if (method === "session.initialize") return { initialized: true };
       if (method === "stock.current_price") return { current_price: 72300 };
       if (method === "ta.sma") return { result: [50, 51] };

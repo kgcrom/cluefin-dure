@@ -118,7 +118,7 @@ function registerMetaTools(
         };
       }
 
-      const methods = registry.getMethodsByCategory(category);
+      const methods = await registry.fetchMethodsByCategory(category);
       if (methods.length === 0) {
         return {
           content: [
