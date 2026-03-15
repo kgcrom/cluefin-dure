@@ -46,10 +46,26 @@ export class ToolRegistry {
   }
 
   /**
-   * Get methods belonging to a specific category.
+   * Get methods belonging to a specific category from local cache.
    */
   getMethodsByCategory(category: string): RpcMethodSchema[] {
     return this.methods.filter((m) => m.category === category);
+  }
+
+  /**
+   * Fetch methods for a specific category from the RPC server.
+   * Merges results into the local cache (deduplicating by name).
+   */
+  async fetchMethodsByCategory(category: string): Promise<RpcMethodSchema[]> {
+    const result = await this.client.request<RpcMethodSchema[]>("rpc.list_methods", { category });
+    const existingNames = new Set(this.methods.map((m) => m.name));
+    for (const method of result) {
+      if (!existingNames.has(method.name)) {
+        this.methods.push(method);
+        existingNames.add(method.name);
+      }
+    }
+    return result;
   }
 
   /**

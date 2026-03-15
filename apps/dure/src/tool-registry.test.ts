@@ -214,6 +214,59 @@ describe("ToolRegistry", () => {
     );
   });
 
+  test("fetchMethodsByCategory calls rpc.list_methods with category param", async () => {
+    const stockMethods = SAMPLE_METHODS.filter((m) => m.category === "stock");
+    const client = createMockClient([]);
+    client.request = vi.fn(async (_method: string, params?: unknown) => {
+      if (_method === "rpc.list_methods") {
+        const p = params as { category?: string } | undefined;
+        if (p?.category === "stock") return stockMethods;
+        return [];
+      }
+      throw new Error(`Unexpected method: ${_method}`);
+    });
+
+    const registry = new ToolRegistry(client);
+    const result = await registry.fetchMethodsByCategory("stock");
+
+    expect(client.request).toHaveBeenCalledWith("rpc.list_methods", { category: "stock" });
+    expect(result).toHaveLength(2);
+    expect(result[0].name).toBe("stock.current_price");
+  });
+
+  test("fetchMethodsByCategory merges into existing methods without duplicates", async () => {
+    const client = createMockClient(SAMPLE_METHODS);
+    client.request = vi.fn(async (method: string, params?: unknown) => {
+      if (method === "rpc.list_methods") {
+        const p = params as { category?: string } | undefined;
+        if (p?.category === "stock") return SAMPLE_METHODS.filter((m) => m.category === "stock");
+        return SAMPLE_METHODS;
+      }
+      throw new Error(`Unexpected: ${method}`);
+    });
+
+    const registry = new ToolRegistry(client);
+    await registry.discover();
+    expect(registry.getMethods()).toHaveLength(3);
+
+    const result = await registry.fetchMethodsByCategory("stock");
+
+    expect(result).toHaveLength(2);
+    // No duplicates added
+    expect(registry.getMethods()).toHaveLength(3);
+  });
+
+  test("fetchMethodsByCategory returns empty array for unknown category", async () => {
+    const client = createMockClient([]);
+    client.request = vi.fn(async () => []);
+
+    const registry = new ToolRegistry(client);
+    const result = await registry.fetchMethodsByCategory("nonexistent");
+
+    expect(result).toHaveLength(0);
+    expect(registry.getMethods()).toHaveLength(0);
+  });
+
   test("getMethodByName returns correct method", async () => {
     const client = createMockClient(SAMPLE_METHODS);
     const registry = new ToolRegistry(client);

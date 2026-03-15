@@ -1,5 +1,6 @@
 import type { ExtensionAPI, ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import { CATEGORY_DESCRIPTIONS } from "./category-descriptions.js";
 
 const MOCK_METHODS = [
   {
@@ -37,7 +38,13 @@ vi.mock("./stdio-jsonrpc-client.js", () => ({
     start: vi.fn(),
     close: vi.fn(async () => {}),
     request: vi.fn(async (method: string, params?: unknown) => {
-      if (method === "rpc.list_methods") return MOCK_METHODS;
+      if (method === "rpc.list_methods") {
+        const p = params as { category?: string } | undefined;
+        if (p?.category) {
+          return MOCK_METHODS.filter((m) => m.category === p.category);
+        }
+        return MOCK_METHODS;
+      }
       if (method === "session.initialize") return { initialized: true };
       if (method === "stock.current_price") return { current_price: 72300 };
       if (method === "ta.sma") return { result: [50, 51] };
@@ -181,10 +188,51 @@ describe("cluefin extension", () => {
     expect(parsed).toEqual({ result: [50, 51] });
   });
 
+  test("list_tool_categories includes category descriptions", async () => {
+    await loadExtension();
+    await triggerEvent("session_start");
+
+    const tool = registeredTools.get("list_tool_categories")!;
+    const result = await tool.execute("id", {}, undefined, undefined, {} as never);
+
+    const categories = JSON.parse(result.content[0].text);
+    const stock = categories.find((c: { category: string }) => c.category === "stock");
+    const ta = categories.find((c: { category: string }) => c.category === "ta");
+
+    expect(stock.description).toBe("종목 현재가·호가·체결·시세 조회");
+    expect(ta.description).toBe("기술적 분석 지표 (이동평균, RSI, MACD, 볼린저밴드 등)");
+  });
+
   test("before_agent_start returns system prompt", async () => {
     await loadExtension();
     const result = await triggerEvent("before_agent_start");
 
     expect(result).toEqual({ systemPrompt: "Test system prompt" });
+  });
+});
+
+describe("CATEGORY_DESCRIPTIONS", () => {
+  test("has entries for all 15 categories", () => {
+    const expected = [
+      "rpc",
+      "session",
+      "ta",
+      "stock",
+      "chart",
+      "etf",
+      "financial",
+      "schedule",
+      "analysis",
+      "ranking",
+      "program",
+      "sector",
+      "market",
+      "dart",
+      "theme",
+    ];
+    expect(Object.keys(CATEGORY_DESCRIPTIONS)).toHaveLength(15);
+    for (const cat of expected) {
+      expect(CATEGORY_DESCRIPTIONS[cat]).toBeTruthy();
+    }
   });
 });

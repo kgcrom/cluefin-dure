@@ -54,7 +54,6 @@ describe("toEntryOrder", () => {
 
     expect(result.peakPrice).toBeNull();
   });
-
 });
 
 describe("toTradeExecution", () => {
@@ -115,5 +114,4 @@ describe("toTradeExecution", () => {
     expect(result.brokerResponse).toBeNull();
     expect(result.filledAt).toBeNull();
   });
-
 });

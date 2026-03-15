@@ -9,7 +9,7 @@
     "test": "npm run build && vitest run"
   },
   "dependencies": {
-    "@mariozechner/pi-coding-agent": "^0.57.0"
+    "@mariozechner/pi-coding-agent": "^0.58.1"
   },
   "devDependencies": {
     "@types/node": "^25.1.0"

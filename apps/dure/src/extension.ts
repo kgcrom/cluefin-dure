@@ -2,6 +2,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ExtensionAPI, ExtensionFactory } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
+import { CATEGORY_DESCRIPTIONS } from "./category-descriptions.js";
 import { JsonRpcRemoteError } from "./jsonrpc.js";
 import { StdioJsonRpcClient } from "./stdio-jsonrpc-client.js";
 import { buildSystemPrompt } from "./system-prompt.js";
@@ -86,6 +87,7 @@ function registerMetaTools(
         .filter((s) => !SYSTEM_CATEGORIES.has(s.category))
         .map((s) => ({
           category: s.category,
+          description: CATEGORY_DESCRIPTIONS[s.category] ?? "",
           method_count: s.count,
           loaded: loadedCategories.has(s.category),
           methods: s.methods,
@@ -116,7 +118,7 @@ function registerMetaTools(
         };
       }
 
-      const methods = registry.getMethodsByCategory(category);
+      const methods = await registry.fetchMethodsByCategory(category);
       if (methods.length === 0) {
         return {
           content: [
