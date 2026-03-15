@@ -46,56 +46,47 @@ cd apps/trader && npx wrangler deploy     # 배포
 npm workspace monorepo (`workspace:*` protocol).
 
 ```
-cluefin-dure (this repo)                    cluefin (external repo)
-═══════════════════════                     ═══════════════════════
-apps/dure/src/                              apps/cluefin-rpc/
-  index.ts (pi-coding-agent 진입점)           server.py (JSON-RPC main loop)
-  extension.ts (ExtensionFactory)             dispatcher.py (method routing)
-  tool-registry.ts (메서드 발견 & 도구 변환)    handlers/ (kis, kiwoom, ta, dart, session)
-  system-prompt.ts (SOUL + skill 기반 프롬프트)  middleware/ (auth, session)
-  jsonrpc.ts (JSON-RPC 타입 & 유틸리티)
-  analysis/ (분석 모듈)
-  scoring/ (스코어링 모듈)
-  .agents/SOUL.md (에이전트 페르소나)
-  .agents/skills/ (도메인별 스킬 정의)
-       ─── stdin/stdout NDJSON ───>
-       <──────────────────────────
+apps/
+  dure/         @cluefin/dure       pi-coding-agent 확장, cluefin-rpc JSON-RPC 클라이언트 + ToolRegistry
+  broker/       @cluefin/broker     증권사 인증 토큰 & 주문 관리 CLI (@clack/prompts)
+  trader/       @cluefin/trader     Hono + Cloudflare Workers, Cron: 주문 실행 & 체결 확인 KST 9-15
+
+packages/
+  securities/   @cluefin/securities KIS/Kiwoom REST API 클라이언트 (인증, 시세, 주문)
+  cloudflare/   @cluefin/cloudflare Cloudflare D1 Repository/Mapper, R2 유틸리티
 ```
-
-### Packages
-
-| Package | Description |
-|---|---|
-| `@cluefin/dure` | pi-coding-agent 확장 — cluefin-rpc JSON-RPC client + ToolRegistry |
-| `@cluefin/securities` | KIS/Kiwoom API client library (TypeScript) |
-| `@cluefin/cloudflare` | Cloudflare runtime utils (D1, R2, Secrets Store) |
-| `@cluefin/broker` | Auth token & order management CLI (`@clack/prompts`) |
-| `apps/trader` | Hono + Cloudflare Workers. Cron: order exec & fill check KST 9-15 |
 
 ### dure ↔ cluefin-rpc
 
 - dure가 `uv run -m cluefin_rpc` (외부 `cluefin` 리포)를 subprocess로 spawn
 - JSON-RPC 2.0 over NDJSON (stdin/stdout), stderr는 로그
-- RPC 서버는 237개 메서드 제공 (2026-03-10 기준), 15개 카테고리: `stock`, `ranking`, `analysis`, `schedule`, `sector`, `etf`, `ta`, `chart`, `financial`, `program`, `market`, `dart`, `session`, `theme`, `rpc`
+- 15개 카테고리, 237개+ 메서드: `stock`, `ranking`, `analysis`, `schedule`, `sector`, `etf`, `ta`, `chart`, `financial`, `program`, `market`, `dart`, `session`, `theme`, `rpc`
 - Python 전용 라이브러리 의존 (cluefin-openapi, cluefin-ta, numpy, pydantic)
 
-### AI Agent (pi-coding-agent Extension)
+### dure 주요 모듈
 
-- Extension: `extension.ts`가 `ExtensionFactory`를 구현, `session_start`/`session_shutdown` 라이프사이클 관리
-- Tool Discovery: `ToolRegistry`가 `rpc.list_methods`로 메서드 자동 탐색, 카테고리별 동적 로딩
+| File | Role |
+|---|---|
+| `index.ts` | pi-coding-agent 진입점 |
+| `extension.ts` | `ExtensionFactory` 구현, `session_start`/`session_shutdown` 라이프사이클 |
+| `tool-registry.ts` | `rpc.list_methods`로 메서드 발견, 카테고리별 동적 로딩, `ToolDefinition` 변환 |
+| `system-prompt.ts` | `SOUL.md` (페르소나) + `skills/` (도메인별 지침) 조합 |
+| `jsonrpc.ts` | JSON-RPC 2.0 타입 & 유틸리티 |
+| `stdio-jsonrpc-client.ts` | NDJSON stdin/stdout 클라이언트 |
+| `category-descriptions.ts` | 카테고리별 한국어 설명 |
+
+### AI Agent
+
 - Meta Tools: `list_tool_categories` → `load_category_tools` → 개별 도구 호출
-- System Prompt: `SOUL.md` (페르소나) + `skills/` (도메인별 지침) + 분석 프로토콜을 조합
-- Skills: `.agents/skills/` 하위 SKILL.md — stock, chart, financial, ranking-analysis, sector-market, dart, technical-analysis, peer-comparison
+- Skills: `.agents/skills/` 하위 8개 SKILL.md — stock, chart, financial, ranking-analysis, sector-market, dart, technical-analysis, peer-comparison
 
 ## Conventions
 
-- TypeScript strict, NodeNext module resolution
-- Minimal external deps — use Node built-ins & standard `fetch`
+- TypeScript strict, ESNext target, NodeNext module resolution
+- Minimal external deps — Node built-ins & standard `fetch` 우선
 - Barrel exports per package (`index.ts`)
-- Tests: Vitest runner (`*.test.ts`), mock `globalThis.fetch` for HTTP
-- Dates: KST (+09:00). KIS format `yyyy-MM-dd HH:mm:ss`, Kiwoom `yyyyMMddHHmmss`
-- Biome lint/format (100 char line width, space indent)
+- Tests: Vitest (`*.test.ts`), mock `globalThis.fetch` for HTTP
+- Dates: KST (+09:00). KIS `yyyy-MM-dd HH:mm:ss`, Kiwoom `yyyyMMddHHmmss`
+- Biome lint/format (100 char line width, 2-space indent)
 - Root `.env` referenced via `--env-file=../../.env` from app dirs
-- JSON-RPC 2.0 (NDJSON via stdin/stdout) for dure ↔ cluefin-rpc communication
-- `uv run` for Python RPC server (외부 `cluefin` 리포)
-- RPC 메서드 명명: 도메인 기반 (`{domain}.{action}`), 15개 카테고리
+- RPC 메서드 명명: 도메인 기반 (`{domain}.{action}`)
