@@ -1,17 +1,17 @@
 import {
-  createAgentSession,
-  SessionManager,
-  ModelRegistry,
-  AuthStorage,
-  DefaultResourceLoader,
-  readOnlyTools,
-  codingTools,
-  getAgentDir,
-  type ToolDefinition,
   type AgentSession,
-} from "@mariozechner/pi-coding-agent";
-import { getAgentModel, type AgentName } from "../config.js";
-import { EventRecorder } from "./eventRecorder.js";
+  AuthStorage,
+  codingTools,
+  createAgentSession,
+  DefaultResourceLoader,
+  getAgentDir,
+  ModelRegistry,
+  readOnlyTools,
+  SessionManager,
+  type ToolDefinition,
+} from '@mariozechner/pi-coding-agent';
+import { type AgentName, getAgentModel } from '../config.js';
+import type { EventRecorder } from './eventRecorder.js';
 
 export interface AgentSessionOptions {
   agentName: AgentName;
@@ -23,7 +23,8 @@ export interface AgentSessionOptions {
 }
 
 export async function createPiSession(options: AgentSessionOptions): Promise<AgentSession> {
-  const { agentName, sessionLabel, systemPrompt, customTools, useCodeTools, eventRecorder } = options;
+  const { agentName, sessionLabel, systemPrompt, customTools, useCodeTools, eventRecorder } =
+    options;
 
   const agentDir = getAgentDir();
   const authStorage = AuthStorage.create(`${agentDir}/auth.json`);

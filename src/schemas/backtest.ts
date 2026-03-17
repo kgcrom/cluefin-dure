@@ -1,4 +1,4 @@
-import { Type, type Static } from "@sinclair/typebox";
+import { type Static, Type } from '@sinclair/typebox';
 
 export const StrategyDefinitionSchema = Type.Object({
   name: Type.String(),
@@ -23,7 +23,7 @@ export const BacktestResultSchema = Type.Object({
       action: Type.String(),
       price: Type.Number(),
       quantity: Type.Number(),
-    })
+    }),
   ),
   runArtifactPath: Type.String(),
   errorLog: Type.Array(Type.String()),
@@ -35,11 +35,7 @@ export const CriticReportSchema = Type.Object({
   dataLeakageCheck: Type.String(),
   survivorshipBias: Type.String(),
   regimeDependency: Type.String(),
-  verdict: Type.Union([
-    Type.Literal("keep"),
-    Type.Literal("revise"),
-    Type.Literal("reject"),
-  ]),
+  verdict: Type.Union([Type.Literal('keep'), Type.Literal('revise'), Type.Literal('reject')]),
   recommendations: Type.Array(Type.String()),
 });
 export type CriticReport = Static<typeof CriticReportSchema>;

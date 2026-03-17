@@ -1,4 +1,4 @@
-import { Type, type Static } from "@sinclair/typebox";
+import { type Static, Type } from '@sinclair/typebox';
 
 export const UniverseResultSchema = Type.Object({
   tickers: Type.Array(
@@ -7,7 +7,7 @@ export const UniverseResultSchema = Type.Object({
       market: Type.String(),
       sector: Type.String(),
       rationale: Type.String(),
-    })
+    }),
   ),
   filterCriteria: Type.String(),
 });
@@ -38,7 +38,7 @@ export const NewsAnalysisSchema = Type.Object({
       date: Type.String(),
       headline: Type.String(),
       impact: Type.String(),
-    })
+    }),
   ),
   sentimentSummary: Type.String(),
   catalysts: Type.Array(Type.String()),

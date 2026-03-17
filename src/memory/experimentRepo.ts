@@ -1,8 +1,8 @@
-import { readFile, writeFile, mkdir } from "node:fs/promises";
-import path from "node:path";
-import type { ExperimentRecord } from "../schemas/signal.js";
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import type { ExperimentRecord } from '../schemas/signal.js';
 
-const DATA_PATH = path.resolve("data/processed/experiments.json");
+const DATA_PATH = path.resolve('data/processed/experiments.json');
 
 export class ExperimentRepo {
   private data: ExperimentRecord[] = [];
@@ -11,7 +11,7 @@ export class ExperimentRepo {
   private async ensureLoaded(): Promise<void> {
     if (this.loaded) return;
     try {
-      const raw = await readFile(DATA_PATH, "utf-8");
+      const raw = await readFile(DATA_PATH, 'utf-8');
       this.data = JSON.parse(raw);
     } catch {
       this.data = [];
@@ -44,7 +44,7 @@ export class ExperimentRepo {
     await this.ensureLoaded();
     const idx = this.data.findIndex((r) => r.id === id);
     if (idx >= 0) {
-      this.data[idx] = { ...this.data[idx]!, ...patch };
+      this.data[idx] = { ...this.data[idx], ...patch } as ExperimentRecord;
       await this.save();
     }
   }

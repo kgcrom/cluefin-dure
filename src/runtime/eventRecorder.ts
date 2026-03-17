@@ -1,6 +1,6 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-import type { AgentSession, AgentSessionEvent } from "@mariozechner/pi-coding-agent";
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import type { AgentSession, AgentSessionEvent } from '@mariozechner/pi-coding-agent';
 
 interface RecordedEvent {
   timestamp: number;
@@ -22,14 +22,14 @@ export class EventRecorder {
       });
 
       if (
-        event.type === "message_update" &&
-        "assistantMessageEvent" in event &&
-        event.assistantMessageEvent.type === "text_delta"
+        event.type === 'message_update' &&
+        'assistantMessageEvent' in event &&
+        event.assistantMessageEvent.type === 'text_delta'
       ) {
         process.stdout.write(`[${sessionLabel}] ${event.assistantMessageEvent.delta}`);
       }
 
-      if (event.type === "turn_end") {
+      if (event.type === 'turn_end') {
         console.log(`\n[${sessionLabel}] --- turn end ---`);
       }
     });
@@ -39,7 +39,7 @@ export class EventRecorder {
   async persist(runId: string, baseDir: string): Promise<void> {
     const dir = path.join(baseDir, runId);
     await mkdir(dir, { recursive: true });
-    await writeFile(path.join(dir, "events.json"), JSON.stringify(this.events, null, 2));
+    await writeFile(path.join(dir, 'events.json'), JSON.stringify(this.events, null, 2));
   }
 
   dispose(): void {

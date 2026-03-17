@@ -11,6 +11,9 @@
     "screen": "tsx src/main.ts screen",
     "strategy": "tsx src/main.ts strategy",
     "backtest": "tsx src/main.ts backtest",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -19,6 +22,7 @@
     "@sinclair/typebox": "^0.34.48"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.4.7",
     "@types/node": "^22.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",

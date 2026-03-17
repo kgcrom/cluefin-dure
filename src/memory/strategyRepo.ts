@@ -1,17 +1,17 @@
-import { readFile, writeFile, mkdir } from "node:fs/promises";
-import path from "node:path";
-import type { StrategyDefinition } from "../schemas/backtest.js";
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import type { StrategyDefinition } from '../schemas/backtest.js';
 
 export interface StoredStrategy {
   id: string;
   strategy: StrategyDefinition;
-  lastCriticVerdict: "keep" | "revise" | "reject";
+  lastCriticVerdict: 'keep' | 'revise' | 'reject';
   iterationCount: number;
   createdAt: string;
   updatedAt: string;
 }
 
-const DATA_PATH = path.resolve("data/processed/strategies.json");
+const DATA_PATH = path.resolve('data/processed/strategies.json');
 
 export class StrategyRepo {
   private data: StoredStrategy[] = [];
@@ -20,7 +20,7 @@ export class StrategyRepo {
   private async ensureLoaded(): Promise<void> {
     if (this.loaded) return;
     try {
-      const raw = await readFile(DATA_PATH, "utf-8");
+      const raw = await readFile(DATA_PATH, 'utf-8');
       this.data = JSON.parse(raw);
     } catch {
       this.data = [];
@@ -53,7 +53,11 @@ export class StrategyRepo {
     await this.ensureLoaded();
     const idx = this.data.findIndex((r) => r.id === id);
     if (idx >= 0) {
-      this.data[idx] = { ...this.data[idx]!, ...patch, updatedAt: new Date().toISOString() };
+      this.data[idx] = {
+        ...this.data[idx],
+        ...patch,
+        updatedAt: new Date().toISOString(),
+      } as StoredStrategy;
       await this.save();
     }
   }

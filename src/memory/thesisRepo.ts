@@ -1,17 +1,17 @@
-import { readFile, writeFile, mkdir } from "node:fs/promises";
-import path from "node:path";
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
 export interface Thesis {
   id: string;
   ticker: string;
   hypothesis: string;
   evidence: string[];
-  status: "active" | "invalidated" | "confirmed";
+  status: 'active' | 'invalidated' | 'confirmed';
   createdAt: string;
   updatedAt: string;
 }
 
-const DATA_PATH = path.resolve("data/processed/theses.json");
+const DATA_PATH = path.resolve('data/processed/theses.json');
 
 export class ThesisRepo {
   private data: Thesis[] = [];
@@ -20,7 +20,7 @@ export class ThesisRepo {
   private async ensureLoaded(): Promise<void> {
     if (this.loaded) return;
     try {
-      const raw = await readFile(DATA_PATH, "utf-8");
+      const raw = await readFile(DATA_PATH, 'utf-8');
       this.data = JSON.parse(raw);
     } catch {
       this.data = [];
@@ -53,7 +53,11 @@ export class ThesisRepo {
     await this.ensureLoaded();
     const idx = this.data.findIndex((r) => r.id === id);
     if (idx >= 0) {
-      this.data[idx] = { ...this.data[idx]!, ...patch, updatedAt: new Date().toISOString() };
+      this.data[idx] = {
+        ...this.data[idx],
+        ...patch,
+        updatedAt: new Date().toISOString(),
+      } as Thesis;
       await this.save();
     }
   }

@@ -1,23 +1,23 @@
-import { readFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
-  createAgentSession,
-  SessionManager,
-  ModelRegistry,
   AuthStorage,
+  createAgentSession,
   DefaultResourceLoader,
-  InteractiveMode,
   getAgentDir,
-} from "@mariozechner/pi-coding-agent";
-import { getAgentModel } from "../config.js";
-import { workflowTools } from "../tools/workflowTools.js";
+  InteractiveMode,
+  ModelRegistry,
+  SessionManager,
+} from '@mariozechner/pi-coding-agent';
+import { getAgentModel } from '../config.js';
+import { workflowTools } from '../tools/workflowTools.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function loadRouterPrompt(): string {
-  const promptPath = resolve(__dirname, "../../research/prompts/router.md");
-  return readFileSync(promptPath, "utf-8");
+  const promptPath = resolve(__dirname, '../../research/prompts/router.md');
+  return readFileSync(promptPath, 'utf-8');
 }
 
 export async function startInteractive(): Promise<void> {
@@ -28,7 +28,7 @@ export async function startInteractive(): Promise<void> {
   const authStorage = AuthStorage.create(`${agentDir}/auth.json`);
   const modelRegistry = new ModelRegistry(authStorage);
 
-  const modelConfig = getAgentModel("router");
+  const modelConfig = getAgentModel('router');
   const model = modelRegistry.find(modelConfig.provider, modelConfig.modelId);
 
   const resourceLoader = new DefaultResourceLoader({

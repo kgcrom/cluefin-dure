@@ -1,7 +1,7 @@
-import { mkdir, writeFile, readFile } from "node:fs/promises";
-import path from "node:path";
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
-const DATA_DIR = path.resolve("data/runs");
+const DATA_DIR = path.resolve('data/runs');
 
 export class ArtifactStore {
   private cache = new Map<string, unknown>();
@@ -25,7 +25,7 @@ export class ArtifactStore {
 
     try {
       const filePath = path.join(DATA_DIR, runId, agentName, `${artifactType}.json`);
-      const raw = await readFile(filePath, "utf-8");
+      const raw = await readFile(filePath, 'utf-8');
       const parsed = JSON.parse(raw) as T;
       this.cache.set(k, parsed);
       return parsed;
