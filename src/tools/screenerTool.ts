@@ -34,7 +34,7 @@ const MOCK_UNIVERSE = [
   { ticker: "JNJ", market: "US", sector: "Healthcare", PE: 15.2, PB: 5.8, ROE: 25, marketCap: 380_000_000_000 },
 ];
 
-function evalOp(val: number, op: string, threshold: number): boolean {
+export function evalOp(val: number, op: string, threshold: number): boolean {
   switch (op) {
     case "gt": return val > threshold;
     case "lt": return val < threshold;

@@ -10,7 +10,9 @@
     "equity": "tsx src/main.ts equity",
     "screen": "tsx src/main.ts screen",
     "strategy": "tsx src/main.ts strategy",
-    "backtest": "tsx src/main.ts backtest"
+    "backtest": "tsx src/main.ts backtest",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@mariozechner/pi-coding-agent": "^0.58.4",
@@ -19,6 +21,7 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.0"
   }
 }
