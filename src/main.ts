@@ -1,4 +1,5 @@
 import { StrategyRepo } from './memory/strategyRepo.js';
+import { closeRpcClient } from './rpc/rpc-client.js';
 import { runBacktestLoop } from './workflow/runBacktestLoop.js';
 import { runEquityAnalysis } from './workflow/runEquityAnalysis.js';
 import { runScreening } from './workflow/runScreening.js';
@@ -94,7 +95,16 @@ async function main() {
   }
 }
 
-main().catch((err) => {
+async function shutdown() {
+  await closeRpcClient();
+  process.exit(0);
+}
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
+
+main().catch(async (err) => {
   console.error('오류:', err);
+  await closeRpcClient();
   process.exit(1);
 });

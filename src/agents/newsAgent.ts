@@ -1,4 +1,5 @@
 import type { ToolDefinition } from '@mariozechner/pi-coding-agent';
+import { getToolsForAgent } from '../rpc/agent-tools.js';
 import type { ArtifactStore } from '../runtime/artifactStore.js';
 import { createPiSession } from '../runtime/createPiSession.js';
 import type { EventRecorder } from '../runtime/eventRecorder.js';
@@ -20,11 +21,12 @@ export async function runNewsAgent(
   const prompt = await loadPrompt('news');
   const label = buildSessionLabel('news', input.ticker);
 
+  const rpcTools = await getToolsForAgent('news');
   const session = await createPiSession({
     agentName: 'news',
     sessionLabel: label,
     systemPrompt: prompt,
-    customTools: [newsTool] as unknown as ToolDefinition[],
+    customTools: [newsTool as unknown as ToolDefinition, ...rpcTools],
     eventRecorder: recorder,
   });
 
@@ -32,7 +34,7 @@ export async function runNewsAgent(
     `분석 대상: ${input.ticker}`,
     `기간: ${input.period ?? '최근 3개월'}`,
     '',
-    'news_search 도구로 관련 뉴스를 검색한 후, 이벤트 타임라인·센티먼트·촉매·리스크를 분석하세요.',
+    '사용 가능한 도구를 활용하여 관련 뉴스와 공시를 검색한 후, 이벤트 타임라인·센티먼트·촉매·리스크를 분석하세요.',
     '결과를 JSON으로 반환하세요.',
   ].join('\n');
 

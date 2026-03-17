@@ -14,7 +14,7 @@ export function buildSessionLabel(agentName: string, context: string): string {
 
 interface Message {
   role: string;
-  content: string | ContentBlock[];
+  content?: string | ContentBlock[];
 }
 
 interface ContentBlock {

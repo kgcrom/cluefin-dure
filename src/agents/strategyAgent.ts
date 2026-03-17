@@ -1,10 +1,9 @@
-import type { ToolDefinition } from '@mariozechner/pi-coding-agent';
+import { getToolsForAgent } from '../rpc/agent-tools.js';
 import type { ArtifactStore } from '../runtime/artifactStore.js';
 import { createPiSession } from '../runtime/createPiSession.js';
 import type { EventRecorder } from '../runtime/eventRecorder.js';
 import type { FundamentalAnalysis, NewsAnalysis } from '../schemas/analysis.js';
 import type { StrategyDefinition } from '../schemas/backtest.js';
-import { marketDataTool } from '../tools/marketDataTool.js';
 import { buildSessionLabel, extractJsonFromMessage, loadPrompt } from './_utils.js';
 
 export interface StrategyInput {
@@ -23,11 +22,12 @@ export async function runStrategyAgent(
   const prompt = await loadPrompt('strategy');
   const label = buildSessionLabel('strategy', input.theme);
 
+  const rpcTools = await getToolsForAgent('strategy');
   const session = await createPiSession({
     agentName: 'strategy',
     sessionLabel: label,
     systemPrompt: prompt,
-    customTools: [marketDataTool] as unknown as ToolDefinition[],
+    customTools: rpcTools,
     useCodeTools: true,
     eventRecorder: recorder,
   });
