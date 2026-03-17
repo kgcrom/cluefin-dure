@@ -1,0 +1,24 @@
+{
+  "name": "dure",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "equity": "tsx src/main.ts equity",
+    "screen": "tsx src/main.ts screen",
+    "strategy": "tsx src/main.ts strategy",
+    "backtest": "tsx src/main.ts backtest"
+  },
+  "dependencies": {
+    "@mariozechner/pi-coding-agent": "^0.58.4",
+    "@sinclair/typebox": "^0.34.48"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,43 @@
+import { createPiSession } from "../runtime/createPiSession.js";
+import { ArtifactStore } from "../runtime/artifactStore.js";
+import { EventRecorder } from "../runtime/eventRecorder.js";
+import { newsTool } from "../tools/newsTool.js";
+import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
+import { loadPrompt, buildSessionLabel, extractJsonFromMessage } from "./_utils.js";
+import type { NewsAnalysis } from "../schemas/analysis.js";
+
+export interface NewsInput {
+  ticker: string;
+  period?: string;
+}
+
+export async function runNewsAgent(
+  runId: string,
+  input: NewsInput,
+  store: ArtifactStore,
+  recorder: EventRecorder,
+): Promise<NewsAnalysis> {
+  const prompt = await loadPrompt("news");
+  const label = buildSessionLabel("news", input.ticker);
+
+  const session = await createPiSession({
+    agentName: "news",
+    sessionLabel: label,
+    systemPrompt: prompt,
+    customTools: [newsTool] as unknown as ToolDefinition[],
+    eventRecorder: recorder,
+  });
+
+  const userMessage = [
+    `분석 대상: ${input.ticker}`,
+    `기간: ${input.period ?? "최근 3개월"}`,
+    "",
+    "news_search 도구로 관련 뉴스를 검색한 후, 이벤트 타임라인·센티먼트·촉매·리스크를 분석하세요.",
+    "결과를 JSON으로 반환하세요.",
+  ].join("\n");
+
+  await session.prompt(userMessage);
+  const result = extractJsonFromMessage<NewsAnalysis>(session.state.messages);
+  await store.put(runId, "news", input.ticker, result);
+  return result;
+}

@@ -1,0 +1,45 @@
+import { Type, type Static } from "@sinclair/typebox";
+
+export const StrategyDefinitionSchema = Type.Object({
+  name: Type.String(),
+  hypothesis: Type.String(),
+  entryRules: Type.Array(Type.String()),
+  exitRules: Type.Array(Type.String()),
+  positionSizing: Type.String(),
+  rebalancePeriod: Type.String(),
+  config: Type.Record(Type.String(), Type.Unknown()),
+});
+export type StrategyDefinition = Static<typeof StrategyDefinitionSchema>;
+
+export const BacktestResultSchema = Type.Object({
+  cagr: Type.Number(),
+  mdd: Type.Number(),
+  sharpe: Type.Number(),
+  turnover: Type.Number(),
+  tradeLog: Type.Array(
+    Type.Object({
+      date: Type.String(),
+      ticker: Type.String(),
+      action: Type.String(),
+      price: Type.Number(),
+      quantity: Type.Number(),
+    })
+  ),
+  runArtifactPath: Type.String(),
+  errorLog: Type.Array(Type.String()),
+});
+export type BacktestResult = Static<typeof BacktestResultSchema>;
+
+export const CriticReportSchema = Type.Object({
+  overfittingRisk: Type.String(),
+  dataLeakageCheck: Type.String(),
+  survivorshipBias: Type.String(),
+  regimeDependency: Type.String(),
+  verdict: Type.Union([
+    Type.Literal("keep"),
+    Type.Literal("revise"),
+    Type.Literal("reject"),
+  ]),
+  recommendations: Type.Array(Type.String()),
+});
+export type CriticReport = Static<typeof CriticReportSchema>;
