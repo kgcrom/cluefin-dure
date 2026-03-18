@@ -103,8 +103,10 @@ async function shutdown() {
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
-main().catch(async (err) => {
-  console.error('오류:', err);
-  await closeRpcClient();
-  process.exit(1);
-});
+main()
+  .then(shutdown)
+  .catch(async (err) => {
+    console.error('오류:', err);
+    await closeRpcClient();
+    process.exit(1);
+  });
