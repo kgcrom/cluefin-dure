@@ -1,3 +1,4 @@
+import type { AgentToolUpdateCallback } from '@mariozechner/pi-coding-agent';
 import { getToolsForAgent } from '../rpc/agent-tools.js';
 import type { ArtifactStore } from '../runtime/artifactStore.js';
 import { createPiSession } from '../runtime/createPiSession.js';
@@ -17,6 +18,7 @@ export async function runBacktestAgent(
   input: BacktestInput,
   store: ArtifactStore,
   recorder: EventRecorder,
+  onUpdate?: AgentToolUpdateCallback<null>,
 ): Promise<BacktestResult> {
   const prompt = await loadPrompt('backtest');
   const label = buildSessionLabel('backtest', input.strategy.name);
@@ -29,6 +31,7 @@ export async function runBacktestAgent(
     customTools: rpcTools,
     useCodeTools: true,
     eventRecorder: recorder,
+    onUpdate,
   });
 
   const userMessage = [

@@ -1,5 +1,6 @@
 import type {
   AgentToolResult,
+  AgentToolUpdateCallback,
   ExtensionContext,
   ToolDefinition,
 } from '@mariozechner/pi-coding-agent';
@@ -75,7 +76,7 @@ export class ToolRegistry {
           _toolCallId: string,
           toolParams: Record<string, unknown>,
           _signal: AbortSignal | undefined,
-          _onUpdate: undefined,
+          _onUpdate: AgentToolUpdateCallback<null> | undefined,
           _ctx: ExtensionContext,
         ): Promise<AgentToolResult<null>> {
           try {

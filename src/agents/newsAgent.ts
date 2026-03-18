@@ -1,4 +1,4 @@
-import type { ToolDefinition } from '@mariozechner/pi-coding-agent';
+import type { AgentToolUpdateCallback, ToolDefinition } from '@mariozechner/pi-coding-agent';
 import { getToolsForAgent } from '../rpc/agent-tools.js';
 import type { ArtifactStore } from '../runtime/artifactStore.js';
 import { createPiSession } from '../runtime/createPiSession.js';
@@ -17,6 +17,7 @@ export async function runNewsAgent(
   input: NewsInput,
   store: ArtifactStore,
   recorder: EventRecorder,
+  onUpdate?: AgentToolUpdateCallback<null>,
 ): Promise<NewsAnalysis> {
   const prompt = await loadPrompt('news');
   const label = buildSessionLabel('news', input.ticker);
@@ -28,6 +29,7 @@ export async function runNewsAgent(
     systemPrompt: prompt,
     customTools: [newsTool as unknown as ToolDefinition, ...rpcTools],
     eventRecorder: recorder,
+    onUpdate,
   });
 
   const userMessage = [

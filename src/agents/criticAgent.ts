@@ -1,3 +1,4 @@
+import type { AgentToolUpdateCallback } from '@mariozechner/pi-coding-agent';
 import type { ArtifactStore } from '../runtime/artifactStore.js';
 import { createPiSession } from '../runtime/createPiSession.js';
 import type { EventRecorder } from '../runtime/eventRecorder.js';
@@ -15,6 +16,7 @@ export async function runCriticAgent(
   input: CriticInput,
   store: ArtifactStore,
   recorder: EventRecorder,
+  onUpdate?: AgentToolUpdateCallback<null>,
 ): Promise<CriticReport> {
   const prompt = await loadPrompt('critic');
   const label = buildSessionLabel('critic', input.strategy.name);
@@ -24,6 +26,7 @@ export async function runCriticAgent(
     sessionLabel: label,
     systemPrompt: prompt,
     eventRecorder: recorder,
+    onUpdate,
   });
 
   const parts: string[] = [

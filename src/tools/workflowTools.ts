@@ -17,9 +17,9 @@ export const equityAnalysisTool: ToolDefinition<typeof equityParams> = {
   description:
     '특정 종목의 펀더멘탈, 뉴스, 전략 적합성을 종합 분석합니다. 종목 코드가 주어지면 해당 종목을, 시장/스타일이 주어지면 유니버스를 먼저 구성합니다.',
   parameters: equityParams,
-  async execute(_toolCallId, params: Static<typeof equityParams>) {
+  async execute(_toolCallId, params: Static<typeof equityParams>, _signal, onUpdate) {
     const { runEquityAnalysis } = await import('../workflow/runEquityAnalysis.js');
-    const result = await runEquityAnalysis(params);
+    const result = await runEquityAnalysis(params, onUpdate);
     return toolResult(JSON.stringify(result));
   },
 };
@@ -39,9 +39,9 @@ export const screeningTool: ToolDefinition<typeof screeningParams> = {
   description:
     '시장과 스타일 기준으로 종목을 스크리닝합니다. 펀더멘탈 지표 기반 순위를 매겨 상위 종목을 반환합니다.',
   parameters: screeningParams,
-  async execute(_toolCallId, params: Static<typeof screeningParams>) {
+  async execute(_toolCallId, params: Static<typeof screeningParams>, _signal, onUpdate) {
     const { runScreening } = await import('../workflow/runScreening.js');
-    const result = await runScreening(params);
+    const result = await runScreening(params, onUpdate);
     return toolResult(JSON.stringify(result));
   },
 };
@@ -58,9 +58,9 @@ export const strategyResearchTool: ToolDefinition<typeof strategyParams> = {
   label: '전략 리서치',
   description: '투자 테마/가설을 기반으로 전략을 설계하고, 백테스트 및 비평 리포트를 생성합니다.',
   parameters: strategyParams,
-  async execute(_toolCallId, params: Static<typeof strategyParams>) {
+  async execute(_toolCallId, params: Static<typeof strategyParams>, _signal, onUpdate) {
     const { runStrategyResearch } = await import('../workflow/runStrategyResearch.js');
-    const result = await runStrategyResearch(params);
+    const result = await runStrategyResearch(params, onUpdate);
     return toolResult(JSON.stringify(result));
   },
 };
@@ -77,7 +77,7 @@ export const backtestLoopTool: ToolDefinition<typeof backtestLoopParams> = {
   description:
     '저장된 전략을 반복 백테스트합니다. 전략 → 백테스트 → 비평 → 전략 수정 루프를 최대 3회 실행합니다.',
   parameters: backtestLoopParams,
-  async execute(_toolCallId, params: Static<typeof backtestLoopParams>) {
+  async execute(_toolCallId, params: Static<typeof backtestLoopParams>, _signal, onUpdate) {
     const { StrategyRepo } = await import('../memory/strategyRepo.js');
     const { runBacktestLoop } = await import('../workflow/runBacktestLoop.js');
 
@@ -94,11 +94,14 @@ export const backtestLoopTool: ToolDefinition<typeof backtestLoopParams> = {
       );
     }
 
-    const result = await runBacktestLoop({
-      strategy: stored.strategy,
-      tickers: ['AAPL', 'MSFT', '005930'],
-      maxIterations: 3,
-    });
+    const result = await runBacktestLoop(
+      {
+        strategy: stored.strategy,
+        tickers: ['AAPL', 'MSFT', '005930'],
+        maxIterations: 3,
+      },
+      onUpdate,
+    );
     return toolResult(JSON.stringify(result));
   },
 };

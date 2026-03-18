@@ -1,3 +1,4 @@
+import type { AgentToolUpdateCallback } from '@mariozechner/pi-coding-agent';
 import { getToolsForAgent } from '../rpc/agent-tools.js';
 import type { ArtifactStore } from '../runtime/artifactStore.js';
 import { createPiSession } from '../runtime/createPiSession.js';
@@ -18,6 +19,7 @@ export async function runStrategyAgent(
   input: StrategyInput,
   store: ArtifactStore,
   recorder: EventRecorder,
+  onUpdate?: AgentToolUpdateCallback<null>,
 ): Promise<StrategyDefinition> {
   const prompt = await loadPrompt('strategy');
   const label = buildSessionLabel('strategy', input.theme);
@@ -30,6 +32,7 @@ export async function runStrategyAgent(
     customTools: rpcTools,
     useCodeTools: true,
     eventRecorder: recorder,
+    onUpdate,
   });
 
   const parts: string[] = [`테마/가설: ${input.theme}`];

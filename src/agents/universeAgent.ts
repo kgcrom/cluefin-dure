@@ -1,3 +1,4 @@
+import type { AgentToolUpdateCallback } from '@mariozechner/pi-coding-agent';
 import { getToolsForAgent } from '../rpc/agent-tools.js';
 import type { ArtifactStore } from '../runtime/artifactStore.js';
 import { createPiSession } from '../runtime/createPiSession.js';
@@ -16,6 +17,7 @@ export async function runUniverseAgent(
   input: UniverseInput,
   store: ArtifactStore,
   recorder: EventRecorder,
+  onUpdate?: AgentToolUpdateCallback<null>,
 ): Promise<UniverseResult> {
   const prompt = await loadPrompt('universe');
   const label = buildSessionLabel('universe', input.market ?? 'global');
@@ -26,6 +28,7 @@ export async function runUniverseAgent(
     systemPrompt: prompt,
     customTools: await getToolsForAgent('universe'),
     eventRecorder: recorder,
+    onUpdate,
   });
 
   const userMessage = [

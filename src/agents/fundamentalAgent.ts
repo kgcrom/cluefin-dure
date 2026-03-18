@@ -1,3 +1,4 @@
+import type { AgentToolUpdateCallback } from '@mariozechner/pi-coding-agent';
 import { getToolsForAgent } from '../rpc/agent-tools.js';
 import type { ArtifactStore } from '../runtime/artifactStore.js';
 import { createPiSession } from '../runtime/createPiSession.js';
@@ -14,6 +15,7 @@ export async function runFundamentalAgent(
   input: FundamentalInput,
   store: ArtifactStore,
   recorder: EventRecorder,
+  onUpdate?: AgentToolUpdateCallback<null>,
 ): Promise<FundamentalAnalysis> {
   const prompt = await loadPrompt('fundamental');
   const label = buildSessionLabel('fundamental', input.ticker);
@@ -24,6 +26,7 @@ export async function runFundamentalAgent(
     systemPrompt: prompt,
     customTools: await getToolsForAgent('fundamental'),
     eventRecorder: recorder,
+    onUpdate,
   });
 
   const userMessage = [

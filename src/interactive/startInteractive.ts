@@ -11,6 +11,7 @@ import {
   SessionManager,
 } from '@mariozechner/pi-coding-agent';
 import { getAgentModel } from '../config.js';
+import { muteStdout } from '../runtime/log.js';
 import { workflowTools } from '../tools/workflowTools.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -21,6 +22,7 @@ function loadRouterPrompt(): string {
 }
 
 export async function startInteractive(): Promise<void> {
+  muteStdout();
   const systemPrompt = loadRouterPrompt();
   const cwd = process.cwd();
 

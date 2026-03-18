@@ -1,5 +1,6 @@
 import {
   type AgentSession,
+  type AgentToolUpdateCallback,
   AuthStorage,
   codingTools,
   createAgentSession,
@@ -20,11 +21,19 @@ export interface AgentSessionOptions {
   customTools?: ToolDefinition[];
   useCodeTools?: boolean;
   eventRecorder?: EventRecorder;
+  onUpdate?: AgentToolUpdateCallback<null>;
 }
 
 export async function createPiSession(options: AgentSessionOptions): Promise<AgentSession> {
-  const { agentName, sessionLabel, systemPrompt, customTools, useCodeTools, eventRecorder } =
-    options;
+  const {
+    agentName,
+    sessionLabel,
+    systemPrompt,
+    customTools,
+    useCodeTools,
+    eventRecorder,
+    onUpdate,
+  } = options;
 
   const agentDir = getAgentDir();
   const authStorage = AuthStorage.create(`${agentDir}/auth.json`);
@@ -56,7 +65,7 @@ export async function createPiSession(options: AgentSessionOptions): Promise<Age
   });
 
   if (eventRecorder) {
-    eventRecorder.attachToSession(sessionLabel, session);
+    eventRecorder.attachToSession(sessionLabel, session, onUpdate);
   }
 
   return session;

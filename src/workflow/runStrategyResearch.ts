@@ -1,8 +1,10 @@
+import type { AgentToolUpdateCallback } from '@mariozechner/pi-coding-agent';
 import { runBacktestAgent } from '../agents/backtestAgent.js';
 import { runCriticAgent } from '../agents/criticAgent.js';
 import { runStrategyAgent } from '../agents/strategyAgent.js';
 import { ArtifactStore } from '../runtime/artifactStore.js';
 import { EventRecorder } from '../runtime/eventRecorder.js';
+import { createOnUpdateLogger, log } from '../runtime/log.js';
 import type { BacktestResult, CriticReport, StrategyDefinition } from '../schemas/backtest.js';
 
 export interface StrategyResearchOptions {
@@ -19,31 +21,51 @@ export interface StrategyResearchResult {
 
 export async function runStrategyResearch(
   options: StrategyResearchOptions,
+  onUpdate?: AgentToolUpdateCallback<null>,
 ): Promise<StrategyResearchResult> {
   const runId = `strategy-${Date.now()}`;
   const store = new ArtifactStore();
   const recorder = new EventRecorder();
+  const emit = onUpdate ? createOnUpdateLogger(onUpdate) : log;
 
-  console.log(`\n[run] 전략 리서치 시작: ${runId}`);
+  emit(`\n[run] 전략 리서치 시작: ${runId}`);
 
   // 1. 전략 설계
-  console.log('[run] 전략 설계 중...');
-  const strategy = await runStrategyAgent(runId, { theme: options.theme }, store, recorder);
+  emit('[run] 전략 설계 중...');
+  const strategy = await runStrategyAgent(
+    runId,
+    { theme: options.theme },
+    store,
+    recorder,
+    onUpdate,
+  );
 
   // 2. 백테스트
   const tickers = options.tickers ?? ['AAPL', 'MSFT', '005930'];
-  console.log('[run] 백테스트 실행 중...');
-  const backtestResult = await runBacktestAgent(runId, { strategy, tickers }, store, recorder);
+  emit('[run] 백테스트 실행 중...');
+  const backtestResult = await runBacktestAgent(
+    runId,
+    { strategy, tickers },
+    store,
+    recorder,
+    onUpdate,
+  );
 
   // 3. Critic 검토
-  console.log('[run] Critic 검토 중...');
-  const criticReport = await runCriticAgent(runId, { strategy, backtestResult }, store, recorder);
+  emit('[run] Critic 검토 중...');
+  const criticReport = await runCriticAgent(
+    runId,
+    { strategy, backtestResult },
+    store,
+    recorder,
+    onUpdate,
+  );
 
   await recorder.persist(runId, 'data/runs');
   recorder.dispose();
 
-  console.log(`\n[run] 전략 리서치 완료: ${runId}`);
-  console.log(`[run] Critic 판정: ${criticReport.verdict}`);
+  emit(`\n[run] 전략 리서치 완료: ${runId}`);
+  emit(`[run] Critic 판정: ${criticReport.verdict}`);
 
   return { runId, strategy, backtestResult, criticReport };
 }
