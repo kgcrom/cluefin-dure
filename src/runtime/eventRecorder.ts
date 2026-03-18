@@ -55,7 +55,31 @@ export class EventRecorder {
           process.stderr.write(`[${sessionLabel}] ${buffer}\n`);
           buffer = '';
         }
+        const msg = event.message as unknown as Record<string, unknown> | undefined;
+        if (msg?.role === 'assistant') {
+          const stopReason = msg.stopReason as string | undefined;
+          const errorMessage = msg.errorMessage as string | undefined;
+          if ((stopReason === 'error' || stopReason === 'aborted') && errorMessage) {
+            process.stderr.write(`[${sessionLabel}] ⚠ provider error (${stopReason}): ${errorMessage}\n`);
+          }
+        }
         emit(`[${sessionLabel}] --- turn end ---`);
+      }
+
+      if (event.type === 'auto_retry_start') {
+        const e = event as unknown as Record<string, unknown>;
+        process.stderr.write(
+          `[${sessionLabel}] ⚠ retrying (${e.attempt}/${e.maxAttempts}, delay ${e.delayMs}ms): ${e.errorMessage}\n`,
+        );
+      }
+
+      if (event.type === 'auto_retry_end') {
+        const e = event as unknown as Record<string, unknown>;
+        if (e.success === false) {
+          process.stderr.write(
+            `[${sessionLabel}] ✗ retry failed after ${e.attempt} attempts: ${e.finalError}\n`,
+          );
+        }
       }
     });
     this.unsubscribes.push(unsub);
