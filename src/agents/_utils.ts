@@ -71,5 +71,24 @@ export function extractJsonFromMessage<T>(messages: Message[]): T {
     }
   }
 
-  throw new Error('에이전트 응답에서 JSON을 추출할 수 없습니다.');
+  // 디버깅을 위해 마지막 assistant 메시지 일부를 에러에 포함
+  let lastText = '';
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    if (msg?.role !== 'assistant') continue;
+    lastText =
+      typeof msg.content === 'string'
+        ? msg.content
+        : Array.isArray(msg.content)
+          ? msg.content
+              .filter((b) => b.type === 'text')
+              .map((b) => b.text ?? '')
+              .join('\n')
+          : '';
+    if (lastText) break;
+  }
+
+  throw new Error(
+    `에이전트 응답에서 JSON을 추출할 수 없습니다. 마지막 응답: "${lastText.slice(0, 200)}"`,
+  );
 }
