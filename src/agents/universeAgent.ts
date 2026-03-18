@@ -4,6 +4,7 @@ import type { ArtifactStore } from '../runtime/artifactStore.js';
 import { createPiSession } from '../runtime/createPiSession.js';
 import type { EventRecorder } from '../runtime/eventRecorder.js';
 import type { UniverseResult } from '../schemas/analysis.js';
+import { getMemoryTools } from '../tools/memoryTools.js';
 import { buildSessionLabel, extractJsonFromMessage, loadPrompt } from './_utils.js';
 
 export interface UniverseInput {
@@ -26,7 +27,7 @@ export async function runUniverseAgent(
     agentName: 'universe',
     sessionLabel: label,
     systemPrompt: prompt,
-    customTools: await getToolsForAgent('universe'),
+    customTools: [...(await getToolsForAgent('universe')), ...getMemoryTools('universe')],
     eventRecorder: recorder,
     onUpdate,
   });

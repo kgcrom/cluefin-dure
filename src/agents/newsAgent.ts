@@ -4,6 +4,7 @@ import type { ArtifactStore } from '../runtime/artifactStore.js';
 import { createPiSession } from '../runtime/createPiSession.js';
 import type { EventRecorder } from '../runtime/eventRecorder.js';
 import type { NewsAnalysis } from '../schemas/analysis.js';
+import { getMemoryTools } from '../tools/memoryTools.js';
 import { newsTool } from '../tools/newsTool.js';
 import { buildSessionLabel, extractJsonFromMessage, loadPrompt } from './_utils.js';
 
@@ -27,7 +28,7 @@ export async function runNewsAgent(
     agentName: 'news',
     sessionLabel: label,
     systemPrompt: prompt,
-    customTools: [newsTool as unknown as ToolDefinition, ...rpcTools],
+    customTools: [newsTool as unknown as ToolDefinition, ...rpcTools, ...getMemoryTools('news')],
     eventRecorder: recorder,
     onUpdate,
   });

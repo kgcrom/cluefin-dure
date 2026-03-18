@@ -5,6 +5,7 @@ import { createPiSession } from '../runtime/createPiSession.js';
 import type { EventRecorder } from '../runtime/eventRecorder.js';
 import type { FundamentalAnalysis, NewsAnalysis } from '../schemas/analysis.js';
 import type { StrategyDefinition } from '../schemas/backtest.js';
+import { getMemoryTools } from '../tools/memoryTools.js';
 import { buildSessionLabel, extractJsonFromMessage, loadPrompt } from './_utils.js';
 
 export interface StrategyInput {
@@ -29,7 +30,7 @@ export async function runStrategyAgent(
     agentName: 'strategy',
     sessionLabel: label,
     systemPrompt: prompt,
-    customTools: rpcTools,
+    customTools: [...rpcTools, ...getMemoryTools('strategy')],
     useCodeTools: true,
     eventRecorder: recorder,
     onUpdate,

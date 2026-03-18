@@ -4,6 +4,7 @@ import type { ArtifactStore } from '../runtime/artifactStore.js';
 import { createPiSession } from '../runtime/createPiSession.js';
 import type { EventRecorder } from '../runtime/eventRecorder.js';
 import type { BacktestResult, StrategyDefinition } from '../schemas/backtest.js';
+import { getMemoryTools } from '../tools/memoryTools.js';
 import { buildSessionLabel, extractJsonFromMessage, loadPrompt } from './_utils.js';
 
 export interface BacktestInput {
@@ -28,7 +29,7 @@ export async function runBacktestAgent(
     agentName: 'backtest',
     sessionLabel: label,
     systemPrompt: prompt,
-    customTools: rpcTools,
+    customTools: [...rpcTools, ...getMemoryTools('backtest')],
     useCodeTools: true,
     eventRecorder: recorder,
     onUpdate,

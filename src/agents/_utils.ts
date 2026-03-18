@@ -1,11 +1,25 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { MemoryStore } from '../memory/memoryStore.js';
 
 const PROMPTS_DIR = path.resolve('research/prompts');
 
 export async function loadPrompt(name: string): Promise<string> {
-  const filePath = path.join(PROMPTS_DIR, `${name}.md`);
-  return readFile(filePath, 'utf-8');
+  const basePrompt = await readFile(path.join(PROMPTS_DIR, `${name}.md`), 'utf-8');
+  const store = new MemoryStore();
+  const memoryContext = await store.getMemoryContext();
+  if (!memoryContext) return basePrompt;
+
+  let instructions: string;
+  try {
+    instructions = await readFile(path.join(PROMPTS_DIR, '_memory_instructions.md'), 'utf-8');
+  } catch {
+    instructions = '';
+  }
+
+  return instructions
+    ? `${basePrompt}\n\n${instructions}\n\n${memoryContext}`
+    : `${basePrompt}\n\n${memoryContext}`;
 }
 
 export function buildSessionLabel(agentName: string, context: string): string {

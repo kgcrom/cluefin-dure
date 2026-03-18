@@ -4,6 +4,7 @@ import type { ArtifactStore } from '../runtime/artifactStore.js';
 import { createPiSession } from '../runtime/createPiSession.js';
 import type { EventRecorder } from '../runtime/eventRecorder.js';
 import type { FundamentalAnalysis } from '../schemas/analysis.js';
+import { getMemoryTools } from '../tools/memoryTools.js';
 import { buildSessionLabel, extractJsonFromMessage, loadPrompt } from './_utils.js';
 
 export interface FundamentalInput {
@@ -24,7 +25,7 @@ export async function runFundamentalAgent(
     agentName: 'fundamental',
     sessionLabel: label,
     systemPrompt: prompt,
-    customTools: await getToolsForAgent('fundamental'),
+    customTools: [...(await getToolsForAgent('fundamental')), ...getMemoryTools('fundamental')],
     eventRecorder: recorder,
     onUpdate,
   });

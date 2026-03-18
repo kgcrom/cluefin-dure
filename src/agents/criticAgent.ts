@@ -3,6 +3,7 @@ import type { ArtifactStore } from '../runtime/artifactStore.js';
 import { createPiSession } from '../runtime/createPiSession.js';
 import type { EventRecorder } from '../runtime/eventRecorder.js';
 import type { BacktestResult, CriticReport, StrategyDefinition } from '../schemas/backtest.js';
+import { getMemoryTools } from '../tools/memoryTools.js';
 import { buildSessionLabel, extractJsonFromMessage, loadPrompt } from './_utils.js';
 
 export interface CriticInput {
@@ -25,6 +26,7 @@ export async function runCriticAgent(
     agentName: 'critic',
     sessionLabel: label,
     systemPrompt: prompt,
+    customTools: getMemoryTools('critic'),
     eventRecorder: recorder,
     onUpdate,
   });
