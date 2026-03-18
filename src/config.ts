@@ -1,11 +1,11 @@
 export const agentModelConfig = {
-  universe: { provider: 'anthropic', modelId: 'claude-haiku-4-5-20251001' },
-  fundamental: { provider: 'anthropic', modelId: 'claude-sonnet-4-6' },
-  news: { provider: 'anthropic', modelId: 'claude-haiku-4-5-20251001' },
-  strategy: { provider: 'anthropic', modelId: 'claude-sonnet-4-6' },
-  backtest: { provider: 'anthropic', modelId: 'claude-sonnet-4-6' },
-  critic: { provider: 'anthropic', modelId: 'claude-opus-4-6' },
-  router: { provider: 'anthropic', modelId: 'claude-sonnet-4-6' },
+  universe: { provider: 'google-antigravity', modelId: 'gemini-3-flash' },
+  fundamental: { provider: 'google-antigravity', modelId: 'claude-sonnet-4-6' },
+  news: { provider: 'google-antigravity', modelId: 'gemini-3-flash' },
+  strategy: { provider: 'google-antigravity', modelId: 'claude-sonnet-4-6' },
+  backtest: { provider: 'google-antigravity', modelId: 'claude-sonnet-4-6' },
+  critic: { provider: 'google-antigravity', modelId: 'claude-opus-4-6-thinking' },
+  router: { provider: 'google-antigravity', modelId: 'gemini-3-flash' },
 } as const;
 
 export type AgentName = keyof typeof agentModelConfig;
