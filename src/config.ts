@@ -5,6 +5,7 @@ export const agentModelConfig = {
   strategy: { provider: 'google-antigravity', modelId: 'claude-sonnet-4-6' },
   backtest: { provider: 'google-antigravity', modelId: 'claude-sonnet-4-6' },
   critic: { provider: 'google-antigravity', modelId: 'claude-opus-4-6-thinking' },
+  scenario: { provider: 'google-antigravity', modelId: 'claude-sonnet-4-6' },
   router: { provider: 'google-antigravity', modelId: 'gemini-3-flash' },
 } as const;
 

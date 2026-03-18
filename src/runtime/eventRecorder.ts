@@ -27,6 +27,8 @@ export class EventRecorder {
       ? (msg: string) => onUpdate({ content: [{ type: 'text', text: msg }], details: null })
       : log;
 
+    let buffer = '';
+
     const unsub = session.subscribe((event: AgentSessionEvent) => {
       this.events.push({
         timestamp: Date.now(),
@@ -39,11 +41,21 @@ export class EventRecorder {
         'assistantMessageEvent' in event &&
         event.assistantMessageEvent.type === 'text_delta'
       ) {
-        emit(`[${sessionLabel}] ${event.assistantMessageEvent.delta}`);
+        buffer += event.assistantMessageEvent.delta;
+        let nlIdx: number;
+        while ((nlIdx = buffer.indexOf('\n')) !== -1) {
+          const line = buffer.slice(0, nlIdx);
+          process.stderr.write(`[${sessionLabel}] ${line}\n`);
+          buffer = buffer.slice(nlIdx + 1);
+        }
       }
 
       if (event.type === 'turn_end') {
-        emit(`\n[${sessionLabel}] --- turn end ---`);
+        if (buffer.length > 0) {
+          process.stderr.write(`[${sessionLabel}] ${buffer}\n`);
+          buffer = '';
+        }
+        emit(`[${sessionLabel}] --- turn end ---`);
       }
     });
     this.unsubscribes.push(unsub);

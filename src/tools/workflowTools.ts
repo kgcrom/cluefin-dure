@@ -106,6 +106,30 @@ export const backtestLoopTool: ToolDefinition<typeof backtestLoopParams> = {
   },
 };
 
+// ── run_scenario_analysis ──
+
+const scenarioParams = Type.Object({
+  scenario: Type.String({
+    description: '분석할 시나리오 (자연어). 예: "연준이 50bp 긴급 인하하면?"',
+  }),
+  tickers: Type.Optional(
+    Type.Array(Type.String(), { description: '분석 대상 종목 코드 목록' }),
+  ),
+});
+
+export const scenarioAnalysisTool: ToolDefinition<typeof scenarioParams> = {
+  name: 'run_scenario_analysis',
+  label: '시나리오 분석',
+  description:
+    'What-if 시나리오를 분석합니다. 가설적 이벤트가 특정 종목/섹터에 미치는 영향을 평가합니다.',
+  parameters: scenarioParams,
+  async execute(_toolCallId, params: Static<typeof scenarioParams>, _signal, onUpdate) {
+    const { runScenarioAnalysis } = await import('../workflow/runScenarioAnalysis.js');
+    const result = await runScenarioAnalysis(params, onUpdate);
+    return toolResult(JSON.stringify(result));
+  },
+};
+
 // ── 전체 도구 목록 ──
 
 export const workflowTools = [
@@ -113,4 +137,5 @@ export const workflowTools = [
   screeningTool,
   strategyResearchTool,
   backtestLoopTool,
+  scenarioAnalysisTool,
 ] as unknown as ToolDefinition[];
