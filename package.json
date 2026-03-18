@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "dev": "node --import=tsx/esm --env-file=.env --watch src/main.ts",
     "start": "node dist/main.js --no-skills",
+    "chat": "tsx --env-file=.env src/main.ts chat",
     "equity": "tsx --env-file=.env src/main.ts equity",
     "screen": "tsx --env-file=.env src/main.ts screen",
     "strategy": "tsx --env-file=.env src/main.ts strategy",
