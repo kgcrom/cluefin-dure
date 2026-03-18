@@ -4,5 +4,3 @@ node_modules/
 dist/
 data/
 strategies/
-backtest_*.py
-backtest_*_result.json
