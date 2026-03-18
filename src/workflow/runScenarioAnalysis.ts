@@ -97,17 +97,31 @@ export async function runScenarioAnalysis(
 
   // 3. Scenario Critic — 종합 평가
   emit('[run] 시나리오 종합 평가 중...');
-  const report = await runScenarioCriticAgent(
-    runId,
-    {
-      scenarioContext: definition,
-      fundamentals,
-      newsAnalyses,
-    },
-    store,
-    recorder,
-    onUpdate,
-  );
+  let report: ScenarioReport;
+  try {
+    report = await runScenarioCriticAgent(
+      runId,
+      {
+        scenarioContext: definition,
+        fundamentals,
+        newsAnalyses,
+      },
+      store,
+      recorder,
+      onUpdate,
+    );
+  } catch (err) {
+    emit(`[run] ⚠ 시나리오 critic 실패, 부분 결과로 기본 리포트 생성: ${(err as Error).message}`);
+    report = {
+      scenarioName: definition.name,
+      projections: [],
+      overallAssessment: 'Critic 에이전트 실패로 종합 평가를 생성할 수 없습니다.',
+      confidence: 'low',
+      keyRisks: ['Critic 에이전트 응답 실패로 종합 평가 누락'],
+      recommendations: ['수동 검토 필요'],
+      disclaimer: '이 분석은 LLM 기반 추론이며 투자 조언이 아닙니다.',
+    };
+  }
 
   // 4. 이벤트 로그 저장
   await recorder.persist(runId, 'data/runs');

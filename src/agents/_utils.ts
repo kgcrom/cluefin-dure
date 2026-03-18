@@ -1,3 +1,4 @@
+import type { AgentSession } from '@mariozechner/pi-coding-agent';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { MemoryStore } from '../memory/memoryStore.js';
@@ -91,4 +92,38 @@ export function extractJsonFromMessage<T>(messages: Message[]): T {
   throw new Error(
     `에이전트 응답에서 JSON을 추출할 수 없습니다. 마지막 응답: "${lastText.slice(0, 200)}"`,
   );
+}
+
+/**
+ * extractJsonFromMessage 실패 시 세션에 재프롬프트하여 JSON 추출을 재시도한다.
+ */
+export async function extractJsonWithRetry<T>(
+  session: AgentSession,
+  maxRetries = 2,
+): Promise<T> {
+  // 첫 시도: 현재 메시지에서 추출
+  try {
+    return extractJsonFromMessage<T>(session.state.messages);
+  } catch {
+    // 재시도
+  }
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    await session.prompt(
+      '이전 응답에서 JSON을 추출할 수 없었습니다. 분석 결과를 유효한 JSON 형식으로 다시 반환해주세요. ```json 블록으로 감싸주세요.',
+    );
+
+    try {
+      return extractJsonFromMessage<T>(session.state.messages);
+    } catch {
+      if (attempt === maxRetries) {
+        throw new Error(
+          `${maxRetries}회 재시도 후에도 에이전트 응답에서 JSON을 추출할 수 없습니다.`,
+        );
+      }
+    }
+  }
+
+  // unreachable but satisfies TypeScript
+  throw new Error('extractJsonWithRetry: unreachable');
 }
