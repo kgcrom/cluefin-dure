@@ -5,7 +5,7 @@ import { createPiSession } from '../runtime/createPiSession.js';
 import type { EventRecorder } from '../runtime/eventRecorder.js';
 import type { UniverseResult } from '../schemas/analysis.js';
 import { getMemoryTools } from '../tools/memoryTools.js';
-import { buildSessionLabel, extractJsonFromMessage, loadPrompt } from './_utils.js';
+import { buildSessionLabel, extractJsonWithRetry, loadPrompt } from './_utils.js';
 
 export interface UniverseInput {
   market?: string;
@@ -41,7 +41,7 @@ export async function runUniverseAgent(
   ].join('\n');
 
   await session.prompt(userMessage);
-  const result = extractJsonFromMessage<UniverseResult>(session.state.messages);
+  const result = await extractJsonWithRetry<UniverseResult>(session, 'universe');
   await store.put(runId, 'universe', 'output', result);
   return result;
 }

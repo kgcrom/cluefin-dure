@@ -6,7 +6,7 @@ import type { EventRecorder } from '../runtime/eventRecorder.js';
 import type { FundamentalAnalysis, NewsAnalysis } from '../schemas/analysis.js';
 import type { StrategyDefinition } from '../schemas/backtest.js';
 import { getMemoryTools } from '../tools/memoryTools.js';
-import { buildSessionLabel, extractJsonFromMessage, loadPrompt } from './_utils.js';
+import { buildSessionLabel, extractJsonWithRetry, loadPrompt } from './_utils.js';
 
 export interface StrategyInput {
   theme: string;
@@ -57,7 +57,7 @@ export async function runStrategyAgent(
   parts.push('', '위 분석을 바탕으로 투자 전략을 설계하세요. 결과를 JSON으로 반환하세요.');
 
   await session.prompt(parts.join('\n'));
-  const result = extractJsonFromMessage<StrategyDefinition>(session.state.messages);
+  const result = await extractJsonWithRetry<StrategyDefinition>(session, 'strategy');
   await store.put(runId, 'strategy', 'output', result);
   return result;
 }

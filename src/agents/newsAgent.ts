@@ -7,7 +7,7 @@ import type { NewsAnalysis } from '../schemas/analysis.js';
 import type { ScenarioDefinition } from '../schemas/scenario.js';
 import { getMemoryTools } from '../tools/memoryTools.js';
 import { newsTool } from '../tools/newsTool.js';
-import { buildSessionLabel, extractJsonFromMessage, loadPrompt } from './_utils.js';
+import { buildSessionLabel, extractJsonWithRetry, loadPrompt } from './_utils.js';
 
 export interface NewsInput {
   ticker: string;
@@ -56,7 +56,7 @@ export async function runNewsAgent(
   const userMessage = parts.join('\n');
 
   await session.prompt(userMessage);
-  const result = extractJsonFromMessage<NewsAnalysis>(session.state.messages);
+  const result = await extractJsonWithRetry<NewsAnalysis>(session, 'news');
   await store.put(runId, 'news', input.ticker, result);
   return result;
 }

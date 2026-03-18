@@ -5,7 +5,7 @@ import { createPiSession } from '../runtime/createPiSession.js';
 import type { EventRecorder } from '../runtime/eventRecorder.js';
 import type { BacktestResult, StrategyDefinition } from '../schemas/backtest.js';
 import { getMemoryTools } from '../tools/memoryTools.js';
-import { buildSessionLabel, extractJsonFromMessage, loadPrompt } from './_utils.js';
+import { buildSessionLabel, extractJsonWithRetry, loadPrompt } from './_utils.js';
 
 export interface BacktestInput {
   strategy: StrategyDefinition;
@@ -45,7 +45,7 @@ export async function runBacktestAgent(
   ].join('\n');
 
   await session.prompt(userMessage);
-  const result = extractJsonFromMessage<BacktestResult>(session.state.messages);
+  const result = await extractJsonWithRetry<BacktestResult>(session, 'backtest');
   await store.put(runId, 'backtest', 'output', result);
   return result;
 }

@@ -6,7 +6,7 @@ import type { EventRecorder } from '../runtime/eventRecorder.js';
 import type { FundamentalAnalysis } from '../schemas/analysis.js';
 import type { ScenarioDefinition } from '../schemas/scenario.js';
 import { getMemoryTools } from '../tools/memoryTools.js';
-import { buildSessionLabel, extractJsonFromMessage, loadPrompt } from './_utils.js';
+import { buildSessionLabel, extractJsonWithRetry, loadPrompt } from './_utils.js';
 
 export interface FundamentalInput {
   ticker: string;
@@ -52,7 +52,7 @@ export async function runFundamentalAgent(
   const userMessage = parts.join('\n');
 
   await session.prompt(userMessage);
-  const result = extractJsonFromMessage<FundamentalAnalysis>(session.state.messages);
+  const result = await extractJsonWithRetry<FundamentalAnalysis>(session, 'fundamental');
   await store.put(runId, 'fundamental', input.ticker, result);
   return result;
 }

@@ -5,7 +5,7 @@ import { createPiSession } from '../runtime/createPiSession.js';
 import type { EventRecorder } from '../runtime/eventRecorder.js';
 import type { ScenarioDefinition } from '../schemas/scenario.js';
 import { getMemoryTools } from '../tools/memoryTools.js';
-import { buildSessionLabel, extractJsonFromMessage, loadPrompt } from './_utils.js';
+import { buildSessionLabel, extractJsonWithRetry, loadPrompt } from './_utils.js';
 
 export interface ScenarioInput {
   scenario: string;
@@ -44,7 +44,7 @@ export async function runScenarioAgent(
   );
 
   await session.prompt(parts.join('\n'));
-  const result = extractJsonFromMessage<ScenarioDefinition>(session.state.messages);
+  const result = await extractJsonWithRetry<ScenarioDefinition>(session, 'scenario');
   await store.put(runId, 'scenario', 'definition', result);
   return result;
 }

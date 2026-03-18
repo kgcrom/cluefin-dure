@@ -37,7 +37,7 @@ interface ContentBlock {
   text?: string;
 }
 
-export function extractJsonFromMessage<T>(messages: Message[]): T {
+export function extractJsonFromMessage<T>(messages: Message[], callerContext?: string): T {
   // 마지막 assistant 메시지에서 JSON 추출
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i];
@@ -89,8 +89,9 @@ export function extractJsonFromMessage<T>(messages: Message[]): T {
     if (lastText) break;
   }
 
+  const prefix = callerContext ? `[${callerContext}] ` : '';
   throw new Error(
-    `에이전트 응답에서 JSON을 추출할 수 없습니다. 마지막 응답: "${lastText.slice(0, 200)}"`,
+    `${prefix}에이전트 응답에서 JSON을 추출할 수 없습니다. 마지막 응답: "${lastText.slice(0, 200)}"`,
   );
 }
 
@@ -99,14 +100,17 @@ export function extractJsonFromMessage<T>(messages: Message[]): T {
  */
 export async function extractJsonWithRetry<T>(
   session: AgentSession,
+  agentName?: string,
   maxRetries = 2,
 ): Promise<T> {
   // 첫 시도: 현재 메시지에서 추출
   try {
-    return extractJsonFromMessage<T>(session.state.messages);
+    return extractJsonFromMessage<T>(session.state.messages, agentName);
   } catch {
     // 재시도
   }
+
+  const prefix = agentName ? `[${agentName}] ` : '';
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     await session.prompt(
@@ -114,11 +118,27 @@ export async function extractJsonWithRetry<T>(
     );
 
     try {
-      return extractJsonFromMessage<T>(session.state.messages);
+      return extractJsonFromMessage<T>(session.state.messages, agentName);
     } catch {
       if (attempt === maxRetries) {
+        // 마지막 응답 텍스트 추출
+        let lastText = '';
+        for (let i = session.state.messages.length - 1; i >= 0; i--) {
+          const msg = session.state.messages[i] as Message;
+          if (msg?.role !== 'assistant') continue;
+          lastText =
+            typeof msg.content === 'string'
+              ? msg.content
+              : Array.isArray(msg.content)
+                ? (msg.content as ContentBlock[])
+                    .filter((b) => b.type === 'text')
+                    .map((b) => b.text ?? '')
+                    .join('\n')
+                : '';
+          if (lastText) break;
+        }
         throw new Error(
-          `${maxRetries}회 재시도 후에도 에이전트 응답에서 JSON을 추출할 수 없습니다.`,
+          `${prefix}${maxRetries}회 재시도 후에도 에이전트 응답에서 JSON을 추출할 수 없습니다. 마지막 응답: "${lastText.slice(0, 200)}"`,
         );
       }
     }

@@ -55,7 +55,7 @@ export async function runCriticAgent(
   parts.push('결과를 JSON으로 반환하세요.');
 
   await session.prompt(parts.join('\n'));
-  const result = await extractJsonWithRetry<CriticReport>(session);
+  const result = await extractJsonWithRetry<CriticReport>(session, 'critic');
   await store.put(runId, 'critic', 'output', result);
   return result;
 }
@@ -121,7 +121,7 @@ export async function runScenarioCriticAgent(
   ];
 
   await session.prompt(parts.join('\n'));
-  const result = await extractJsonWithRetry<ScenarioReport>(session);
+  const result = await extractJsonWithRetry<ScenarioReport>(session, 'critic');
   await store.put(runId, 'scenario-critic', 'output', result);
   return result;
 }
