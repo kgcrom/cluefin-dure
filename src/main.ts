@@ -1,4 +1,5 @@
 import { StrategyRepo } from './memory/strategyRepo.js';
+import { generateReport, printTerminalSummary } from './report/generateReport.js';
 import { closeRpcClient } from './rpc/rpc-client.js';
 import { runBacktestLoop } from './workflow/runBacktestLoop.js';
 import { runEquityAnalysis } from './workflow/runEquityAnalysis.js';
@@ -24,8 +25,10 @@ async function main() {
         process.exit(1);
       }
       const result = await runEquityAnalysis({ ticker });
-      console.log('\n=== 분석 결과 ===');
-      console.log(JSON.stringify(result, null, 2));
+      const input = { type: 'equity' as const, result };
+      const reportPath = await generateReport(input);
+      printTerminalSummary(input);
+      console.log(`\n  리포트: ${reportPath}`);
       break;
     }
 
@@ -37,8 +40,10 @@ async function main() {
         style,
         filterRules: args.slice(2).join(' ') || undefined,
       });
-      console.log('\n=== 스크리닝 결과 ===');
-      console.log(JSON.stringify(result, null, 2));
+      const input = { type: 'screen' as const, result };
+      const reportPath = await generateReport(input);
+      printTerminalSummary(input);
+      console.log(`\n  리포트: ${reportPath}`);
       break;
     }
 
@@ -50,8 +55,10 @@ async function main() {
         process.exit(1);
       }
       const result = await runStrategyResearch({ theme });
-      console.log('\n=== 전략 리서치 결과 ===');
-      console.log(JSON.stringify(result, null, 2));
+      const input = { type: 'strategy' as const, result };
+      const reportPath = await generateReport(input);
+      printTerminalSummary(input);
+      console.log(`\n  리포트: ${reportPath}`);
       break;
     }
 
@@ -75,8 +82,10 @@ async function main() {
         tickers: ['AAPL', 'MSFT', '005930'],
         maxIterations: 3,
       });
-      console.log('\n=== 백테스트 루프 결과 ===');
-      console.log(JSON.stringify(result, null, 2));
+      const input = { type: 'backtest' as const, result };
+      const reportPath = await generateReport(input);
+      printTerminalSummary(input);
+      console.log(`\n  리포트: ${reportPath}`);
       break;
     }
 
@@ -88,8 +97,10 @@ async function main() {
         process.exit(1);
       }
       const result = await runScenarioAnalysis({ scenario });
-      console.log('\n=== 시나리오 분석 결과 ===');
-      console.log(JSON.stringify(result, null, 2));
+      const input = { type: 'scenario' as const, result };
+      const reportPath = await generateReport(input);
+      printTerminalSummary(input);
+      console.log(`\n  리포트: ${reportPath}`);
       break;
     }
 
