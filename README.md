@@ -2,84 +2,20 @@
 
 ![Dure Logo](docs/assets/dure_logo.png)
 
-> **두레**는 농촌에서 농사일을 공동으로 하기 위한 공동 노동 협동 조직입니다. 여러 AI 에이전트가 두레처럼 협동하여 투자 분석 결과를 도출하는 멀티 에이전트 시스템입니다.
+두레는 여러 AI 에이전트가 협업해 투자 리서치를 수행하는 멀티 에이전트 시스템입니다.
+종목 분석, 스크리닝, 전략 설계, 백테스트, 시나리오 분석을 하나의 CLI와 대화형 인터페이스로 실행할 수 있습니다.
 
-AI 에이전트들이 협력하여 종목 분석, 뉴스 감성 분석, 전략 설계, 백테스트, 비평 평가까지 투자 리서치 전 과정을 자동화합니다.
+## 핵심 기능
 
-## Table of Contents
+- 종목 분석: 펀더멘털, 뉴스, 비평 결과를 종합
+- 스크리닝: 유니버스 구성 후 상위 종목 랭킹 생성
+- 전략 리서치: 전략 정의, 백테스트, 비평까지 연결
+- 백테스트 루프: 전략을 반복 개선하며 성과 비교
+- 시나리오 분석: what-if 질문에 대한 종목별 영향 평가
 
-- [Architecture](#architecture)
-- [Memory System](#memory-system)
-- [Getting Started](#getting-started)
-- [Usage](#usage)
-- [Project Structure](#project-structure)
-- [Tech Stack](#tech-stack)
+## 빠른 시작
 
-## Architecture
-
-```
-                         ┌─────────────┐
-                         │   Router    │
-                         └──────┬──────┘
-                                │
-     ┌──────────────┼──────────────┼──────────────┐
-     ▼              ▼              ▼              ▼
-┌──────────┐ ┌───────────┐ ┌──────────────┐ ┌──────────┐
-│ Equity   │ │ Screening │ │Strategy      │ │ Scenario │
-│ Analysis │ │           │ │Research      │ │ Analysis │
-└────┬─────┘ └─────┬─────┘ └──────┬───────┘ └────┬─────┘
-     │             │              │              │
-     ▼             ▼              ▼              ▼
-```
-
-### 에이전트 구성
-
-| 에이전트 | 역할 | 모델 |
-|---------|------|------|
-| **Universe** | 투자 유니버스 구성 (시장/스타일 필터) | `gemini-3-flash` |
-| **Fundamental** | 재무제표 분석, 밸류에이션 평가 | `claude-sonnet-4-6` |
-| **News** | 뉴스 감성 분석, 이벤트 타임라인 | `gemini-3-flash` |
-| **Strategy** | 정량적 투자 전략 설계 | `claude-sonnet-4-6` |
-| **Backtest** | 전략 검증 (CAGR, MDD, Sharpe) | `claude-sonnet-4-6` |
-| **Critic** | 과적합, 데이터 누수, 생존 편향 검증 | `claude-opus-4-6-thinking` |
-| **Scenario** | What-if 시나리오 영향도 분석 | `claude-sonnet-4-6` |
-| **Router** | 자연어 요청을 워크플로우로 라우팅 | `gemini-3-flash` |
-
-기본 프로바이더는 `google-antigravity`이며, `DURE_PROVIDER` 환경변수로 전체 전환할 수 있습니다.
-
-#### 프로바이더별 모델 매핑
-
-| 역할 티어 | 에이전트 | google-antigravity | openai-codex | anthropic |
-|-----------|---------|-------------------|-------------|-----------|
-| **fast** | Universe, News, Router | `gemini-3-flash` | `gpt-5.4-mini` / `gpt-5.3-codex-spark` | `claude-haiku-4-5` |
-| **standard** | Fundamental, Strategy, Backtest, Scenario | `claude-sonnet-4-6` | `gpt-5.4` | `claude-sonnet-4-6` |
-| **advanced** | Critic | `claude-opus-4-6-thinking` | `gpt-5.4` | `claude-opus-4-6` |
-
-### 워크플로우
-
-- **Equity Analysis** — 종목 분석 파이프라인: 유니버스 → 펀더멘털 + 뉴스 (병렬) → 전략 → 백테스트 → 비평
-- **Screening** — 유니버스 구성 후 Top-N 펀더멘털 분석으로 종목 랭킹
-- **Strategy Research** — 테마 기반 전략 설계 → 백테스트 → 비평 평가
-- **Backtest Loop** — 최대 3회 반복 개선: 백테스트 → 비평 → 전략 수정
-- **Scenario Analysis** — What-if 시나리오 분석: 시나리오 구조화 → 펀더멘털 + 뉴스 영향도 (병렬) → 종합 평가
-
-## Memory System
-
-에이전트들은 세션 간 정보를 축적하는 파일 기반 메모리 시스템을 사용합니다.
-
-- **저장 위치**: `data/memory/*.md` + `data/memory/MEMORY.md` (인덱스)
-- **자동 주입**: `loadPrompt()` (`src/agents/_utils.ts`)가 시스템 프롬프트에 `<agent-memory>` 블록을 자동으로 포함시킵니다.
-
-### 에이전트별 접근 권한
-
-| 에이전트 | 권한 |
-|---------|------|
-| **Strategy**, **Backtest**, **Critic** | 읽기 + 쓰기 |
-| **Universe**, **News**, **Fundamental** | 읽기 전용 |
-
-## Getting Started
-
-### 사전 요구 사항
+### 요구 사항
 
 - Node.js 18+
 - npm
@@ -92,43 +28,13 @@ cd cluefin-dure
 npm install
 ```
 
-### 환경 변수
-
-프로젝트 루트에 `.env` 파일을 생성합니다.
-
-| 변수 | 설명 | 기본값 |
-|------|------|--------|
-| `DURE_PROVIDER` | 전체 프로바이더 전환 (프리셋: `google-antigravity`, `openai-codex`, `anthropic`) | `google-antigravity` |
-| `DURE_MODEL_UNIVERSE` | Universe 에이전트 모델 | `google-antigravity:gemini-3-flash` |
-| `DURE_MODEL_FUNDAMENTAL` | Fundamental 에이전트 모델 | `google-antigravity:claude-sonnet-4-6` |
-| `DURE_MODEL_NEWS` | News 에이전트 모델 | `google-antigravity:gemini-3-flash` |
-| `DURE_MODEL_STRATEGY` | Strategy 에이전트 모델 | `google-antigravity:claude-sonnet-4-6` |
-| `DURE_MODEL_BACKTEST` | Backtest 에이전트 모델 | `google-antigravity:claude-sonnet-4-6` |
-| `DURE_MODEL_CRITIC` | Critic 에이전트 모델 | `google-antigravity:claude-opus-4-6-thinking` |
-| `DURE_MODEL_SCENARIO` | Scenario 에이전트 모델 | `google-antigravity:claude-sonnet-4-6` |
-| `DURE_MODEL_ROUTER` | Router 에이전트 모델 | `google-antigravity:gemini-3-flash` |
-
-**우선순위**: `DURE_MODEL_{AGENT}` (개별) > `DURE_PROVIDER` (전역 프리셋) > 하드코딩 기본값
-
-형식은 `provider:modelId`이며, 환경 변수로 기본값을 오버라이드할 수 있습니다.
-
-```bash
-# 전체 openai-codex로 전환
-DURE_PROVIDER=openai-codex npm run chat
-
-# openai-codex 기본 + critic만 anthropic
-DURE_PROVIDER=openai-codex DURE_MODEL_CRITIC=anthropic:claude-opus-4-6 npm run chat
-```
-
-## Usage
-
-### CLI
+### 실행
 
 ```bash
 # 종목 분석
 npm run equity -- AAPL
 
-# 유니버스 스크리닝
+# 스크리닝
 npm run screen -- "US growth"
 
 # 전략 리서치
@@ -137,54 +43,139 @@ npm run strategy -- "quality dividend growth"
 # 백테스트 반복 개선
 npm run backtest -- <strategyId>
 
-# What-if 시나리오 분석
+# 시나리오 분석
 npm run scenario -- "연준이 50bp 긴급 인하하면 반도체 섹터 어떻게 되나?"
+
+# 대화형 모드
+npm run chat
 ```
 
 > `tsx`가 인수를 직접 파싱하므로 `--` 구분자가 필요합니다.
 
-### 대화형 모드
+## 출력물
+
+각 실행은 `data/runs/<runId>/` 아래에 결과를 저장합니다.
+
+- `report.html`: 결과를 읽기 쉬운 HTML 리포트로 정리
+- `events.json`: 실행 이벤트 기록
+- 에이전트별 서브디렉토리: 실행 중 생성된 세부 아티팩트
+
+CLI 실행 시 터미널 요약이 출력되고, macOS에서는 `report.html`이 자동으로 열립니다.
+
+## 아키텍처
+
+### 에이전트
+
+| 에이전트 | 역할 | 기본 모델 |
+|---------|------|-----------|
+| Universe | 투자 유니버스 구성 | `gemini-3-flash` |
+| Fundamental | 재무제표 및 밸류에이션 분석 | `claude-sonnet-4-6` |
+| News | 뉴스 감성 및 이벤트 분석 | `gemini-3-flash` |
+| Strategy | 투자 전략 설계 | `claude-sonnet-4-6` |
+| Backtest | 전략 성과 검증 | `claude-sonnet-4-6` |
+| Critic | 과적합, 데이터 누수, 편향 검토 | `claude-opus-4-6-thinking` |
+| Scenario | 시나리오 영향도 분석 | `claude-sonnet-4-6` |
+| Router | 자연어 요청 라우팅 | `gemini-3-flash` |
+
+### 워크플로우
+
+- Equity Analysis: 유니버스 → 펀더멘털 + 뉴스 → 비평
+- Screening: 유니버스 → 펀더멘털 랭킹
+- Strategy Research: 전략 설계 → 백테스트 → 비평
+- Backtest Loop: 백테스트 → 비평 → 전략 수정 반복
+- Scenario Analysis: 시나리오 정의 → 영향 분석 → 종합 평가
+
+## 설정
+
+기본 프로바이더는 `google-antigravity`입니다.
+전체 프리셋은 `DURE_PROVIDER`, 개별 에이전트는 `DURE_MODEL_{AGENT}`로 덮어쓸 수 있습니다.
+
+우선순위는 다음과 같습니다.
+
+`DURE_MODEL_{AGENT}` > `DURE_PROVIDER` > 코드 기본값
+
+### 환경 변수
+
+| 변수 | 설명 | 기본값 |
+|------|------|--------|
+| `DURE_PROVIDER` | 전체 프로바이더 프리셋 (`google-antigravity`, `openai-codex`, `anthropic`) | `google-antigravity` |
+| `DURE_MODEL_UNIVERSE` | Universe 모델 | `google-antigravity:gemini-3-flash` |
+| `DURE_MODEL_FUNDAMENTAL` | Fundamental 모델 | `google-antigravity:claude-sonnet-4-6` |
+| `DURE_MODEL_NEWS` | News 모델 | `google-antigravity:gemini-3-flash` |
+| `DURE_MODEL_STRATEGY` | Strategy 모델 | `google-antigravity:claude-sonnet-4-6` |
+| `DURE_MODEL_BACKTEST` | Backtest 모델 | `google-antigravity:claude-sonnet-4-6` |
+| `DURE_MODEL_CRITIC` | Critic 모델 | `google-antigravity:claude-opus-4-6-thinking` |
+| `DURE_MODEL_SCENARIO` | Scenario 모델 | `google-antigravity:claude-sonnet-4-6` |
+| `DURE_MODEL_ROUTER` | Router 모델 | `google-antigravity:gemini-3-flash` |
+
+형식은 `provider:modelId`입니다.
 
 ```bash
+# 전체 프로바이더 전환
+DURE_PROVIDER=openai-codex npm run chat
+
+# critic만 별도 override
+DURE_PROVIDER=openai-codex \
+DURE_MODEL_CRITIC=anthropic:claude-opus-4-6 \
 npm run chat
 ```
 
-자연어로 요청할 수 있습니다:
+### 프로바이더 프리셋
 
-```
-> 삼성전자 분석해줘
-> 저평가된 한국 기술주 찾아줘
-> 저PER 고ROE 전략 만들어줘
-> 연준이 50bp 인하하면 반도체 섹터에 어떤 영향이 있을까?
-```
+| 역할 티어 | 에이전트 | google-antigravity | openai-codex | anthropic |
+|-----------|---------|-------------------|-------------|-----------|
+| fast | Universe, News, Router | `gemini-3-flash` | `gpt-5.4-mini` / `gpt-5.3-codex-spark` | `claude-haiku-4-5` |
+| standard | Fundamental, Strategy, Backtest, Scenario | `claude-sonnet-4-6` | `gpt-5.4` | `claude-sonnet-4-6` |
+| advanced | Critic | `claude-opus-4-6-thinking` | `gpt-5.4` | `claude-opus-4-6` |
 
-## Project Structure
+## 안정성
 
-```
+- 모든 주요 에이전트는 JSON 추출 실패 시 최대 2회 재시도합니다.
+- 최종 실패 시 에이전트 이름과 마지막 응답 일부를 포함한 오류를 반환합니다.
+- 프로바이더 오류와 자동 재시도 이벤트는 로그에 기록됩니다.
+
+## 메모리 시스템
+
+에이전트는 파일 기반 메모리를 사용해 세션 간 정보를 축적합니다.
+
+- 저장 위치: `data/memory/*.md`, `data/memory/MEMORY.md`
+- 자동 주입: `loadPrompt()`가 시스템 프롬프트에 메모리 컨텍스트를 포함
+
+### 접근 권한
+
+| 에이전트 | 권한 |
+|---------|------|
+| Strategy, Backtest, Critic | 읽기 + 쓰기 |
+| Universe, News, Fundamental | 읽기 전용 |
+
+## 프로젝트 구조
+
+```text
 src/
-├── agents/          # 7개 에이전트 정의 (universe, fundamental, news, strategy, backtest, critic, scenario)
-├── workflow/        # 5개 워크플로우 오케스트레이션
-├── tools/           # 데이터 도구 (시세, 뉴스, 공시, 스크리너, 백테스트)
-├── schemas/         # TypeBox 스키마 (분석, 백테스트, 시그널, 시나리오)
-├── memory/          # MemoryStore (파일 기반 영속 메모리)
-├── runtime/         # 세션 풀, 이벤트 레코더, 아티팩트 스토어
+├── agents/          # 에이전트 정의
+├── workflow/        # 워크플로우 오케스트레이션
+├── tools/           # 시세, 뉴스, 공시, 스크리너, 백테스트 도구
+├── schemas/         # 분석/백테스트/시그널/시나리오 스키마
+├── memory/          # 파일 기반 메모리 저장소
+├── runtime/         # 세션, 이벤트, 아티팩트 관리
 ├── interactive/     # 대화형 모드 진입점
-├── config.ts        # 에이전트별 모델 설정
+├── config.ts        # 모델 설정
 └── main.ts          # CLI 라우터
 research/
 └── prompts/         # 에이전트 시스템 프롬프트
 data/
-├── memory/          # MemoryStore 마크다운 (세션 간 축적)
-├── processed/       # 전략·실험·논제 JSON
+├── memory/          # 세션 간 메모리
+├── processed/       # 전략, 실험, 논제 JSON
 ├── raw/             # 원시 데이터
-└── runs/            # 실행별 아티팩트 (events.json + 에이전트별 서브디렉토리)
+└── runs/            # 실행별 아티팩트
 ```
 
-## Tech Stack
+## 기술 스택
 
-- **Runtime** — TypeScript 5.7, Node.js (ESM)
-- **Agent Framework** — [@mariozechner/pi-coding-agent](https://www.npmjs.com/package/@mariozechner/pi-coding-agent) ^0.60.0
-- **Schema Validation** — [@sinclair/typebox](https://github.com/sinclairzx81/typebox) ^0.34.48
-- **Linter/Formatter** — Biome 2.4.7
-- **Test Runner** — Vitest ^4.1.0
-- **TS Executor** — tsx ^4.19.0
+- TypeScript 5.7
+- Node.js (ESM)
+- `@mariozechner/pi-coding-agent` ^0.60.0
+- `@sinclair/typebox` ^0.34.48
+- Biome 2.4.7
+- Vitest ^4.1.0
+- tsx ^4.19.0
