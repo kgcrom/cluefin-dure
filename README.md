@@ -139,7 +139,8 @@ npm run chat
 에이전트는 파일 기반 메모리를 사용해 세션 간 정보를 축적합니다.
 
 - 저장 위치: `data/memory/*.md`, `data/memory/MEMORY.md`
-- 자동 주입: `loadPrompt()`가 시스템 프롬프트에 메모리 컨텍스트를 포함
+- 자동 주입: 공통 프롬프트 로더가 shared SOUL, 역할 프롬프트, 메모리 지침, 메모리 컨텍스트를 순서대로 조합
+- shared SOUL 위치: `research/prompts/SOUL.md`
 
 ### 접근 권한
 
@@ -162,13 +163,24 @@ src/
 ├── config.ts        # 모델 설정
 └── main.ts          # CLI 라우터
 research/
-└── prompts/         # 에이전트 시스템 프롬프트
+└── prompts/         # shared SOUL + 에이전트 시스템 프롬프트
 data/
 ├── memory/          # 세션 간 메모리
 ├── processed/       # 전략, 실험, 논제 JSON
 ├── raw/             # 원시 데이터
 └── runs/            # 실행별 아티팩트
 ```
+
+## 프롬프트 구성
+
+모든 에이전트와 대화형 router는 공통 프롬프트 조합 규칙을 사용합니다.
+
+1. `research/prompts/SOUL.md`의 Dure 정체성
+2. 역할별 프롬프트 (`router.md`, `fundamental.md` 등)
+3. 메모리 지침 (`_memory_instructions.md`, 메모리 사용 시)
+4. 메모리 컨텍스트 (`data/memory/MEMORY.md` 기반, 메모리 사용 시)
+
+이 구조 덕분에 Dure의 공통적인 리서치 태도는 유지하면서도, 각 에이전트는 기존 역할과 출력 스키마를 그대로 보존합니다.
 
 ## 기술 스택
 

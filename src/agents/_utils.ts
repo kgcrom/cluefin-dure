@@ -1,26 +1,59 @@
-import type { AgentSession } from '@mariozechner/pi-coding-agent';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import type { AgentSession } from '@mariozechner/pi-coding-agent';
 import { MemoryStore } from '../memory/memoryStore.js';
 
 const PROMPTS_DIR = path.resolve('research/prompts');
+const SOUL_PROMPT_FILE = 'SOUL.md';
+const MEMORY_INSTRUCTIONS_FILE = '_memory_instructions.md';
 
-export async function loadPrompt(name: string): Promise<string> {
-  const basePrompt = await readFile(path.join(PROMPTS_DIR, `${name}.md`), 'utf-8');
-  const store = new MemoryStore();
-  const memoryContext = await store.getMemoryContext();
-  if (!memoryContext) return basePrompt;
+type PromptName =
+  | 'router'
+  | 'universe'
+  | 'fundamental'
+  | 'news'
+  | 'strategy'
+  | 'backtest'
+  | 'critic'
+  | 'scenario';
 
-  let instructions: string;
-  try {
-    instructions = await readFile(path.join(PROMPTS_DIR, '_memory_instructions.md'), 'utf-8');
-  } catch {
-    instructions = '';
+export interface LoadPromptOptions {
+  includeMemory?: boolean;
+  memoryStore?: MemoryStore;
+}
+
+export async function loadPrompt(
+  name: PromptName,
+  options: LoadPromptOptions = {},
+): Promise<string> {
+  const { includeMemory = name !== 'router', memoryStore = new MemoryStore() } = options;
+  const sections = [await readPromptFile(SOUL_PROMPT_FILE), await readPromptFile(`${name}.md`)];
+
+  if (!includeMemory) {
+    return sections.join('\n\n');
   }
 
-  return instructions
-    ? `${basePrompt}\n\n${instructions}\n\n${memoryContext}`
-    : `${basePrompt}\n\n${memoryContext}`;
+  const memoryContext = await memoryStore.getMemoryContext();
+  if (!memoryContext) {
+    return sections.join('\n\n');
+  }
+
+  const instructions = await readPromptFile(MEMORY_INSTRUCTIONS_FILE, true);
+  if (instructions) {
+    sections.push(instructions);
+  }
+  sections.push(memoryContext);
+
+  return sections.join('\n\n');
+}
+
+async function readPromptFile(fileName: string, optional = false): Promise<string> {
+  try {
+    return await readFile(path.join(PROMPTS_DIR, fileName), 'utf-8');
+  } catch (error) {
+    if (optional) return '';
+    throw error;
+  }
 }
 
 export function buildSessionLabel(agentName: string, context: string): string {

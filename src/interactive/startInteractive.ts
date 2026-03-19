@@ -1,6 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   AuthStorage,
   createAgentSession,
@@ -10,20 +7,14 @@ import {
   ModelRegistry,
   SessionManager,
 } from '@mariozechner/pi-coding-agent';
+import { loadPrompt } from '../agents/_utils.js';
 import { getAgentModel } from '../config.js';
 import { muteStdout } from '../runtime/log.js';
 import { workflowTools } from '../tools/workflowTools.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-function loadRouterPrompt(): string {
-  const promptPath = resolve(__dirname, '../../research/prompts/router.md');
-  return readFileSync(promptPath, 'utf-8');
-}
-
 export async function startInteractive(): Promise<void> {
   muteStdout();
-  const systemPrompt = loadRouterPrompt();
+  const systemPrompt = await loadPrompt('router', { includeMemory: false });
   const cwd = process.cwd();
 
   const agentDir = getAgentDir();
