@@ -72,7 +72,11 @@ ${bodyHtml}
 }
 
 export function esc(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 export function badge(text: string, variant?: string): string {
@@ -82,15 +86,16 @@ export function badge(text: string, variant?: string): string {
 
 export function table(headers: string[], rows: string[][]): string {
   const ths = headers.map((h) => `<th>${esc(h)}</th>`).join('');
-  const trs = rows
-    .map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`)
-    .join('\n');
+  const trs = rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('\n');
   return `<table><thead><tr>${ths}</tr></thead><tbody>\n${trs}\n</tbody></table>`;
 }
 
 export function metricCards(items: { label: string; value: string }[]): string {
   const cards = items
-    .map((m) => `<div class="metric-card"><div class="label">${esc(m.label)}</div><div class="value">${esc(m.value)}</div></div>`)
+    .map(
+      (m) =>
+        `<div class="metric-card"><div class="label">${esc(m.label)}</div><div class="value">${esc(m.value)}</div></div>`,
+    )
     .join('\n');
   return `<div class="metric-grid">${cards}</div>`;
 }

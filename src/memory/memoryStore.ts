@@ -1,4 +1,4 @@
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const INDEX_FILE = 'MEMORY.md';
@@ -33,9 +33,7 @@ export class MemoryStore {
   async listTopics(): Promise<string[]> {
     try {
       const files = await readdir(this.baseDir);
-      return files
-        .filter((f) => f.endsWith('.md') && f !== INDEX_FILE)
-        .map((f) => f.slice(0, -3));
+      return files.filter((f) => f.endsWith('.md') && f !== INDEX_FILE).map((f) => f.slice(0, -3));
     } catch {
       return [];
     }

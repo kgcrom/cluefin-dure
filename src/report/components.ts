@@ -2,8 +2,21 @@
 
 import type { FundamentalAnalysis, NewsAnalysis } from '../schemas/analysis.js';
 import type { BacktestResult, CriticReport, StrategyDefinition } from '../schemas/backtest.js';
-import type { ScenarioDefinition, ScenarioProjection, ScenarioReport } from '../schemas/scenario.js';
-import { badge, bulletList, detailsBlock, esc, metricCards, pct, section, table } from './layout.js';
+import type {
+  ScenarioDefinition,
+  ScenarioProjection,
+  ScenarioReport,
+} from '../schemas/scenario.js';
+import {
+  badge,
+  bulletList,
+  detailsBlock,
+  esc,
+  metricCards,
+  pct,
+  section,
+  table,
+} from './layout.js';
 
 // ── Fundamentals ──
 
@@ -62,12 +75,8 @@ export function renderNewsAnalyses(newsAnalyses: NewsAnalysis[]): string {
         `<h3>${esc(n.ticker)}</h3>`,
         `<p><strong>센티먼트:</strong> ${esc(n.sentimentSummary)}</p>`,
         timelineHtml,
-        n.catalysts.length > 0
-          ? `<p><strong>촉매:</strong></p>${bulletList(n.catalysts)}`
-          : '',
-        n.risks.length > 0
-          ? `<p><strong>리스크:</strong></p>${bulletList(n.risks)}`
-          : '',
+        n.catalysts.length > 0 ? `<p><strong>촉매:</strong></p>${bulletList(n.catalysts)}` : '',
+        n.risks.length > 0 ? `<p><strong>리스크:</strong></p>${bulletList(n.risks)}` : '',
       ].join('\n');
     })
     .join('\n');
@@ -79,9 +88,7 @@ export function renderNewsAnalyses(newsAnalyses: NewsAnalysis[]): string {
 
 export function renderCriticReport(critic: CriticReport): string {
   const verdictBadge = badge(critic.verdict, critic.verdict);
-  const cards = metricCards([
-    { label: '판정', value: critic.verdict.toUpperCase() },
-  ]);
+  const cards = metricCards([{ label: '판정', value: critic.verdict.toUpperCase() }]);
 
   const content = [
     cards,
@@ -135,10 +142,7 @@ export function renderScenarioProjections(projections: ScenarioProjection[]): st
     badge(p.newsContext.expectedSentiment, p.newsContext.expectedSentiment),
   ]);
 
-  const projTable = table(
-    ['티커', '영향 방향', '크기', '근거', '예상 센티먼트'],
-    rows,
-  );
+  const projTable = table(['티커', '영향 방향', '크기', '근거', '예상 센티먼트'], rows);
 
   const detailContent = projections
     .map((p) => {
@@ -229,10 +233,7 @@ export function renderTradeLog(tradeLog: BacktestResult['tradeLog']): string {
   const tradeTable = table(['날짜', '티커', '액션', '가격', '수량'], rows);
 
   if (tradeLog.length > TRADE_LOG_FOLD_THRESHOLD) {
-    return section(
-      '거래 내역',
-      detailsBlock(`거래 ${tradeLog.length}건 보기`, tradeTable),
-    );
+    return section('거래 내역', detailsBlock(`거래 ${tradeLog.length}건 보기`, tradeTable));
   }
 
   return section('거래 내역', tradeTable);

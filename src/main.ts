@@ -3,8 +3,8 @@ import { generateReport, printTerminalSummary } from './report/generateReport.js
 import { closeRpcClient } from './rpc/rpc-client.js';
 import { runBacktestLoop } from './workflow/runBacktestLoop.js';
 import { runEquityAnalysis } from './workflow/runEquityAnalysis.js';
-import { runScreening } from './workflow/runScreening.js';
 import { runScenarioAnalysis } from './workflow/runScenarioAnalysis.js';
+import { runScreening } from './workflow/runScreening.js';
 import { runStrategyResearch } from './workflow/runStrategyResearch.js';
 
 const [command, ...args] = process.argv.slice(2);
@@ -118,7 +118,9 @@ async function main() {
       console.log('  npx tsx src/main.ts equity AAPL');
       console.log('  npx tsx src/main.ts screen KR value');
       console.log('  npx tsx src/main.ts strategy "저PER 고ROE 퀄리티 밸류"');
-      console.log('  npx tsx src/main.ts scenario "연준이 50bp 긴급 인하하면 반도체 섹터 어떻게 되나?"');
+      console.log(
+        '  npx tsx src/main.ts scenario "연준이 50bp 긴급 인하하면 반도체 섹터 어떻게 되나?"',
+      );
   }
 }
 

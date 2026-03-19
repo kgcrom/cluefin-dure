@@ -42,11 +42,12 @@ export class EventRecorder {
         event.assistantMessageEvent.type === 'text_delta'
       ) {
         buffer += event.assistantMessageEvent.delta;
-        let nlIdx: number;
-        while ((nlIdx = buffer.indexOf('\n')) !== -1) {
+        let nlIdx = buffer.indexOf('\n');
+        while (nlIdx !== -1) {
           const line = buffer.slice(0, nlIdx);
           process.stderr.write(`[${sessionLabel}] ${line}\n`);
           buffer = buffer.slice(nlIdx + 1);
+          nlIdx = buffer.indexOf('\n');
         }
       }
 
@@ -60,7 +61,9 @@ export class EventRecorder {
           const stopReason = msg.stopReason as string | undefined;
           const errorMessage = msg.errorMessage as string | undefined;
           if ((stopReason === 'error' || stopReason === 'aborted') && errorMessage) {
-            process.stderr.write(`[${sessionLabel}] ⚠ provider error (${stopReason}): ${errorMessage}\n`);
+            process.stderr.write(
+              `[${sessionLabel}] ⚠ provider error (${stopReason}): ${errorMessage}\n`,
+            );
           }
         }
         emit(`[${sessionLabel}] --- turn end ---`);

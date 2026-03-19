@@ -112,9 +112,7 @@ const scenarioParams = Type.Object({
   scenario: Type.String({
     description: '분석할 시나리오 (자연어). 예: "연준이 50bp 긴급 인하하면?"',
   }),
-  tickers: Type.Optional(
-    Type.Array(Type.String(), { description: '분석 대상 종목 코드 목록' }),
-  ),
+  tickers: Type.Optional(Type.Array(Type.String(), { description: '분석 대상 종목 코드 목록' })),
 });
 
 export const scenarioAnalysisTool: ToolDefinition<typeof scenarioParams> = {

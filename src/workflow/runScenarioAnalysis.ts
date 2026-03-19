@@ -61,13 +61,7 @@ export async function runScenarioAnalysis(
             recorder,
             onUpdate,
           ),
-          runNewsAgent(
-            runId,
-            { ticker, scenarioContext: definition },
-            store,
-            recorder,
-            onUpdate,
-          ),
+          runNewsAgent(runId, { ticker, scenarioContext: definition }, store, recorder, onUpdate),
         ]);
         return { ticker, fundamental, news };
       }),
@@ -76,8 +70,13 @@ export async function runScenarioAnalysis(
 
   const succeeded = settledResults
     .filter(
-      (r): r is PromiseFulfilledResult<{ ticker: string; fundamental: FundamentalAnalysis; news: NewsAnalysis }> =>
-        r.status === 'fulfilled',
+      (
+        r,
+      ): r is PromiseFulfilledResult<{
+        ticker: string;
+        fundamental: FundamentalAnalysis;
+        news: NewsAnalysis;
+      }> => r.status === 'fulfilled',
     )
     .map((r) => r.value);
 

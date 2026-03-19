@@ -34,36 +34,46 @@ function buildHtml(input: WorkflowResult): string {
   switch (input.type) {
     case 'scenario': {
       const r = input.result;
-      return wrapLayout('시나리오 분석', r.runId, [
-        renderScenarioDefinition(r.definition),
-        renderScenarioProjections(r.report.projections),
-        renderFundamentals(r.fundamentals),
-        renderNewsAnalyses(r.newsAnalyses),
-        renderAssessment(r.report),
-      ].join(''));
+      return wrapLayout(
+        '시나리오 분석',
+        r.runId,
+        [
+          renderScenarioDefinition(r.definition),
+          renderScenarioProjections(r.report.projections),
+          renderFundamentals(r.fundamentals),
+          renderNewsAnalyses(r.newsAnalyses),
+          renderAssessment(r.report),
+        ].join(''),
+      );
     }
     case 'equity': {
       const r = input.result;
-      return wrapLayout('종목 분석', r.runId, [
-        renderFundamentals(r.fundamentals),
-        renderNewsAnalyses(r.newsAnalyses),
-        renderCriticReport(r.criticReport),
-      ].join(''));
+      return wrapLayout(
+        '종목 분석',
+        r.runId,
+        [
+          renderFundamentals(r.fundamentals),
+          renderNewsAnalyses(r.newsAnalyses),
+          renderCriticReport(r.criticReport),
+        ].join(''),
+      );
     }
     case 'screen': {
       const r = input.result;
-      return wrapLayout('종목 스크리닝', r.runId, [
-        renderFundamentals(r.rankings),
-      ].join(''));
+      return wrapLayout('종목 스크리닝', r.runId, [renderFundamentals(r.rankings)].join(''));
     }
     case 'strategy': {
       const r = input.result;
-      return wrapLayout('전략 리서치', r.runId, [
-        renderStrategy(r.strategy),
-        renderBacktestKPIs(r.backtestResult),
-        renderTradeLog(r.backtestResult.tradeLog),
-        renderCriticReport(r.criticReport),
-      ].join(''));
+      return wrapLayout(
+        '전략 리서치',
+        r.runId,
+        [
+          renderStrategy(r.strategy),
+          renderBacktestKPIs(r.backtestResult),
+          renderTradeLog(r.backtestResult.tradeLog),
+          renderCriticReport(r.criticReport),
+        ].join(''),
+      );
     }
     case 'backtest': {
       const r = input.result;
@@ -73,10 +83,11 @@ function buildHtml(input: WorkflowResult): string {
           `<p><strong>Iteration ${i + 1} Verdict:</strong> ${iter.criticVerdict}</p>`,
         ].join('');
       });
-      return wrapLayout('백테스트 루프', r.runId, [
-        renderStrategy(r.finalStrategy),
-        ...iterSections,
-      ].join(''));
+      return wrapLayout(
+        '백테스트 루프',
+        r.runId,
+        [renderStrategy(r.finalStrategy), ...iterSections].join(''),
+      );
     }
   }
 }

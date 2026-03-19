@@ -14,7 +14,8 @@ const readParams = Type.Object({
 const memoryReadTool: ToolDefinition<typeof readParams> = {
   name: 'memory_read',
   label: '메모리 읽기',
-  description: '에이전트 메모리에서 토픽을 읽습니다. "index"를 지정하면 전체 목록을 확인할 수 있습니다.',
+  description:
+    '에이전트 메모리에서 토픽을 읽습니다. "index"를 지정하면 전체 목록을 확인할 수 있습니다.',
   parameters: readParams,
   async execute(_id, params: Static<typeof readParams>) {
     if (params.topic === 'index') {
@@ -36,7 +37,8 @@ const writeParams = Type.Object({
 const memoryWriteTool: ToolDefinition<typeof writeParams> = {
   name: 'memory_write',
   label: '메모리 쓰기',
-  description: '에이전트 메모리 토픽에 새 엔트리를 추가합니다. 반복 패턴, 교훈, 시장 관찰을 저장하세요.',
+  description:
+    '에이전트 메모리 토픽에 새 엔트리를 추가합니다. 반복 패턴, 교훈, 시장 관찰을 저장하세요.',
   parameters: writeParams,
   async execute(_id, params: Static<typeof writeParams>) {
     await store.appendToTopic(params.topic, params.content);
@@ -60,9 +62,7 @@ const memorySearchTool: ToolDefinition<typeof searchParams> = {
     if (results.length === 0) {
       return toolResult(`'${params.query}'에 대한 메모리 없음`);
     }
-    const text = results
-      .map((r) => `## ${r.topic}\n${r.matches.join('\n\n')}`)
-      .join('\n\n---\n\n');
+    const text = results.map((r) => `## ${r.topic}\n${r.matches.join('\n\n')}`).join('\n\n---\n\n');
     return toolResult(text);
   },
 };
