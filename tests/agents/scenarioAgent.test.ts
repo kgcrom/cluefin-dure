@@ -20,7 +20,7 @@ describe('ScenarioDefinition 스키마 검증', () => {
           direction: 'down' as const,
         },
       ],
-      affectedTickers: ['005930', 'AAPL'],
+      affectedTickers: ['005930', '000660'],
       timeHorizon: '3개월',
       assumptions: ['인플레이션이 안정적이라고 가정'],
     };

@@ -14,7 +14,7 @@ afterEach(async () => {
 
 describe("buildSessionLabel", () => {
   it("agentName:context 포맷으로 반환", () => {
-    expect(buildSessionLabel("fundamental", "AAPL")).toBe("fundamental:AAPL");
+    expect(buildSessionLabel("fundamental", "005930")).toBe("fundamental:005930");
   });
 });
 
@@ -23,22 +23,22 @@ describe("extractJsonFromMessage", () => {
     const messages = [
       {
         role: "assistant",
-        content: '분석 결과입니다:\n```json\n{"ticker": "AAPL", "score": 85}\n```',
+        content: '분석 결과입니다:\n```json\n{"ticker": "005930", "score": 85}\n```',
       },
     ];
     const result = extractJsonFromMessage<{ ticker: string; score: number }>(messages);
-    expect(result).toEqual({ ticker: "AAPL", score: 85 });
+    expect(result).toEqual({ ticker: "005930", score: 85 });
   });
 
   it("bare JSON object 추출", () => {
     const messages = [
       {
         role: "assistant",
-        content: '결과: {"ticker": "MSFT", "score": 90}',
+        content: '결과: {"ticker": "000660", "score": 90}',
       },
     ];
     const result = extractJsonFromMessage<{ ticker: string; score: number }>(messages);
-    expect(result).toEqual({ ticker: "MSFT", score: 90 });
+    expect(result).toEqual({ ticker: "000660", score: 90 });
   });
 
   it("JSON이 없으면 에러 발생", () => {

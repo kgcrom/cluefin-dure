@@ -41,7 +41,7 @@ export async function runStrategyResearch(
   );
 
   // 2. 백테스트
-  const tickers = options.tickers ?? ['AAPL', 'MSFT', '005930'];
+  const tickers = options.tickers ?? ['005930', '000660', '035420'];
   emit('[run] 백테스트 실행 중...');
   const backtestResult = await runBacktestAgent(
     runId,

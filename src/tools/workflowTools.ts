@@ -5,8 +5,8 @@ import { toolResult } from './_helpers.js';
 // ── run_equity_analysis ──
 
 const equityParams = Type.Object({
-  ticker: Type.Optional(Type.String({ description: '종목 코드 (예: AAPL, 005930)' })),
-  market: Type.Optional(Type.String({ description: '시장 (예: US, KR)' })),
+  ticker: Type.Optional(Type.String({ description: '종목 코드 (예: 005930, 000660)' })),
+  market: Type.Optional(Type.String({ description: '시장 (예: KR, KOSPI)' })),
   style: Type.Optional(Type.String({ description: '투자 스타일 (예: value, growth, quality)' })),
   filterRules: Type.Optional(Type.String({ description: '추가 필터 규칙' })),
 });
@@ -27,7 +27,7 @@ export const equityAnalysisTool: ToolDefinition<typeof equityParams> = {
 // ── run_screening ──
 
 const screeningParams = Type.Object({
-  market: Type.Optional(Type.String({ description: '시장 (예: US, KR)' })),
+  market: Type.Optional(Type.String({ description: '시장 (예: KR, KOSPI)' })),
   style: Type.Optional(Type.String({ description: '투자 스타일 (예: value, growth)' })),
   filterRules: Type.Optional(Type.String({ description: '스크리닝 필터 규칙' })),
   topN: Type.Optional(Type.Number({ description: '상위 N개 종목 반환 (기본: 10)' })),
@@ -97,7 +97,7 @@ export const backtestLoopTool: ToolDefinition<typeof backtestLoopParams> = {
     const result = await runBacktestLoop(
       {
         strategy: stored.strategy,
-        tickers: ['AAPL', 'MSFT', '005930'],
+        tickers: ['005930', '000660', '035420'],
         maxIterations: 3,
       },
       onUpdate,

@@ -21,7 +21,7 @@ async function main() {
       const ticker = args[0];
       if (!ticker) {
         console.error('사용법: equity <ticker>');
-        console.error('예시: equity AAPL');
+        console.error('예시: equity 005930');
         process.exit(1);
       }
       const result = await runEquityAnalysis({ ticker });
@@ -79,7 +79,7 @@ async function main() {
       }
       const result = await runBacktestLoop({
         strategy: stored.strategy,
-        tickers: ['AAPL', 'MSFT', '005930'],
+        tickers: ['005930', '000660', '035420'],
         maxIterations: 3,
       });
       const input = { type: 'backtest' as const, result };
@@ -115,7 +115,7 @@ async function main() {
       console.log('  scenario <시나리오>        What-if 시나리오 분석');
       console.log('\n예시:');
       console.log('  npx tsx src/main.ts chat');
-      console.log('  npx tsx src/main.ts equity AAPL');
+      console.log('  npx tsx src/main.ts equity 005930');
       console.log('  npx tsx src/main.ts screen KR value');
       console.log('  npx tsx src/main.ts strategy "저PER 고ROE 퀄리티 밸류"');
       console.log(

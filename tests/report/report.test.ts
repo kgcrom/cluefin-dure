@@ -56,17 +56,17 @@ describe('layout', () => {
 describe('components', () => {
   it('renderFundamentals: 티커명과 주요 메트릭 포함', () => {
     const html = renderFundamentals(fundamentals);
-    expect(html).toContain('AAPL');
-    expect(html).toContain('MSFT');
-    expect(html).toContain('28.5'); // PE
-    expect(html).toContain('47.2'); // PB
+    expect(html).toContain('005930');
+    expect(html).toContain('000660');
+    expect(html).toContain('16.4'); // PE
+    expect(html).toContain('1.3'); // PB
     expect(html).toContain('펀더멘털 분석');
   });
 
   it('renderNewsAnalyses: 이벤트 타임라인과 센티먼트 포함', () => {
     const html = renderNewsAnalyses(newsAnalyses);
-    expect(html).toContain('AAPL');
-    expect(html).toContain('Apple Vision Pro 2세대 발표');
+    expect(html).toContain('005930');
+    expect(html).toContain('삼성전자 HBM 공급 확대 기대');
     expect(html).toContain('전반적 긍정');
     expect(html).toContain('뉴스 분석');
   });
@@ -89,7 +89,7 @@ describe('components', () => {
 
   it('renderScenarioProjections: 종목별 영향 방향/크기 뱃지 포함', () => {
     const html = renderScenarioProjections(scenarioProjections);
-    expect(html).toContain('NVDA');
+    expect(html).toContain('005930');
     expect(html).toContain('badge-positive');
     expect(html).toContain('badge-high');
     expect(html).toContain('badge-bullish');
@@ -98,7 +98,7 @@ describe('components', () => {
   it('renderAssessment: 신뢰도, 평가, 리스크 포함', () => {
     const html = renderAssessment(scenarioReport);
     expect(html).toContain('badge-medium');
-    expect(html).toContain('반도체 섹터 전반적으로 긍정적');
+    expect(html).toContain('국내 반도체 섹터 전반적으로 긍정적');
     expect(html).toContain('인플레이션 재발');
   });
 
@@ -139,7 +139,7 @@ describe('components', () => {
   it('renderTradeLog: 50개 이하는 접기 없이 테이블', () => {
     const html = renderTradeLog(backtestResult.tradeLog);
     expect(html).not.toContain('<details>');
-    expect(html).toContain('AAPL');
+    expect(html).toContain('005930');
   });
 });
 
@@ -183,7 +183,7 @@ describe('generateReport', () => {
       type: 'equity',
       result: {
         runId: 'test-report-run',
-        tickers: ['AAPL'],
+        tickers: ['005930'],
         fundamentals,
         newsAnalyses,
         criticReport,

@@ -12,29 +12,29 @@ const parameters = Type.Object({
 type Params = Static<typeof parameters>;
 
 const MOCK_NEWS: Record<string, unknown[]> = {
-  AAPL: [
+  '000660': [
     {
       date: '2025-03-15',
-      headline: 'Apple, AI 기반 Siri 대규모 업데이트 발표',
-      source: 'Reuters',
+      headline: 'SK하이닉스, HBM 증설 투자 확대 검토',
+      source: '한국경제',
       sentiment: 'positive',
     },
     {
       date: '2025-03-10',
-      headline: 'iPhone 17 시리즈 사전 주문 역대 최고 기록',
-      source: 'Bloomberg',
+      headline: 'AI 서버 투자 확대에 HBM 수요 강세 지속',
+      source: '매일경제',
       sentiment: 'positive',
     },
     {
       date: '2025-03-05',
-      headline: 'EU, Apple에 대한 추가 반독점 조사 착수',
-      source: 'FT',
+      headline: '메모리 가격 단기 변동성 확대 우려',
+      source: '전자신문',
       sentiment: 'negative',
     },
     {
       date: '2025-02-28',
-      headline: 'Apple Vision Pro 2세대 개발 보도',
-      source: 'The Verge',
+      headline: '고객사 재고 조정 종료 기대 확산',
+      source: '조선일보',
       sentiment: 'neutral',
     },
   ],
@@ -53,7 +53,7 @@ const MOCK_NEWS: Record<string, unknown[]> = {
     },
     {
       date: '2025-03-08',
-      headline: '파운드리 3나노 수율 50% 돌파, TSMC와 격차 축소',
+      headline: '파운드리 3나노 수율 50% 돌파, 경쟁력 개선 기대',
       source: '매일경제',
       sentiment: 'positive',
     },
@@ -74,7 +74,7 @@ export const newsTool: ToolDefinition<typeof parameters> = {
   parameters,
   async execute(_toolCallId, params: Params) {
     const { ticker, limit } = params;
-    const key = ticker ?? Object.keys(MOCK_NEWS)[0] ?? 'AAPL';
+    const key = ticker ?? Object.keys(MOCK_NEWS)[0] ?? '005930';
     const articles = MOCK_NEWS[key];
     if (!articles) {
       return toolResult(JSON.stringify({ error: `뉴스를 찾을 수 없습니다.` }));
