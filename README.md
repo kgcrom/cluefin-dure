@@ -2,97 +2,62 @@
 
 ![Dure Logo](docs/assets/dure_logo.png)
 
-두레는 여러 AI 에이전트가 협업해 투자 리서치를 수행하는 멀티 에이전트 시스템입니다.
-종목 분석, 스크리닝, 전략 설계, 백테스트, 시나리오 분석을 하나의 CLI와 대화형 인터페이스로 실행할 수 있습니다.
+두레는 여러 AI 에이전트를 조합해 투자 리서치를 실행하는 CLI 워크벤치입니다.
+종목 분석, 스크리닝, 전략 리서치, 백테스트, 시나리오 분석을 하나의 진입점에서 다룰 수 있습니다.
 
-## Dure로 할 수 있는 일
+## Quick Navigation
+
+- [What It Does](#what-it-does)
+- [Quick Start](#quick-start)
+- [Examples](#examples)
+- [Outputs](#outputs)
+- [Configuration Summary](#configuration-summary)
+- [More Docs](#more-docs)
+- [Development](#development)
+
+## What It Does
 
 처음 쓰는 사용자라면 Dure를 "투자 리서치용 AI 워크벤치"로 이해하면 됩니다.
-질문을 자연어로 던지면, Dure가 작업 종류에 맞는 에이전트를 조합해 분석 결과를 정리합니다.
+자연어 요청이나 CLI 명령을 입력하면, 작업 종류에 맞는 에이전트 조합이 실행되고 결과가 리포트로 정리됩니다.
 
-- 기업 분석: 특정 기업의 실적, 밸류에이션, 재무 안정성, 최근 공시/뉴스를 요약
-- 시나리오 분석: 금리 인하, 경기 둔화, 업황 회복 같은 거시 이벤트가 섹터와 종목에 주는 영향을 정리
-- 스크리닝: 조건에 맞는 종목군을 추려서 우선순위를 제시
-- 전략 리서치: 투자 아이디어를 전략으로 만들고 백테스트와 비평까지 연결
-- 대화형 탐색: 채팅처럼 질문을 이어가며 분석 범위를 좁히거나 확장
+- 종목 분석: 특정 종목의 펀더멘털, 뉴스, 비평을 함께 정리합니다.
+- 스크리닝: 시장과 스타일 기준으로 종목군을 추리고 상위 후보를 보여줍니다.
+- 전략 리서치: 전략 정의, 백테스트, critic 비평을 하나의 흐름으로 묶습니다.
+- 백테스트 루프: 저장된 전략을 반복 개선하면서 성과를 비교합니다.
+- 시나리오 분석: 거시 이벤트나 가정이 종목과 섹터에 주는 영향을 요약합니다.
+- 대화형 탐색: 채팅처럼 질문을 이어가며 분석 범위를 좁히거나 확장할 수 있습니다.
 
-## 처음 써보는 사용자용 예시
+## Quick Start
 
-아래 예시는 모두 `openai-codex` 프로바이더로 실행한 결과이며, 생성 시점은 2026년 3월 19일 저녁 기준입니다.
-
-### 1. 시나리오 분석
-
-"어떤 이벤트가 발생하면 특정 섹터가 어떻게 반응할까?"를 보고 싶을 때 사용합니다.
+### 1. Install
 
 ```bash
-DURE_PROVIDER=openai-codex npm run scenario -- "연준이 50bp 긴급 인하하면 반도체 섹터 어떻게 되나?"
-```
+git clone https://github.com/kgcrom/cluefin-dure
+git clone https://github.com/kgcrom/cluefin
 
-이 명령을 실행하면 Dure는 시나리오를 정의하고, 관련 변수와 종목별 영향을 정리한 HTML 리포트를 생성합니다.
-렌더링된 예시 결과는 [GitHub Pages에서 바로 보기](https://kgcrom.github.io/cluefin-dure/examples/scenario_report.html)로 확인할 수 있습니다.
-원본 HTML 파일은 [docs/examples/scenario_report.html](docs/examples/scenario_report.html)에서 확인할 수 있습니다.
-
-이 예시에서 확인할 수 있는 포인트는 다음과 같습니다.
-
-- 시나리오 정의: 금리 인하가 어떤 경로로 반도체 섹터에 영향을 줄지 설명
-- 핵심 변수 정리: 정책금리, 장기금리, 환율, 주요 종목 가격 같은 변수의 방향성 제시
-- 종목별 영향 비교: SK하이닉스, 삼성전자 등 개별 종목의 수혜 강도와 리스크 비교
-- 종합 평가: "단기 긍정, 중기 조건부"처럼 실행 가능한 한 줄 결론 제시
-
-즉, 막연한 거시 질문을 바로 투자 리서치 문서 형태로 바꿔주는 기능입니다.
-
-### 2. 대화형 기업 분석
-
-"한 회사가 지금 어떤 상태인지 빠르게 파악하고 싶다"면 대화형 모드를 쓰는 것이 가장 쉽습니다.
-
-```bash
-DURE_PROVIDER=openai-codex npm run chat
-```
-
-프롬프트가 보이면 아래처럼 입력합니다.
-
-```text
-삼성전자 기업분석해주세요.
-```
-
-그러면 Dure는 삼성전자의 핵심 결론, 주요 재무지표, 실적 흐름, 긍정 포인트, 리스크 요인을 Markdown 형태로 정리합니다.
-예시 결과는 [docs/examples/chat_result.md](docs/examples/chat_result.md)에서 확인할 수 있습니다.
-
-이 예시를 보면 Dure는 다음처럼 응답합니다.
-
-- 핵심 결론 먼저 제시: "실적은 회복세지만 밸류에이션 부담이 있다"
-- 숫자 정리: 매출, 영업이익, ROE, PER, PBR 같은 핵심 지표를 한 번에 제시
-- 투자 판단 포인트 구분: 긍정 요인과 리스크 요인을 나눠서 설명
-- 다음 질문 유도: 비교 분석, 시나리오 분석, 투자 전략안으로 자연스럽게 확장 가능
-
-즉, 사용자는 복잡한 명령을 외우지 않아도 자연어 질문만으로 기업 분석을 시작할 수 있습니다.
-
-## 핵심 기능
-
-- 종목 분석: 펀더멘털, 뉴스, 비평 결과를 종합
-- 스크리닝: 유니버스 구성 후 상위 종목 랭킹 생성
-- 전략 리서치: 전략 정의, 백테스트, 비평까지 연결
-- 백테스트 루프: 전략을 반복 개선하며 성과 비교
-- 시나리오 분석: what-if 질문에 대한 종목별 영향 평가
-
-## 빠른 시작
-
-### 요구 사항
-
-- Node.js 18+
-- npm
-
-### 설치
-
-```bash
-git clone <repository-url>
 cd cluefin-dure
 npm install
+cp .env.example .env
 ```
 
-### 실행
+두 저장소가 모두 필요합니다.
+`cluefin-dure`는 CLI 오케스트레이션을 담당하고, `cluefin`은 `uv run -m cluefin_rpc`로 호출되는 RPC 백엔드입니다.
+
+`.env`에는 데이터 소스 키와 `CLUEFIN_RPC_CWD`가 필요합니다.
+예를 들어 `cluefin`을 같은 상위 디렉터리에 clone했다면 아래처럼 설정합니다.
 
 ```bash
+CLUEFIN_RPC_CWD=../cluefin
+```
+
+필수 항목과 모델 설정 방법은 [docs/configuration.md](docs/configuration.md)에서 정리합니다.
+
+### 2. Run
+
+```bash
+# 대화형 모드
+npm run chat
+
 # 종목 분석
 npm run equity -- 005930
 
@@ -102,75 +67,114 @@ npm run screen -- KR value
 # 전략 리서치
 npm run strategy -- "quality dividend growth"
 
-# 백테스트 반복 개선
+# 저장된 전략 백테스트
 npm run backtest -- <strategyId>
 
 # 시나리오 분석
 npm run scenario -- "연준이 50bp 긴급 인하하면 반도체 섹터 어떻게 되나?"
-
-# 대화형 모드
-npm run chat
 ```
 
-> `tsx`가 인수를 직접 파싱하므로 `--` 구분자가 필요합니다.
+> `npm run <script>` 뒤 인수를 넘길 때는 `--` 구분자가 필요합니다.
 
-## 출력물
+## Examples
+
+아래 예시는 저장소에 포함된 실제 산출물 기준으로 정리했습니다.
+리포트 예시는 모두 `docs/examples/` 아래에서 바로 확인할 수 있습니다.
+
+### 1. Chat
+
+언제 쓰나: 한 회사 상태를 빠르게 요약받고 다음 질문으로 이어가고 싶을 때
+
+```bash
+DURE_PROVIDER=openai-codex npm run chat
+```
+
+```text
+삼성전자 기업분석해주세요.
+```
+
+결과 파일: [docs/examples/chat_result.md](https://kgcrom.github.io/cluefin-dure/examples/chat_result.md)
+
+이 예시에서 볼 포인트:
+
+- 핵심 결론을 먼저 제시하고, 뒤에서 숫자와 근거를 붙입니다.
+- 매출, 영업이익, ROE, PER, PBR, 부채비율 같은 기본 지표를 한 번에 보여줍니다.
+- 긍정 포인트와 리스크 요인을 분리해 후속 질문을 이어가기 쉽습니다.
+- 마지막에 비교 분석, 시나리오, 전략안 같은 다음 액션을 제안합니다.
+
+### 2. Scenario
+
+언제 쓰나: 특정 거시 이벤트가 섹터와 종목에 어떤 경로로 영향을 줄지 보고 싶을 때
+
+```bash
+DURE_PROVIDER=openai-codex npm run scenario -- "연준이 50bp 긴급 인하하면 반도체 섹터 어떻게 되나?"
+```
+
+결과 파일: [docs/examples/scenario_report.html](https://kgcrom.github.io/cluefin-dure/examples/scenario_report.html)
+
+이 예시에서 볼 포인트:
+
+- 시나리오 설명, 시간 범위, 대상 종목, 핵심 변수 방향을 한 화면에서 정리합니다.
+- SK하이닉스, 삼성전자 등 종목별 영향과 촉매, 리스크를 비교합니다.
+- "단기 긍정, 중기 조건부"처럼 실행 가능한 종합 평가를 제공합니다.
+- 마지막에 확인해야 할 후속 데이터와 체크포인트를 권고사항으로 남깁니다.
+
+### 3. Screen
+
+언제 쓰나: 시장과 스타일을 넣고 우선 검토할 종목 후보를 빠르게 추리고 싶을 때
+
+```bash
+DURE_PROVIDER=openai-codex npm run screen -- KR value
+```
+
+결과 파일: [docs/examples/screen_report.html](https://kgcrom.github.io/cluefin-dure/examples/screen_report.html)
+
+이 예시에서 볼 포인트:
+
+- 상위 랭킹 종목의 매출, 이익률, PE, PB, ROE, D/E를 표로 먼저 보여줍니다.
+- 각 종목마다 성장 트렌드, 분기 변화, 레드 플래그, 메모가 이어져 1차 검토에 적합합니다.
+- 최근 공시와 자본정책 이벤트까지 함께 언급해 숫자만 보는 스크리너보다 맥락이 풍부합니다.
+- 단순 필터 결과가 아니라 "왜 지금 봐야 하는 후보인지"를 서술형으로 정리합니다.
+
+### 4. Strategy
+
+언제 쓰나: 투자 아이디어를 전략 규칙으로 바꾸고 백테스트와 비평까지 한 번에 보고 싶을 때
+
+```bash
+DURE_PROVIDER=openai-codex npm run strategy -- "quality dividend growth"
+```
+
+결과 파일: [docs/examples/strategy_report.html](https://kgcrom.github.io/cluefin-dure/examples/strategy_report.html)
+
+이 예시에서 볼 포인트:
+
+- 전략 가설, 진입 규칙, 청산 규칙, 포지션 사이징, 리밸런싱 주기를 명시합니다.
+- CAGR, MDD, Sharpe, Turnover 같은 백테스트 핵심 지표를 카드 형태로 요약합니다.
+- 거래 내역과 함께 데이터 한계, 유니버스 제약, 계산 방식 같은 주의사항도 드러냅니다.
+- Critic 리포트가 과적합, 데이터 누수, 생존 편향, 체제 의존성을 따로 지적합니다.
+
+## Outputs
 
 각 실행은 `data/runs/<runId>/` 아래에 결과를 저장합니다.
 
-- `report.html`: 결과를 읽기 쉬운 HTML 리포트로 정리
-- `events.json`: 실행 이벤트 기록
-- 에이전트별 서브디렉토리: 실행 중 생성된 세부 아티팩트
+- `report.html`: 사람이 읽기 쉬운 HTML 리포트
+- `events.json`: 실행 중 이벤트 로그
+- `<agent>/artifact.json`: 에이전트별 중간 산출물
 
-CLI 실행 시 터미널 요약이 출력되고, macOS에서는 `report.html`이 자동으로 열립니다.
+CLI를 실행하면 터미널 요약이 함께 출력되고, macOS에서는 생성된 `report.html`이 자동으로 열립니다.
 
-## 아키텍처
+## Configuration Summary
 
-### 에이전트
+기본 모델 프리셋은 `google-antigravity`입니다.
+전체 프리셋은 `DURE_PROVIDER`, 개별 에이전트 오버라이드는 `DURE_MODEL_{AGENT}`로 제어합니다.
 
-| 에이전트 | 역할 | 기본 모델 |
-|---------|------|-----------|
-| Universe | 투자 유니버스 구성 | `gemini-3-flash` |
-| Fundamental | 재무제표 및 밸류에이션 분석 | `claude-sonnet-4-6` |
-| News | 뉴스 감성 및 이벤트 분석 | `gemini-3-flash` |
-| Strategy | 투자 전략 설계 | `claude-sonnet-4-6` |
-| Backtest | 전략 성과 검증 | `claude-sonnet-4-6` |
-| Critic | 과적합, 데이터 누수, 편향 검토 | `claude-opus-4-6-thinking` |
-| Scenario | 시나리오 영향도 분석 | `claude-sonnet-4-6` |
-| Router | 자연어 요청 라우팅 | `gemini-3-flash` |
+우선순위:
 
-### 워크플로우
+```text
+DURE_MODEL_{AGENT} > DURE_PROVIDER > 코드 기본값
+```
 
-- Equity Analysis: 유니버스 → 펀더멘털 + 뉴스 → 비평
-- Screening: 유니버스 → 펀더멘털 랭킹
-- Strategy Research: 전략 설계 → 백테스트 → 비평
-- Backtest Loop: 백테스트 → 비평 → 전략 수정 반복
-- Scenario Analysis: 시나리오 정의 → 영향 분석 → 종합 평가
-
-## 설정
-
-기본 프로바이더는 `google-antigravity`입니다.
-전체 프리셋은 `DURE_PROVIDER`, 개별 에이전트는 `DURE_MODEL_{AGENT}`로 덮어쓸 수 있습니다.
-
-우선순위는 다음과 같습니다.
-
-`DURE_MODEL_{AGENT}` > `DURE_PROVIDER` > 코드 기본값
-
-### 환경 변수
-
-| 변수 | 설명 | 기본값 |
-|------|------|--------|
-| `DURE_PROVIDER` | 전체 프로바이더 프리셋 (`google-antigravity`, `openai-codex`, `anthropic`) | `google-antigravity` |
-| `DURE_MODEL_UNIVERSE` | Universe 모델 | `google-antigravity:gemini-3-flash` |
-| `DURE_MODEL_FUNDAMENTAL` | Fundamental 모델 | `google-antigravity:claude-sonnet-4-6` |
-| `DURE_MODEL_NEWS` | News 모델 | `google-antigravity:gemini-3-flash` |
-| `DURE_MODEL_STRATEGY` | Strategy 모델 | `google-antigravity:claude-sonnet-4-6` |
-| `DURE_MODEL_BACKTEST` | Backtest 모델 | `google-antigravity:claude-sonnet-4-6` |
-| `DURE_MODEL_CRITIC` | Critic 모델 | `google-antigravity:claude-opus-4-6-thinking` |
-| `DURE_MODEL_SCENARIO` | Scenario 모델 | `google-antigravity:claude-sonnet-4-6` |
-| `DURE_MODEL_ROUTER` | Router 모델 | `google-antigravity:gemini-3-flash` |
-
-형식은 `provider:modelId`입니다.
+예시:
 
 ```bash
 # 전체 프로바이더 전환
@@ -182,74 +186,22 @@ DURE_MODEL_CRITIC=anthropic:claude-opus-4-6 \
 npm run chat
 ```
 
-### 프로바이더 프리셋
+전체 환경 변수 목록, provider preset, `.env.example` 설명은 [docs/configuration.md](docs/configuration.md)에서 다룹니다.
 
-| 역할 티어 | 에이전트 | google-antigravity | openai-codex | anthropic |
-|-----------|---------|-------------------|-------------|-----------|
-| fast | Universe, News, Router | `gemini-3-flash` | `gpt-5.4-mini` / `gpt-5.3-codex-spark` | `claude-haiku-4-5` |
-| standard | Fundamental, Strategy, Backtest, Scenario | `claude-sonnet-4-6` | `gpt-5.4` | `claude-sonnet-4-6` |
-| advanced | Critic | `claude-opus-4-6-thinking` | `gpt-5.4` | `claude-opus-4-6` |
+## More Docs
 
-## 안정성
+- [docs/configuration.md](docs/configuration.md): `.env` 항목, 모델 선택, provider preset, override 규칙
+- [docs/architecture.md](docs/architecture.md): 에이전트 구성, 워크플로우, 메모리 시스템, 프롬프트 조합, 프로젝트 구조
+- [docs/examples/scenario_report.html](docs/examples/scenario_report.html): 시나리오 리포트 예시
+- [docs/examples/screen_report.html](docs/examples/screen_report.html): 스크리닝 리포트 예시
+- [docs/examples/strategy_report.html](docs/examples/strategy_report.html): 전략 리포트 예시
+- [docs/examples/chat_result.md](docs/examples/chat_result.md): 대화형 분석 예시
 
-- 모든 주요 에이전트는 JSON 추출 실패 시 최대 2회 재시도합니다.
-- 최종 실패 시 에이전트 이름과 마지막 응답 일부를 포함한 오류를 반환합니다.
-- 프로바이더 오류와 자동 재시도 이벤트는 로그에 기록됩니다.
+## Development
 
-## 메모리 시스템
+문서 외 변경 작업을 마칠 때는 아래 검증을 실행합니다.
 
-에이전트는 파일 기반 메모리를 사용해 세션 간 정보를 축적합니다.
-
-- 저장 위치: `data/memory/*.md`, `data/memory/MEMORY.md`
-- 자동 주입: 공통 프롬프트 로더가 shared SOUL, 역할 프롬프트, 메모리 지침, 메모리 컨텍스트를 순서대로 조합
-- shared SOUL 위치: `research/prompts/SOUL.md`
-
-### 접근 권한
-
-| 에이전트 | 권한 |
-|---------|------|
-| Strategy, Backtest, Critic | 읽기 + 쓰기 |
-| Universe, News, Fundamental | 읽기 전용 |
-
-## 프로젝트 구조
-
-```text
-src/
-├── agents/          # 에이전트 정의
-├── workflow/        # 워크플로우 오케스트레이션
-├── tools/           # 시세, 뉴스, 공시, 스크리너, 백테스트 도구
-├── schemas/         # 분석/백테스트/시그널/시나리오 스키마
-├── memory/          # 파일 기반 메모리 저장소
-├── runtime/         # 세션, 이벤트, 아티팩트 관리
-├── interactive/     # 대화형 모드 진입점
-├── config.ts        # 모델 설정
-└── main.ts          # CLI 라우터
-research/
-└── prompts/         # shared SOUL + 에이전트 시스템 프롬프트
-data/
-├── memory/          # 세션 간 메모리
-├── processed/       # 전략, 실험, 논제 JSON
-├── raw/             # 원시 데이터
-└── runs/            # 실행별 아티팩트
+```bash
+npm test
+npm run lint
 ```
-
-## 프롬프트 구성
-
-모든 에이전트와 대화형 router는 공통 프롬프트 조합 규칙을 사용합니다.
-
-1. `research/prompts/SOUL.md`의 Dure 정체성
-2. 역할별 프롬프트 (`router.md`, `fundamental.md` 등)
-3. 메모리 지침 (`_memory_instructions.md`, 메모리 사용 시)
-4. 메모리 컨텍스트 (`data/memory/MEMORY.md` 기반, 메모리 사용 시)
-
-이 구조 덕분에 Dure의 공통적인 리서치 태도는 유지하면서도, 각 에이전트는 기존 역할과 출력 스키마를 그대로 보존합니다.
-
-## 기술 스택
-
-- TypeScript 5.7
-- Node.js (ESM)
-- `@mariozechner/pi-coding-agent` ^0.60.0
-- `@sinclair/typebox` ^0.34.48
-- Biome 2.4.7
-- Vitest ^4.1.0
-- tsx ^4.19.0

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전략 리서치 - strategy-1774063354339</title>
+<style>
+*,*::before,*::after{box-sizing:border-box}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.6;color:#1a1a2e;background:#f8f9fa;margin:0;padding:0;
+}
+.container{max-width:960px;margin:0 auto;padding:24px 16px}
+header{border-bottom:2px solid #e0e0e0;padding-bottom:16px;margin-bottom:32px}
+header h1{margin:0 0 4px;font-size:1.8rem;color:#1a1a2e}
+header .meta{color:#666;font-size:0.85rem}
+
+.section{margin-bottom:32px}
+.section h2{font-size:1.3rem;color:#2d3436;border-left:4px solid #0984e3;padding-left:12px;margin-bottom:16px}
+.section h3{font-size:1.1rem;color:#636e72;margin-bottom:8px}
+
+table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:0.9rem}
+thead th{background:#dfe6e9;text-align:left;padding:10px 12px;font-weight:600;border-bottom:2px solid #b2bec3}
+tbody td{padding:8px 12px;border-bottom:1px solid #e0e0e0}
+tbody tr:nth-child(even){background:#f1f3f5}
+tbody tr:hover{background:#e8f4fd}
+
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:0.8rem;font-weight:600;text-transform:uppercase}
+.badge-positive,.badge-bullish,.badge-keep,.badge-up{background:#d4edda;color:#155724}
+.badge-negative,.badge-bearish,.badge-reject,.badge-down{background:#f8d7da;color:#721c24}
+.badge-neutral,.badge-mixed,.badge-revise{background:#fff3cd;color:#856404}
+.badge-high{background:#cce5ff;color:#004085}
+.badge-medium{background:#e2e3e5;color:#383d41}
+.badge-low{background:#f5f5f5;color:#6c757d}
+
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.metric-card{background:#fff;border:1px solid #dee2e6;border-radius:8px;padding:16px;text-align:center}
+.metric-card .label{font-size:0.8rem;color:#636e72;margin-bottom:4px}
+.metric-card .value{font-size:1.4rem;font-weight:700;color:#2d3436}
+
+ul.bullet-list{padding-left:20px;margin:8px 0}
+ul.bullet-list li{margin-bottom:4px}
+
+details{margin-bottom:16px}
+details summary{cursor:pointer;font-weight:600;padding:8px 0;color:#0984e3}
+details[open] summary{margin-bottom:8px}
+
+.assessment-box{background:#fff;border:1px solid #dee2e6;border-radius:8px;padding:16px;margin-bottom:16px;white-space:pre-wrap}
+
+@media print{
+  body{background:#fff}
+  .container{max-width:100%;padding:0}
+  details{display:block!important}
+  details>*{display:block!important}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <h1>전략 리서치</h1>
+  <div class="meta">Run ID: strategy-1774063354339 &middot; 2026-03-21T03:38:23.424Z</div>
+</header>
+<div class="section"><h2>전략 정의</h2><p><strong>전략명:</strong> Quality Dividend Growth KR</p>
+<p><strong>가설:</strong> 지속적으로 배당을 지급하면서도 수익성(ROE), 재무건전성, 이익성장성을 동시에 유지하는 기업은 배당 함정에 빠질 확률이 낮고, 장기적으로 배당 성장과 주가 성과를 함께 낼 가능성이 높다. 이를 추세 필터로 보완하면 구조적 훼손 기업 비중을 줄일 수 있다.</p>
+<p><strong>진입 규칙:</strong></p><ul class="bullet-list"><li>DIVIDEND_YIELD &gt;= 1.5%</li><li>ROE &gt;= 10%</li><li>DEBT_RATIO &lt;= 100%</li><li>OPERATING_PROFIT_YOY_GROWTH &gt; 0%</li><li>CLOSE &gt; SMA200</li></ul>
+<p><strong>청산 규칙:</strong></p><ul class="bullet-list"><li>DIVIDEND_YIELD &lt; 1.5% OR ROE &lt; 10% OR DEBT_RATIO &gt; 100% OR OPERATING_PROFIT_YOY_GROWTH &lt;= 0% OR CLOSE &lt;= SMA200</li><li>AT QUARTERLY_REBALANCE, SELL IF RANK_BY_DIVIDEND_YIELD_AMONG_ELIGIBLE &gt; 20</li></ul>
+<p><strong>포지션 사이징:</strong> 동일가중 20종목 보유, 종목당 5%. 적격 종목이 20개 미만이면 남는 비중은 현금 보유.</p>
+<p><strong>리밸런싱 주기:</strong> 분기</p></div><div class="section"><h2>백테스트 성과</h2><div class="metric-grid"><div class="metric-card"><div class="label">CAGR</div><div class="value">0.02%</div></div>
+<div class="metric-card"><div class="label">MDD</div><div class="value">-0.13%</div></div>
+<div class="metric-card"><div class="label">Sharpe</div><div class="value">0.16</div></div>
+<div class="metric-card"><div class="label">Turnover</div><div class="value">10.09%</div></div></div><p><strong>에러 로그:</strong></p><ul class="bullet-list"><li>run_backtest 전용 도구가 세션에 제공되지 않아 Python 스크립트로 CAGR/MDD/Sharpe/turnover를 계산했습니다.</li><li>ROE는 DART 연간 연결재무제표 기준으로 계산했고, 각 연차 사업보고서 접수일 +45일 이후부터만 반영했습니다.</li><li>DIVIDEND_YIELD는 DART alotMatter 연간 보통주 주당 현금배당금(DPS)을 최근 주가로 나눈 값으로 근사했습니다.</li><li>OPERATING_PROFIT_YOY_GROWTH는 최신 DART 보고서의 비교가능 누적기간(Q1/H1/9M/FY) 기준 전년동기 대비 증감률을 사용했습니다.</li><li>대상 유니버스를 사용자 지정 3종목으로 제한해 최대 투자비중이 15%(3 x 5%)에 그치며, 나머지는 현금으로 유지되었습니다.</li></ul></div><div class="section"><h2>거래 내역</h2><table><thead><tr><th>날짜</th><th>티커</th><th>액션</th><th>가격</th><th>수량</th></tr></thead><tbody>
+<tr><td>2023-04-03</td><td>005930</td><td>BUY</td><td>64,000</td><td>78</td></tr>
+<tr><td>2023-04-24</td><td>005930</td><td>SELL</td><td>65,300</td><td>78</td></tr>
+</tbody></table></div><div class="section"><h2>Critic 리포트</h2><div class="metric-grid"><div class="metric-card"><div class="label">판정</div><div class="value">REJECT</div></div></div>
+<p><strong>판정:</strong> <span class="badge badge-reject">reject</span></p>
+<p><strong>과적합 리스크:</strong> 높음 - 규칙 수 자체는 5개 필터+랭킹으로 과도하게 복잡하지 않지만, 실제 검증 표본이 사실상 2020-2025 3종목 서브유니버스와 1회 왕복 거래에 불과해 파라미터 대비 유효 표본이 극단적으로 부족합니다. 특히 top20 규칙은 3종목 테스트에서 전혀 검증되지 않았고, CAGR 0.02%/Sharpe 0.16도 전략 우위보다 현금 비중 85% 효과에 가깝습니다.</p>
+<p><strong>데이터 누수:</strong> 주의 - 재무데이터를 공시일+45일 후 반영한 점은 긍정적입니다. 다만 (1) DIVIDEND_YIELD가 연간 DPS를 '최근 주가'로 나눈 값이라 DPS 확정/공시 시점과 가격 시점 정렬이 명확하지 않고, (2) CLOSE &gt; SMA200 신호를 같은 날짜 가격으로 체결했다면 same-bar look-ahead가 생길 수 있으며, (3) 거래 로그상 2023-04-03 매수/2023-04-24 매도처럼 분기 리밸런스 외 일중/일별 평가 로직이 불명확합니다. 치명적 누출이 확인되지는 않았지만 시점 정의가 불충분해 통과로 보기 어렵습니다.</p>
+<p><strong>생존 편향:</strong> 높음 - 명시된 전략 유니버스는 KOSPI/KOSDAQ 보통주 전체(금융 제외)인데 실제 백테스트는 사용자 지정 3종목만 사용했습니다. 이는 상장폐지·합병·관리종목 제외 효과를 반영하지 못하고, 현재까지 생존한 대표 종목만 골랐을 가능성을 배제할 수 없습니다. 따라서 생존편향과 선택편향이 매우 큽니다.</p>
+<p><strong>체제 의존성:</strong> 높음 - 전략은 배당, ROE, 저부채, 이익성장, 200일선 상향을 동시에 요구하므로 구조적으로 '안정적 이익 + 상승 추세' 레짐에 편중됩니다. 금리 급등기, 성장주 주도장, 이익 역성장 구간에서는 기회집합이 급감할 수 있습니다. 더 큰 문제는 이번 결과가 대부분 현금 상태와 단일 거래에 의해 형성돼 2020-2025 내 서로 다른 레짐에서 전략이 어떻게 반응하는지 전혀 검증하지 못했다는 점입니다.</p>
+<p><strong>권고사항:</strong></p><ul class="bullet-list"><li>전략 정의와 동일한 조건으로 백테스트를 다시 수행하세요: KOSPI/KOSDAQ 보통주 전체(금융 제외), 상장폐지·합병 종목 포함, 시점별 유니버스(point-in-time) 구성, 20종목 동일가중을 실제로 채우는지 확인해야 합니다.</li><li>신호 시점과 체결 시점을 분리하세요: 재무·배당 데이터는 실제 공시/결의일 기준 사용 가능 시점을 기록하고, CLOSE&gt;SMA200 등 가격 신호는 최소 익일 시가 체결로 테스트해 same-bar look-ahead 가능성을 제거해야 합니다.</li><li>민감도 및 레짐 검증을 추가하세요: 배당수익률 1.5%, ROE 10%, 부채비율 100%, SMA200 같은 임계값을 주변 구간으로 흔들어도 성과가 유지되는지, 그리고 2020-2021/2022/2023-2024 등 레짐별 성과와 투자비중 변화를 별도로 보고해야 합니다.</li></ul></div>
+</div>
+</body>
+</html>
