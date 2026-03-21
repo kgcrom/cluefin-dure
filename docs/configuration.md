@@ -30,7 +30,7 @@ CLUEFIN_RPC_CWD=../cluefin
 
 ## Model Selection
 
-기본 프리셋은 `google-antigravity`입니다.
+기본 프리셋은 `openai-codex`입니다.
 모델 선택 우선순위는 아래 순서입니다.
 
 ```text
@@ -67,28 +67,43 @@ npm run strategy -- "quality dividend growth"
 - `DURE_MODEL_SCENARIO`
 - `DURE_MODEL_ROUTER`
 
+## Unsupported Google Product Logins
+
+다음 방식은 지원하지 않습니다.
+
+- `Antigravity`, `Gemini CLI`, `Gemini Code Assist` 제품 로그인을 제3자 코딩 에이전트나 외부 도구에 연결하는 경우
+- 제품 로그인 기반 OAuth를 우회해 다른 소프트웨어에서 Google 모델에 접근하는 경우
+
+이런 방식으로 연동하면 차단 또는 계정 정지 대상이 될 수 있습니다.
+Gemini를 제3자 코딩 에이전트에서 사용해야 한다면 제품 로그인 대신 Vertex AI 또는 AI Studio API 키를 사용하는 편이 안전합니다.
+
+이미 차단된 경우 이의제기는 아래 Google Form에서 진행할 수 있습니다.
+
+- [Gemini suspension appeal form](https://docs.google.com/forms/d/e/1FAIpQLScOJWibQ_-hYuVv63kJTgEqlgAaOwRLGFTbXm-QY1gz8U0CGA/viewform)
+
 ## Provider Presets
 
 아래 값은 현재 [`src/config.ts`](../src/config.ts) 기준입니다.
 
-| 역할 티어 | 에이전트 | `google-antigravity` | `openai-codex` | `anthropic` |
-|-----------|---------|----------------------|----------------|-------------|
-| fast | Universe, News, Router | `gemini-3-flash` | `gpt-5.4-mini`, `gpt-5.3-codex-spark` | `claude-haiku-4-5` |
-| standard | Fundamental, Strategy, Backtest, Scenario | `claude-sonnet-4-6` | `gpt-5.4` | `claude-sonnet-4-6` |
-| advanced | Critic | `claude-opus-4-6-thinking` | `gpt-5.4` | `claude-opus-4-6` |
+| 역할 티어 | 에이전트 | `openai-codex` | `anthropic` |
+|-----------|---------|----------------|-------------|
+| fast | Universe, News | `gpt-5.4-mini` | `claude-haiku-4-5` |
+| fast | Router | `gpt-5.3-codex-spark` | `claude-haiku-4-5` |
+| standard | Fundamental, Strategy, Backtest, Scenario | `gpt-5.4` | `claude-sonnet-4-6` |
+| advanced | Critic | `gpt-5.4` | `claude-opus-4-6` |
 
 에이전트별 기본 조합은 다음과 같습니다.
 
 | 에이전트 | 기본 provider:modelId |
 |----------|------------------------|
-| Universe | `google-antigravity:gemini-3-flash` |
-| Fundamental | `google-antigravity:claude-sonnet-4-6` |
-| News | `google-antigravity:gemini-3-flash` |
-| Strategy | `google-antigravity:claude-sonnet-4-6` |
-| Backtest | `google-antigravity:claude-sonnet-4-6` |
-| Critic | `google-antigravity:claude-opus-4-6-thinking` |
-| Scenario | `google-antigravity:claude-sonnet-4-6` |
-| Router | `google-antigravity:gemini-3-flash` |
+| Universe | `openai-codex:gpt-5.4-mini` |
+| Fundamental | `openai-codex:gpt-5.4` |
+| News | `openai-codex:gpt-5.4-mini` |
+| Strategy | `openai-codex:gpt-5.4` |
+| Backtest | `openai-codex:gpt-5.4` |
+| Critic | `openai-codex:gpt-5.4` |
+| Scenario | `openai-codex:gpt-5.4` |
+| Router | `openai-codex:gpt-5.3-codex-spark` |
 
 ## Command Notes
 

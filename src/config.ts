@@ -1,27 +1,17 @@
 export const agentModelConfig = {
-  universe: { provider: 'google-antigravity', modelId: 'gemini-3-flash' },
-  fundamental: { provider: 'google-antigravity', modelId: 'claude-sonnet-4-6' },
-  news: { provider: 'google-antigravity', modelId: 'gemini-3-flash' },
-  strategy: { provider: 'google-antigravity', modelId: 'claude-sonnet-4-6' },
-  backtest: { provider: 'google-antigravity', modelId: 'claude-sonnet-4-6' },
-  critic: { provider: 'google-antigravity', modelId: 'claude-opus-4-6-thinking' },
-  scenario: { provider: 'google-antigravity', modelId: 'claude-sonnet-4-6' },
-  router: { provider: 'google-antigravity', modelId: 'gemini-3-flash' },
+  universe: { provider: 'openai-codex', modelId: 'gpt-5.4-mini' },
+  fundamental: { provider: 'openai-codex', modelId: 'gpt-5.4' },
+  news: { provider: 'openai-codex', modelId: 'gpt-5.4-mini' },
+  strategy: { provider: 'openai-codex', modelId: 'gpt-5.4' },
+  backtest: { provider: 'openai-codex', modelId: 'gpt-5.4' },
+  critic: { provider: 'openai-codex', modelId: 'gpt-5.4' },
+  scenario: { provider: 'openai-codex', modelId: 'gpt-5.4' },
+  router: { provider: 'openai-codex', modelId: 'gpt-5.3-codex-spark' },
 } as const;
 
 export type AgentName = keyof typeof agentModelConfig;
 
 const providerPresets: Record<string, Record<AgentName, { provider: string; modelId: string }>> = {
-  'google-antigravity': {
-    universe: { provider: 'google-antigravity', modelId: 'gemini-3-flash' },
-    fundamental: { provider: 'google-antigravity', modelId: 'claude-sonnet-4-6' },
-    news: { provider: 'google-antigravity', modelId: 'gemini-3-flash' },
-    strategy: { provider: 'google-antigravity', modelId: 'claude-sonnet-4-6' },
-    backtest: { provider: 'google-antigravity', modelId: 'claude-sonnet-4-6' },
-    critic: { provider: 'google-antigravity', modelId: 'claude-opus-4-6-thinking' },
-    scenario: { provider: 'google-antigravity', modelId: 'claude-sonnet-4-6' },
-    router: { provider: 'google-antigravity', modelId: 'gemini-3-flash' },
-  },
   'openai-codex': {
     universe: { provider: 'openai-codex', modelId: 'gpt-5.4-mini' },
     fundamental: { provider: 'openai-codex', modelId: 'gpt-5.4' },
