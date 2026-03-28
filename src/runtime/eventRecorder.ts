@@ -5,7 +5,7 @@ import type {
   AgentSessionEvent,
   AgentToolUpdateCallback,
 } from '@mariozechner/pi-coding-agent';
-import { log } from './log.js';
+import { createPiLogSink, getCurrentLogSink, log, type PiLogSink } from './log.js';
 
 interface RecordedEvent {
   timestamp: number;
@@ -18,14 +18,15 @@ export class EventRecorder {
   private events: RecordedEvent[] = [];
   private unsubscribes: (() => void)[] = [];
 
+  constructor(private readonly logSink?: PiLogSink) {}
+
   attachToSession(
     sessionLabel: string,
     session: AgentSession,
     onUpdate?: AgentToolUpdateCallback<null>,
   ): void {
-    const emit = onUpdate
-      ? (msg: string) => onUpdate({ content: [{ type: 'text', text: msg }], details: null })
-      : log;
+    const sink = this.logSink ?? getCurrentLogSink() ?? createPiLogSink(onUpdate);
+    const emit = sink ? (msg: string) => sink.appendLine(msg) : log;
 
     let buffer = '';
 
@@ -45,7 +46,7 @@ export class EventRecorder {
         let nlIdx = buffer.indexOf('\n');
         while (nlIdx !== -1) {
           const line = buffer.slice(0, nlIdx);
-          process.stderr.write(`[${sessionLabel}] ${line}\n`);
+          emit(`[${sessionLabel}] ${line}`);
           buffer = buffer.slice(nlIdx + 1);
           nlIdx = buffer.indexOf('\n');
         }
@@ -53,7 +54,7 @@ export class EventRecorder {
 
       if (event.type === 'turn_end') {
         if (buffer.length > 0) {
-          process.stderr.write(`[${sessionLabel}] ${buffer}\n`);
+          emit(`[${sessionLabel}] ${buffer}`);
           buffer = '';
         }
         const msg = event.message as unknown as Record<string, unknown> | undefined;
@@ -61,9 +62,7 @@ export class EventRecorder {
           const stopReason = msg.stopReason as string | undefined;
           const errorMessage = msg.errorMessage as string | undefined;
           if ((stopReason === 'error' || stopReason === 'aborted') && errorMessage) {
-            process.stderr.write(
-              `[${sessionLabel}] ⚠ provider error (${stopReason}): ${errorMessage}\n`,
-            );
+            emit(`[${sessionLabel}] ⚠ provider error (${stopReason}): ${errorMessage}`);
           }
         }
         emit(`[${sessionLabel}] --- turn end ---`);
@@ -71,17 +70,15 @@ export class EventRecorder {
 
       if (event.type === 'auto_retry_start') {
         const e = event as unknown as Record<string, unknown>;
-        process.stderr.write(
-          `[${sessionLabel}] ⚠ retrying (${e.attempt}/${e.maxAttempts}, delay ${e.delayMs}ms): ${e.errorMessage}\n`,
+        emit(
+          `[${sessionLabel}] ⚠ retrying (${e.attempt}/${e.maxAttempts}, delay ${e.delayMs}ms): ${e.errorMessage}`,
         );
       }
 
       if (event.type === 'auto_retry_end') {
         const e = event as unknown as Record<string, unknown>;
         if (e.success === false) {
-          process.stderr.write(
-            `[${sessionLabel}] ✗ retry failed after ${e.attempt} attempts: ${e.finalError}\n`,
-          );
+          emit(`[${sessionLabel}] ✗ retry failed after ${e.attempt} attempts: ${e.finalError}`);
         }
       }
     });

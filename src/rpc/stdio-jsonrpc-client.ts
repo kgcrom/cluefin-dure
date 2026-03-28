@@ -2,6 +2,7 @@ import { type ChildProcessByStdio, spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import type { Readable, Writable } from 'node:stream';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { log } from '../runtime/log.js';
 import {
   createRequest,
   type JsonRpcId,
@@ -32,10 +33,11 @@ function isResponse(message: unknown): message is JsonRpcResponse {
 
 export class StdioJsonRpcClient {
   private readonly options: StdioJsonRpcClientOptions;
-  private process: ChildProcessByStdio<Writable, Readable, null> | null = null;
+  private process: ChildProcessByStdio<Writable, Readable, Readable> | null = null;
   private pending = new Map<JsonRpcId, PendingRequest>();
   private nextId = 1;
   private stdoutLoop: Promise<void> | null = null;
+  private stderrLoop: Promise<void> | null = null;
 
   constructor(options: StdioJsonRpcClientOptions) {
     this.options = {
@@ -55,7 +57,7 @@ export class StdioJsonRpcClient {
     this.process = spawn(command, args, {
       cwd: this.options.cwd,
       env: { ...process.env, ...this.options.env },
-      stdio: ['pipe', 'pipe', 'inherit'],
+      stdio: ['pipe', 'pipe', 'pipe'],
     });
 
     this.process.on('error', (error) => {
@@ -65,6 +67,7 @@ export class StdioJsonRpcClient {
     });
 
     this.stdoutLoop = this.readStdoutLoop();
+    this.stderrLoop = this.readStderrLoop();
   }
 
   async close(): Promise<void> {
@@ -75,9 +78,11 @@ export class StdioJsonRpcClient {
 
     this.process.kill();
     await this.stdoutLoop;
+    await this.stderrLoop;
     this.rejectAll(new Error('JSON-RPC process closed'));
     this.process = null;
     this.stdoutLoop = null;
+    this.stderrLoop = null;
   }
 
   async request<T>(method: string, params?: unknown, timeoutMs?: number): Promise<T> {
@@ -132,6 +137,33 @@ export class StdioJsonRpcClient {
       this.rejectAll(error instanceof Error ? error : new Error('Failed to read JSON-RPC stream'));
     } finally {
       lineReader.close();
+    }
+  }
+
+  private async readStderrLoop(): Promise<void> {
+    if (!this.process?.stderr) return;
+
+    let buffer = '';
+
+    try {
+      for await (const chunk of this.process.stderr) {
+        buffer += chunk.toString('utf8').replaceAll('\r\n', '\n');
+        let newlineIndex = buffer.indexOf('\n');
+        while (newlineIndex !== -1) {
+          const line = buffer.slice(0, newlineIndex).trimEnd();
+          if (line.length > 0) {
+            log(`[rpc] ${line}`);
+          }
+          buffer = buffer.slice(newlineIndex + 1);
+          newlineIndex = buffer.indexOf('\n');
+        }
+      }
+
+      if (buffer.trim().length > 0) {
+        log(`[rpc] ${buffer.trimEnd()}`);
+      }
+    } catch (error) {
+      this.rejectAll(error instanceof Error ? error : new Error('Failed to read stderr stream'));
     }
   }
 

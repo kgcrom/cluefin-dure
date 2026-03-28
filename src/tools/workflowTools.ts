@@ -1,6 +1,42 @@
-import type { ToolDefinition } from '@mariozechner/pi-coding-agent';
+import type {
+  AgentToolResult,
+  AgentToolUpdateCallback,
+  ToolDefinition,
+} from '@mariozechner/pi-coding-agent';
 import { type Static, Type } from '@sinclair/typebox';
+import { createPiLogSink, type PiLogDetails, withLogSink } from '../runtime/log.js';
 import { toolResult } from './_helpers.js';
+
+type WorkflowToolDetails = PiLogDetails & {
+  kind: 'workflow-log';
+};
+
+async function runWorkflowTool<T>(
+  onUpdate: AgentToolUpdateCallback<WorkflowToolDetails> | undefined,
+  runner: () => Promise<T>,
+): Promise<{ result: T; details: WorkflowToolDetails }> {
+  const logSink = createPiLogSink(onUpdate);
+  try {
+    const result = await withLogSink(logSink, runner);
+    const snapshot = logSink.finish();
+    return {
+      result,
+      details: {
+        kind: 'workflow-log',
+        ...snapshot,
+      },
+    };
+  } catch (error) {
+    logSink.finish();
+    throw error;
+  }
+}
+
+function asWorkflowUpdate(
+  onUpdate: AgentToolUpdateCallback<WorkflowToolDetails> | undefined,
+): AgentToolUpdateCallback<null> | undefined {
+  return onUpdate as unknown as AgentToolUpdateCallback<null> | undefined;
+}
 
 // ── run_equity_analysis ──
 
@@ -11,7 +47,7 @@ const equityParams = Type.Object({
   filterRules: Type.Optional(Type.String({ description: '추가 필터 규칙' })),
 });
 
-export const equityAnalysisTool: ToolDefinition<typeof equityParams> = {
+export const equityAnalysisTool: ToolDefinition<typeof equityParams, WorkflowToolDetails> = {
   name: 'run_equity_analysis',
   label: '종목 종합 분석',
   description:
@@ -19,8 +55,11 @@ export const equityAnalysisTool: ToolDefinition<typeof equityParams> = {
   parameters: equityParams,
   async execute(_toolCallId, params: Static<typeof equityParams>, _signal, onUpdate) {
     const { runEquityAnalysis } = await import('../workflow/runEquityAnalysis.js');
-    const result = await runEquityAnalysis(params, onUpdate);
-    return toolResult(JSON.stringify(result));
+    const workflowOnUpdate = asWorkflowUpdate(onUpdate);
+    const { result, details } = await runWorkflowTool(onUpdate, () =>
+      runEquityAnalysis(params, workflowOnUpdate),
+    );
+    return toolResult(JSON.stringify(result), details);
   },
 };
 
@@ -33,7 +72,7 @@ const screeningParams = Type.Object({
   topN: Type.Optional(Type.Number({ description: '상위 N개 종목 반환 (기본: 10)' })),
 });
 
-export const screeningTool: ToolDefinition<typeof screeningParams> = {
+export const screeningTool: ToolDefinition<typeof screeningParams, WorkflowToolDetails> = {
   name: 'run_screening',
   label: '종목 스크리닝',
   description:
@@ -41,8 +80,11 @@ export const screeningTool: ToolDefinition<typeof screeningParams> = {
   parameters: screeningParams,
   async execute(_toolCallId, params: Static<typeof screeningParams>, _signal, onUpdate) {
     const { runScreening } = await import('../workflow/runScreening.js');
-    const result = await runScreening(params, onUpdate);
-    return toolResult(JSON.stringify(result));
+    const workflowOnUpdate = asWorkflowUpdate(onUpdate);
+    const { result, details } = await runWorkflowTool(onUpdate, () =>
+      runScreening(params, workflowOnUpdate),
+    );
+    return toolResult(JSON.stringify(result), details);
   },
 };
 
@@ -53,15 +95,18 @@ const strategyParams = Type.Object({
   tickers: Type.Optional(Type.Array(Type.String(), { description: '대상 종목 코드 목록' })),
 });
 
-export const strategyResearchTool: ToolDefinition<typeof strategyParams> = {
+export const strategyResearchTool: ToolDefinition<typeof strategyParams, WorkflowToolDetails> = {
   name: 'run_strategy_research',
   label: '전략 리서치',
   description: '투자 테마/가설을 기반으로 전략을 설계하고, 백테스트 및 비평 리포트를 생성합니다.',
   parameters: strategyParams,
   async execute(_toolCallId, params: Static<typeof strategyParams>, _signal, onUpdate) {
     const { runStrategyResearch } = await import('../workflow/runStrategyResearch.js');
-    const result = await runStrategyResearch(params, onUpdate);
-    return toolResult(JSON.stringify(result));
+    const workflowOnUpdate = asWorkflowUpdate(onUpdate);
+    const { result, details } = await runWorkflowTool(onUpdate, () =>
+      runStrategyResearch(params, workflowOnUpdate),
+    );
+    return toolResult(JSON.stringify(result), details);
   },
 };
 
@@ -71,15 +116,21 @@ const backtestLoopParams = Type.Object({
   strategyId: Type.String({ description: '저장된 전략 ID' }),
 });
 
-export const backtestLoopTool: ToolDefinition<typeof backtestLoopParams> = {
+export const backtestLoopTool: ToolDefinition<typeof backtestLoopParams, WorkflowToolDetails> = {
   name: 'run_backtest_loop',
   label: '백테스트 루프',
   description:
     '저장된 전략을 반복 백테스트합니다. 전략 → 백테스트 → 비평 → 전략 수정 루프를 최대 3회 실행합니다.',
   parameters: backtestLoopParams,
-  async execute(_toolCallId, params: Static<typeof backtestLoopParams>, _signal, onUpdate) {
+  async execute(
+    _toolCallId,
+    params: Static<typeof backtestLoopParams>,
+    _signal,
+    onUpdate,
+  ): Promise<AgentToolResult<WorkflowToolDetails>> {
     const { StrategyRepo } = await import('../memory/strategyRepo.js');
     const { runBacktestLoop } = await import('../workflow/runBacktestLoop.js');
+    const workflowOnUpdate = asWorkflowUpdate(onUpdate);
 
     const repo = new StrategyRepo();
     const stored = await repo.get(params.strategyId);
@@ -94,15 +145,17 @@ export const backtestLoopTool: ToolDefinition<typeof backtestLoopParams> = {
       );
     }
 
-    const result = await runBacktestLoop(
-      {
-        strategy: stored.strategy,
-        tickers: ['005930', '000660', '035420'],
-        maxIterations: 3,
-      },
-      onUpdate,
+    const { result, details } = await runWorkflowTool(onUpdate, () =>
+      runBacktestLoop(
+        {
+          strategy: stored.strategy,
+          tickers: ['005930', '000660', '035420'],
+          maxIterations: 3,
+        },
+        workflowOnUpdate,
+      ),
     );
-    return toolResult(JSON.stringify(result));
+    return toolResult(JSON.stringify(result), details);
   },
 };
 
@@ -115,7 +168,7 @@ const scenarioParams = Type.Object({
   tickers: Type.Optional(Type.Array(Type.String(), { description: '분석 대상 종목 코드 목록' })),
 });
 
-export const scenarioAnalysisTool: ToolDefinition<typeof scenarioParams> = {
+export const scenarioAnalysisTool: ToolDefinition<typeof scenarioParams, WorkflowToolDetails> = {
   name: 'run_scenario_analysis',
   label: '시나리오 분석',
   description:
@@ -123,8 +176,11 @@ export const scenarioAnalysisTool: ToolDefinition<typeof scenarioParams> = {
   parameters: scenarioParams,
   async execute(_toolCallId, params: Static<typeof scenarioParams>, _signal, onUpdate) {
     const { runScenarioAnalysis } = await import('../workflow/runScenarioAnalysis.js');
-    const result = await runScenarioAnalysis(params, onUpdate);
-    return toolResult(JSON.stringify(result));
+    const workflowOnUpdate = asWorkflowUpdate(onUpdate);
+    const { result, details } = await runWorkflowTool(onUpdate, () =>
+      runScenarioAnalysis(params, workflowOnUpdate),
+    );
+    return toolResult(JSON.stringify(result), details);
   },
 };
 

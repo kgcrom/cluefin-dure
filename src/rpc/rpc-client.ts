@@ -1,3 +1,4 @@
+import { log } from '../runtime/log.js';
 import { StdioJsonRpcClient } from './stdio-jsonrpc-client.js';
 import { ToolRegistry } from './tool-registry.js';
 
@@ -28,11 +29,11 @@ async function init(): Promise<RpcContext> {
   });
 
   client.start();
-  console.error('[rpc] cluefin_rpc subprocess started');
+  log('[rpc] cluefin_rpc subprocess started');
 
   const registry = new ToolRegistry(client);
   await registry.discover();
-  console.error('[rpc] registry discovered, categories:', registry.getCategories().join(', '));
+  log(`[rpc] registry discovered, categories: ${registry.getCategories().join(', ')}`);
 
   const ctx: RpcContext = {
     client,
@@ -62,6 +63,6 @@ export async function closeRpcClient(): Promise<void> {
     await context.client.close();
     context = null;
     initPromise = null;
-    console.error('[rpc] cluefin_rpc subprocess closed');
+    log('[rpc] cluefin_rpc subprocess closed');
   }
 }

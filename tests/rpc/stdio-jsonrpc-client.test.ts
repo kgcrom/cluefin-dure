@@ -3,6 +3,7 @@ import { PassThrough } from 'node:stream';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { JsonRpcRemoteError } from '../../src/rpc/jsonrpc.js';
 import { StdioJsonRpcClient } from '../../src/rpc/stdio-jsonrpc-client.js';
+import { createPiLogSink, withLogSink } from '../../src/runtime/log.js';
 
 // spawn 모킹
 vi.mock('node:child_process', () => ({
@@ -15,14 +16,17 @@ const mockSpawn = vi.mocked(spawn);
 function createMockProcess() {
   const stdin = new PassThrough();
   const stdout = new PassThrough();
+  const stderr = new PassThrough();
   const proc = new EventEmitter() as EventEmitter & {
     stdin: PassThrough;
     stdout: PassThrough;
+    stderr: PassThrough;
     kill: ReturnType<typeof vi.fn>;
     pid: number;
   };
   proc.stdin = stdin;
   proc.stdout = stdout;
+  proc.stderr = stderr;
   proc.kill = vi.fn();
   proc.pid = 12345;
   return proc;
@@ -45,6 +49,7 @@ describe('StdioJsonRpcClient', () => {
   afterEach(() => {
     // stdout를 닫아 readStdoutLoop가 종료되도록 함
     mockProc.stdout.destroy();
+    mockProc.stderr.destroy();
     vi.restoreAllMocks();
   });
 
@@ -54,7 +59,7 @@ describe('StdioJsonRpcClient', () => {
       expect(mockSpawn).toHaveBeenCalledWith('uv', ['run', '-m', 'cluefin_rpc'], {
         cwd: '/test',
         env: expect.objectContaining({}),
-        stdio: ['pipe', 'pipe', 'inherit'],
+        stdio: ['pipe', 'pipe', 'pipe'],
       });
     });
 
@@ -139,6 +144,7 @@ describe('StdioJsonRpcClient', () => {
       // kill 호출 시 stdout을 닫아 stdoutLoop가 종료되도록 시뮬레이션
       mockProc.kill.mockImplementation(() => {
         mockProc.stdout.push(null); // EOF
+        mockProc.stderr.push(null); // EOF
       });
 
       await client.close();
@@ -162,6 +168,27 @@ describe('StdioJsonRpcClient', () => {
 
       expect(await p1).toBe('a');
       expect(await p2).toBe('b');
+    });
+  });
+
+  describe('stderr capture', () => {
+    it('stderr를 line-buffering하여 sink로 전달하고 마지막 chunk도 flush', async () => {
+      const updates: Array<{ details: { logs: string } }> = [];
+      const sink = createPiLogSink((update) => updates.push(update as never), {
+        flushIntervalMs: 1,
+      });
+
+      await withLogSink(sink, async () => {
+        client.start();
+        mockProc.stderr.write('first');
+        mockProc.stderr.write(' second\nthird');
+        mockProc.stderr.end();
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        sink.flush();
+      });
+
+      expect(updates.at(-1)?.details.logs).toContain('[rpc] first second\n');
+      expect(updates.at(-1)?.details.logs).toContain('[rpc] third\n');
     });
   });
 
