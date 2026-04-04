@@ -1,7 +1,8 @@
 import {
   AuthStorage,
-  createAgentSession,
-  DefaultResourceLoader,
+  createAgentSessionFromServices,
+  createAgentSessionRuntime,
+  createAgentSessionServices,
   getAgentDir,
   InteractiveMode,
   ModelRegistry,
@@ -16,34 +17,50 @@ export async function startInteractive(): Promise<void> {
   muteStdout();
   const systemPrompt = await loadPrompt('router', { includeMemory: false });
   const cwd = process.cwd();
-
   const agentDir = getAgentDir();
   const authStorage = AuthStorage.create(`${agentDir}/auth.json`);
   const modelRegistry = new ModelRegistry(authStorage);
-
   const modelConfig = getAgentModel('router');
   const model = modelRegistry.find(modelConfig.provider, modelConfig.modelId);
+  const sessionManager = SessionManager.create(cwd);
+  const runtime = await createAgentSessionRuntime(
+    async ({ cwd: runtimeCwd, agentDir: runtimeAgentDir, sessionManager, sessionStartEvent }) => {
+      const services = await createAgentSessionServices({
+        cwd: runtimeCwd,
+        agentDir: runtimeAgentDir,
+        authStorage,
+        modelRegistry,
+        resourceLoaderOptions: {
+          systemPrompt,
+          noExtensions: true,
+          noSkills: true,
+          noPromptTemplates: true,
+          noThemes: true,
+        },
+      });
 
-  const resourceLoader = new DefaultResourceLoader({
-    cwd,
-    agentDir,
-    systemPrompt,
-    noExtensions: true,
-    noSkills: true,
-    noPromptTemplates: true,
-    noThemes: true,
+      return {
+        ...(await createAgentSessionFromServices({
+          services,
+          sessionManager,
+          sessionStartEvent,
+          model: model ?? undefined,
+          tools: [],
+          customTools: workflowTools,
+        })),
+        services,
+        diagnostics: services.diagnostics,
+      };
+    },
+    {
+      cwd,
+      agentDir,
+      sessionManager,
+    },
+  );
+
+  const interactive = new InteractiveMode(runtime, {
+    modelFallbackMessage: runtime.modelFallbackMessage,
   });
-  await resourceLoader.reload();
-
-  const { session } = await createAgentSession({
-    sessionManager: SessionManager.create(cwd),
-    modelRegistry,
-    model: model ?? undefined,
-    tools: [],
-    customTools: workflowTools,
-    resourceLoader,
-  });
-
-  const interactive = new InteractiveMode(session);
   await interactive.run();
 }

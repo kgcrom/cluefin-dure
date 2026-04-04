@@ -104,8 +104,9 @@ macOS에서는 리포트 생성 직후 `open` 명령으로 HTML 파일을 자동
 
 ## External RPC Dependency
 
-RPC 클라이언트는 `uv run -m cluefin_rpc`로 외부 프로세스를 띄웁니다.
-이때 실행 경로는 `CLUEFIN_RPC_CWD` 환경 변수에서 읽습니다.
+RPC 클라이언트는 `CLUEFIN_RPC_CWD`가 `cluefin` 워크스페이스 루트면
+`uv run --project apps/cluefin-rpc -m cluefin_rpc`로,
+`apps/cluefin-rpc` 디렉터리면 `uv run -m cluefin_rpc`로 외부 프로세스를 띄웁니다.
 
 즉, Dure는 자체 TypeScript 오케스트레이션 위에서 cluefin RPC 도구 집합을 사용하는 구조입니다.
 

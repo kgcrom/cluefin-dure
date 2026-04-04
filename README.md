@@ -41,13 +41,16 @@ cp .env.example .env
 ```
 
 두 저장소가 모두 필요합니다.
-`cluefin-dure`는 CLI 오케스트레이션을 담당하고, `cluefin`은 `uv run -m cluefin_rpc`로 호출되는 RPC 백엔드입니다.
+`cluefin-dure`는 CLI 오케스트레이션을 담당하고, `cluefin`은 `uv run --project apps/cluefin-rpc -m cluefin_rpc`로 호출되는 RPC 백엔드입니다.
 
 `.env`에는 데이터 소스 키와 `CLUEFIN_RPC_CWD`가 필요합니다.
 예를 들어 `cluefin`을 같은 상위 디렉터리에 clone했다면 아래처럼 설정합니다.
 
 ```bash
 CLUEFIN_RPC_CWD=../cluefin
+
+# 또는 RPC 패키지 디렉터리를 직접 지정해도 됩니다.
+# CLUEFIN_RPC_CWD=../cluefin/apps/cluefin-rpc
 ```
 
 필수 항목과 모델 설정 방법은 [docs/configuration.md](docs/configuration.md)에서 정리합니다.

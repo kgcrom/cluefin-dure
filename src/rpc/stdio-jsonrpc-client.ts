@@ -38,6 +38,9 @@ export class StdioJsonRpcClient {
   private nextId = 1;
   private stdoutLoop: Promise<void> | null = null;
   private stderrLoop: Promise<void> | null = null;
+  private isClosing = false;
+  private stderrLines: string[] = [];
+  private stderrRaw = '';
 
   constructor(options: StdioJsonRpcClientOptions) {
     this.options = {
@@ -59,11 +62,18 @@ export class StdioJsonRpcClient {
       env: { ...process.env, ...this.options.env },
       stdio: ['pipe', 'pipe', 'pipe'],
     });
+    this.isClosing = false;
+    this.stderrLines = [];
+    this.stderrRaw = '';
 
     this.process.on('error', (error) => {
       this.rejectAll(
         error instanceof Error ? error : new Error('Failed to spawn JSON-RPC process'),
       );
+    });
+    this.process.on('exit', (code, signal) => {
+      if (this.isClosing) return;
+      this.rejectAll(new Error(this.formatProcessExitMessage(code, signal)));
     });
 
     this.stdoutLoop = this.readStdoutLoop();
@@ -73,6 +83,7 @@ export class StdioJsonRpcClient {
   async close(): Promise<void> {
     if (!this.process) return;
 
+    this.isClosing = true;
     this.notify('rpc.shutdown');
     await sleep(100);
 
@@ -147,11 +158,14 @@ export class StdioJsonRpcClient {
 
     try {
       for await (const chunk of this.process.stderr) {
-        buffer += chunk.toString('utf8').replaceAll('\r\n', '\n');
+        const text = chunk.toString('utf8').replaceAll('\r\n', '\n');
+        this.pushStderrRaw(text);
+        buffer += text;
         let newlineIndex = buffer.indexOf('\n');
         while (newlineIndex !== -1) {
           const line = buffer.slice(0, newlineIndex).trimEnd();
           if (line.length > 0) {
+            this.pushStderrLine(line);
             log(`[rpc] ${line}`);
           }
           buffer = buffer.slice(newlineIndex + 1);
@@ -160,7 +174,9 @@ export class StdioJsonRpcClient {
       }
 
       if (buffer.trim().length > 0) {
-        log(`[rpc] ${buffer.trimEnd()}`);
+        const line = buffer.trimEnd();
+        this.pushStderrLine(line);
+        log(`[rpc] ${line}`);
       }
     } catch (error) {
       this.rejectAll(error instanceof Error ? error : new Error('Failed to read stderr stream'));
@@ -201,5 +217,31 @@ export class StdioJsonRpcClient {
       pending.reject(error);
       this.pending.delete(id);
     }
+  }
+
+  private pushStderrLine(line: string): void {
+    this.stderrLines.push(line);
+    if (this.stderrLines.length > 20) {
+      this.stderrLines.shift();
+    }
+  }
+
+  private pushStderrRaw(text: string): void {
+    this.stderrRaw += text;
+    if (this.stderrRaw.length > 4000) {
+      this.stderrRaw = this.stderrRaw.slice(-4000);
+    }
+  }
+
+  private formatProcessExitMessage(code: number | null, signal: NodeJS.Signals | null): string {
+    const exitReason =
+      code !== null ? `code ${code}` : signal ? `signal ${signal}` : 'unknown reason';
+    const stderr = [this.stderrLines.join('\n').trim(), this.stderrRaw.trim()]
+      .filter((value, index, values) => value.length > 0 && values.indexOf(value) === index)
+      .join('\n')
+      .trim();
+    return stderr.length > 0
+      ? `JSON-RPC process exited before responding (${exitReason})\n${stderr}`
+      : `JSON-RPC process exited before responding (${exitReason})`;
   }
 }

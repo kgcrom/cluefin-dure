@@ -134,6 +134,18 @@ describe('StdioJsonRpcClient', () => {
     });
   });
 
+  describe('프로세스 조기 종료', () => {
+    it('응답 전에 exit되면 timeout 대신 종료 에러를 반환한다', async () => {
+      client.start();
+
+      const resultPromise = client.request('rpc.list_methods');
+      mockProc.stderr.write('No module named cluefin_rpc\n');
+      mockProc.emit('exit', 1, null);
+
+      await expect(resultPromise).rejects.toThrow(/exited before responding/);
+    });
+  });
+
   describe('close()', () => {
     it('rpc.shutdown 알림 + kill 호출', async () => {
       client.start();
