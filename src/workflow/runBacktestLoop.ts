@@ -7,11 +7,13 @@ import { EventRecorder } from '../runtime/eventRecorder.js';
 import { createOnUpdateLogger, log } from '../runtime/log.js';
 import type { BacktestResult, CriticReport, StrategyDefinition } from '../schemas/backtest.js';
 import type { ExperimentRecord } from '../schemas/signal.js';
+import { timeoutMinutesToMs } from './backtestTimeout.js';
 
 export interface BacktestLoopOptions {
   strategy: StrategyDefinition;
   tickers: string[];
   maxIterations?: number;
+  timeoutMinutes?: number;
 }
 
 export interface BacktestLoopResult {
@@ -29,6 +31,7 @@ export async function runBacktestLoop(
   const store = new ArtifactStore();
   const recorder = new EventRecorder();
   const maxIter = options.maxIterations ?? 3;
+  const backtestTimeoutMs = timeoutMinutesToMs(options.timeoutMinutes);
   const emit = onUpdate ? createOnUpdateLogger(onUpdate) : log;
 
   emit(`\n[run] 백테스트 루프 시작: ${runId} (최대 ${maxIter}회)`);
@@ -43,7 +46,7 @@ export async function runBacktestLoop(
     emit('[run] 백테스트 실행 중...');
     const backtestResult: BacktestResult = await runBacktestAgent(
       runId,
-      { strategy: currentStrategy, tickers: options.tickers },
+      { strategy: currentStrategy, tickers: options.tickers, timeoutMs: backtestTimeoutMs },
       store,
       recorder,
       onUpdate,

@@ -1,6 +1,8 @@
+import { fileURLToPath } from 'node:url';
 import { StrategyRepo } from './memory/strategyRepo.js';
 import { generateReport, printTerminalSummary } from './report/generateReport.js';
 import { closeRpcClient } from './rpc/rpc-client.js';
+import { DEFAULT_BACKTEST_TIMEOUT_MINUTES } from './workflow/backtestTimeout.js';
 import { runBacktestLoop } from './workflow/runBacktestLoop.js';
 import { runEquityAnalysis } from './workflow/runEquityAnalysis.js';
 import { runScenarioAnalysis } from './workflow/runScenarioAnalysis.js';
@@ -8,6 +10,58 @@ import { runScreening } from './workflow/runScreening.js';
 import { runStrategyResearch } from './workflow/runStrategyResearch.js';
 
 const [command, ...args] = process.argv.slice(2);
+
+function parseNonNegativeNumber(value: string, optionName: string): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    throw new Error(`${optionName} 값은 0 이상의 숫자여야 합니다.`);
+  }
+  return parsed;
+}
+
+export function parseBacktestCommandArgs(argv: string[]): {
+  strategyId?: string;
+  timeoutMinutes?: number;
+} {
+  let strategyId: string | undefined;
+  let timeoutMinutes: number | undefined;
+
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+
+    if (arg === '--timeout-minutes') {
+      const value = argv[i + 1];
+      if (value === undefined) {
+        throw new Error('--timeout-minutes 뒤에 값을 지정하세요.');
+      }
+      timeoutMinutes = parseNonNegativeNumber(value, '--timeout-minutes');
+      i += 1;
+      continue;
+    }
+
+    if (arg.startsWith('--timeout-minutes=')) {
+      const value = arg.slice('--timeout-minutes='.length);
+      if (!value) {
+        throw new Error('--timeout-minutes 뒤에 값을 지정하세요.');
+      }
+      timeoutMinutes = parseNonNegativeNumber(value, '--timeout-minutes');
+      continue;
+    }
+
+    if (arg.startsWith('--')) {
+      throw new Error(`알 수 없는 옵션: ${arg}`);
+    }
+
+    if (!strategyId) {
+      strategyId = arg;
+      continue;
+    }
+
+    throw new Error(`알 수 없는 추가 인수: ${arg}`);
+  }
+
+  return { strategyId, timeoutMinutes };
+}
 
 async function main() {
   switch (command) {
@@ -63,9 +117,23 @@ async function main() {
     }
 
     case 'backtest': {
-      const strategyId = args[0];
+      let strategyId: string | undefined;
+      let timeoutMinutes: number | undefined;
+
+      try {
+        ({ strategyId, timeoutMinutes } = parseBacktestCommandArgs(args));
+      } catch (error) {
+        console.error(error instanceof Error ? error.message : String(error));
+        console.error(
+          `사용법: backtest <strategyId> [--timeout-minutes ${DEFAULT_BACKTEST_TIMEOUT_MINUTES}]`,
+        );
+        process.exit(1);
+      }
+
       if (!strategyId) {
-        console.error('사용법: backtest <strategyId>');
+        console.error(
+          `사용법: backtest <strategyId> [--timeout-minutes ${DEFAULT_BACKTEST_TIMEOUT_MINUTES}]`,
+        );
         process.exit(1);
       }
       const repo = new StrategyRepo();
@@ -81,6 +149,7 @@ async function main() {
         strategy: stored.strategy,
         tickers: ['005930', '000660', '035420'],
         maxIterations: 3,
+        timeoutMinutes,
       });
       const input = { type: 'backtest' as const, result };
       const reportPath = await generateReport(input);
@@ -111,7 +180,9 @@ async function main() {
       console.log('  equity <ticker>         종목 종합 분석');
       console.log('  screen [market] [style]  종목 스크리닝');
       console.log('  strategy <theme...>      전략 리서치');
-      console.log('  backtest <strategyId>    백테스트 루프');
+      console.log(
+        `  backtest <strategyId> [--timeout-minutes N]  백테스트 루프 (기본 ${DEFAULT_BACKTEST_TIMEOUT_MINUTES}분, 0=무제한)`,
+      );
       console.log('  scenario <시나리오>        What-if 시나리오 분석');
       console.log('\n예시:');
       console.log('  npx tsx src/main.ts chat');
@@ -132,10 +203,12 @@ async function shutdown() {
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
-main()
-  .then(shutdown)
-  .catch(async (err) => {
-    console.error('오류:', err);
-    await closeRpcClient();
-    process.exit(1);
-  });
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main()
+    .then(shutdown)
+    .catch(async (err) => {
+      console.error('오류:', err);
+      await closeRpcClient();
+      process.exit(1);
+    });
+}

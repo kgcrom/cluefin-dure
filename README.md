@@ -70,14 +70,17 @@ npm run screen -- KR value
 # 전략 리서치
 npm run strategy -- "quality dividend growth"
 
-# 저장된 전략 백테스트
+# 저장된 전략 백테스트 (기본 7분, 0이면 무제한)
 npm run backtest -- <strategyId>
+npm run backtest -- <strategyId> --timeout-minutes 10
+npm run backtest -- <strategyId> --timeout-minutes 0
 
 # 시나리오 분석
 npm run scenario -- "연준이 50bp 긴급 인하하면 반도체 섹터 어떻게 되나?"
 ```
 
 > `npm run <script>` 뒤 인수를 넘길 때는 `--` 구분자가 필요합니다.
+> `npm run chat`에서는 백테스트를 실행하지 않습니다. 백테스트는 `npm run backtest -- <strategyId>`로만 직접 실행합니다.
 
 ## Examples
 

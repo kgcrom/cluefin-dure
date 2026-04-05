@@ -6,10 +6,12 @@ import { ArtifactStore } from '../runtime/artifactStore.js';
 import { EventRecorder } from '../runtime/eventRecorder.js';
 import { createOnUpdateLogger, log } from '../runtime/log.js';
 import type { BacktestResult, CriticReport, StrategyDefinition } from '../schemas/backtest.js';
+import { timeoutMinutesToMs } from './backtestTimeout.js';
 
 export interface StrategyResearchOptions {
   theme: string;
   tickers?: string[];
+  timeoutMinutes?: number;
 }
 
 export interface StrategyResearchResult {
@@ -42,10 +44,11 @@ export async function runStrategyResearch(
 
   // 2. 백테스트
   const tickers = options.tickers ?? ['005930', '000660', '035420'];
+  const backtestTimeoutMs = timeoutMinutesToMs(options.timeoutMinutes);
   emit('[run] 백테스트 실행 중...');
   const backtestResult = await runBacktestAgent(
     runId,
-    { strategy, tickers },
+    { strategy, tickers, timeoutMs: backtestTimeoutMs },
     store,
     recorder,
     onUpdate,

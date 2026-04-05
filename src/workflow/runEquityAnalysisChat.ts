@@ -1,6 +1,4 @@
 import type { AgentToolUpdateCallback } from '@mariozechner/pi-coding-agent';
-import { runBacktestAgent } from '../agents/backtestAgent.js';
-import { runCriticAgent } from '../agents/criticAgent.js';
 import { runFundamentalAgent } from '../agents/fundamentalAgent.js';
 import { runNewsAgent } from '../agents/newsAgent.js';
 import { runStrategyAgent } from '../agents/strategyAgent.js';
@@ -10,36 +8,35 @@ import { EventRecorder } from '../runtime/eventRecorder.js';
 import { createOnUpdateLogger, log } from '../runtime/log.js';
 import { SessionPool } from '../runtime/sessionPool.js';
 import type { FundamentalAnalysis, NewsAnalysis } from '../schemas/analysis.js';
-import type { CriticReport } from '../schemas/backtest.js';
+import type { StrategyDefinition } from '../schemas/backtest.js';
 
-export interface EquityAnalysisOptions {
+export interface EquityAnalysisChatOptions {
   ticker?: string;
   market?: string;
   style?: string;
   filterRules?: string;
 }
 
-export interface EquityAnalysisResult {
+export interface EquityAnalysisChatResult {
   runId: string;
   tickers: string[];
   fundamentals: FundamentalAnalysis[];
   newsAnalyses: NewsAnalysis[];
-  criticReport: CriticReport;
+  strategy: StrategyDefinition;
 }
 
-export async function runEquityAnalysis(
-  options: EquityAnalysisOptions,
+export async function runEquityAnalysisChat(
+  options: EquityAnalysisChatOptions,
   onUpdate?: AgentToolUpdateCallback<null>,
-): Promise<EquityAnalysisResult> {
-  const runId = `equity-${Date.now()}`;
+): Promise<EquityAnalysisChatResult> {
+  const runId = `equity-chat-${Date.now()}`;
   const store = new ArtifactStore();
   const recorder = new EventRecorder();
   const pool = new SessionPool(3);
   const emit = onUpdate ? createOnUpdateLogger(onUpdate) : log;
 
-  emit(`\n[run] 종목 분석 시작: ${runId}`);
+  emit(`\n[run] 대화형 종목 분석 시작: ${runId}`);
 
-  // 1. 유니버스 구성 (또는 단일 종목)
   let tickers: string[];
   if (options.ticker) {
     tickers = [options.ticker];
@@ -61,7 +58,6 @@ export async function runEquityAnalysis(
     emit(`[run] 유니버스: ${tickers.join(', ')}`);
   }
 
-  // 2. 각 종목 병렬 분석 (fundamental + news)
   emit('[run] 펀더멘털 + 뉴스 병렬 분석 중...');
   const analysisResults = await Promise.all(
     tickers.map((ticker) =>
@@ -78,8 +74,7 @@ export async function runEquityAnalysis(
   const fundamentals = analysisResults.map((r) => r.fundamental);
   const newsAnalyses = analysisResults.map((r) => r.news);
 
-  // 3. 전략 설계
-  emit('[run] 전략 설계 중...');
+  emit('[run] 전략 초안 생성 중...');
   const strategy = await runStrategyAgent(
     runId,
     {
@@ -92,43 +87,10 @@ export async function runEquityAnalysis(
     onUpdate,
   );
 
-  // 4. 백테스트
-  emit('[run] 백테스트 실행 중...');
-  const backtestResult = await runBacktestAgent(
-    runId,
-    {
-      strategy,
-      tickers,
-      timeoutMs: undefined,
-    },
-    store,
-    recorder,
-    onUpdate,
-  );
-
-  // 5. Critic 검토
-  emit('[run] Critic 검토 중...');
-  const criticReport = await runCriticAgent(
-    runId,
-    {
-      strategy,
-      backtestResult,
-      additionalArtifacts: {
-        fundamentals,
-        newsAnalyses,
-      },
-    },
-    store,
-    recorder,
-    onUpdate,
-  );
-
-  // 6. 이벤트 로그 저장
   await recorder.persist(runId, 'data/runs');
   recorder.dispose();
 
-  emit(`\n[run] 분석 완료: ${runId}`);
-  emit(`[run] Critic 판정: ${criticReport.verdict}`);
+  emit(`\n[run] 대화형 종목 분석 완료: ${runId}`);
 
-  return { runId, tickers, fundamentals, newsAnalyses, criticReport };
+  return { runId, tickers, fundamentals, newsAnalyses, strategy };
 }

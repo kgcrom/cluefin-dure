@@ -93,6 +93,9 @@ export const screeningTool: ToolDefinition<typeof screeningParams, WorkflowToolD
 const strategyParams = Type.Object({
   theme: Type.String({ description: "전략 테마 또는 가설 (예: '저PER 고ROE 퀄리티 밸류')" }),
   tickers: Type.Optional(Type.Array(Type.String(), { description: '대상 종목 코드 목록' })),
+  timeoutMinutes: Type.Optional(
+    Type.Number({ minimum: 0, description: '백테스트 제한 시간(분). 기본 7, 0이면 무제한' }),
+  ),
 });
 
 export const strategyResearchTool: ToolDefinition<typeof strategyParams, WorkflowToolDetails> = {
@@ -110,10 +113,53 @@ export const strategyResearchTool: ToolDefinition<typeof strategyParams, Workflo
   },
 };
 
+const chatStrategyParams = Type.Object({
+  theme: Type.String({ description: "전략 테마 또는 가설 (예: '저PER 고ROE 퀄리티 밸류')" }),
+  tickers: Type.Optional(Type.Array(Type.String(), { description: '참고할 종목 코드 목록' })),
+});
+
+export const chatEquityAnalysisTool: ToolDefinition<typeof equityParams, WorkflowToolDetails> = {
+  name: 'run_equity_analysis',
+  label: '종목 종합 분석',
+  description:
+    '특정 종목 또는 조건에 맞는 종목군의 펀더멘털과 뉴스, 전략 초안을 종합 분석합니다. 대화형 모드에서는 백테스트를 실행하지 않습니다.',
+  parameters: equityParams,
+  async execute(_toolCallId, params: Static<typeof equityParams>, _signal, onUpdate) {
+    const { runEquityAnalysisChat } = await import('../workflow/runEquityAnalysisChat.js');
+    const workflowOnUpdate = asWorkflowUpdate(onUpdate);
+    const { result, details } = await runWorkflowTool(onUpdate, () =>
+      runEquityAnalysisChat(params, workflowOnUpdate),
+    );
+    return toolResult(JSON.stringify(result), details);
+  },
+};
+
+export const chatStrategyResearchTool: ToolDefinition<
+  typeof chatStrategyParams,
+  WorkflowToolDetails
+> = {
+  name: 'run_strategy_research',
+  label: '전략 초안 생성',
+  description:
+    '투자 테마/가설을 기반으로 전략 초안을 생성합니다. 대화형 모드에서는 백테스트와 비평을 실행하지 않습니다.',
+  parameters: chatStrategyParams,
+  async execute(_toolCallId, params: Static<typeof chatStrategyParams>, _signal, onUpdate) {
+    const { runStrategyDraft } = await import('../workflow/runStrategyDraft.js');
+    const workflowOnUpdate = asWorkflowUpdate(onUpdate);
+    const { result, details } = await runWorkflowTool(onUpdate, () =>
+      runStrategyDraft(params, workflowOnUpdate),
+    );
+    return toolResult(JSON.stringify(result), details);
+  },
+};
+
 // ── run_backtest_loop ──
 
 const backtestLoopParams = Type.Object({
   strategyId: Type.String({ description: '저장된 전략 ID' }),
+  timeoutMinutes: Type.Optional(
+    Type.Number({ minimum: 0, description: '각 백테스트 제한 시간(분). 기본 7, 0이면 무제한' }),
+  ),
 });
 
 export const backtestLoopTool: ToolDefinition<typeof backtestLoopParams, WorkflowToolDetails> = {
@@ -151,6 +197,7 @@ export const backtestLoopTool: ToolDefinition<typeof backtestLoopParams, Workflo
           strategy: stored.strategy,
           tickers: ['005930', '000660', '035420'],
           maxIterations: 3,
+          timeoutMinutes: params.timeoutMinutes,
         },
         workflowOnUpdate,
       ),
@@ -191,5 +238,12 @@ export const workflowTools = [
   screeningTool,
   strategyResearchTool,
   backtestLoopTool,
+  scenarioAnalysisTool,
+] as unknown as ToolDefinition[];
+
+export const chatWorkflowTools = [
+  chatEquityAnalysisTool,
+  screeningTool,
+  chatStrategyResearchTool,
   scenarioAnalysisTool,
 ] as unknown as ToolDefinition[];
