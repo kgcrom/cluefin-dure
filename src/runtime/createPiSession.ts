@@ -37,7 +37,7 @@ export async function createPiSession(options: AgentSessionOptions): Promise<Age
 
   const agentDir = getAgentDir();
   const authStorage = AuthStorage.create(`${agentDir}/auth.json`);
-  const modelRegistry = new ModelRegistry(authStorage);
+  const modelRegistry = ModelRegistry.create(authStorage);
 
   const modelConfig = getAgentModel(agentName);
   const model = modelRegistry.find(modelConfig.provider, modelConfig.modelId);

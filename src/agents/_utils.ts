@@ -7,7 +7,7 @@ const PROMPTS_DIR = path.resolve('research/prompts');
 const SOUL_PROMPT_FILE = 'SOUL.md';
 const MEMORY_INSTRUCTIONS_FILE = '_memory_instructions.md';
 
-type PromptName =
+export type PromptName =
   | 'router'
   | 'universe'
   | 'fundamental'
@@ -15,7 +15,13 @@ type PromptName =
   | 'strategy'
   | 'backtest'
   | 'critic'
-  | 'scenario';
+  | 'scenario'
+  | 'review_checklist_base'
+  | 'review_checklist_company'
+  | 'review_checklist_risk'
+  | 'review_checklist_peer'
+  | 'review_checklist_cross_validation'
+  | 'review_checklist_synthesizer';
 
 export interface LoadPromptOptions {
   includeMemory?: boolean;
@@ -23,11 +29,17 @@ export interface LoadPromptOptions {
 }
 
 export async function loadPrompt(
-  name: PromptName,
+  name: PromptName | PromptName[],
   options: LoadPromptOptions = {},
 ): Promise<string> {
-  const { includeMemory = name !== 'router', memoryStore = new MemoryStore() } = options;
-  const sections = [await readPromptFile(SOUL_PROMPT_FILE), await readPromptFile(`${name}.md`)];
+  const names = Array.isArray(name) ? name : [name];
+  const includeMemoryDefault = names.some((promptName) => promptName !== 'router');
+  const { includeMemory = includeMemoryDefault, memoryStore = new MemoryStore() } = options;
+  const sections = [await readPromptFile(SOUL_PROMPT_FILE)];
+
+  for (const promptName of names) {
+    sections.push(await readPromptFile(`${promptName}.md`));
+  }
 
   if (!includeMemory) {
     return sections.join('\n\n');
@@ -70,22 +82,26 @@ interface ContentBlock {
   text?: string;
 }
 
+function messageToText(message: Message | undefined): string {
+  if (!message) return '';
+
+  return typeof message.content === 'string'
+    ? message.content
+    : Array.isArray(message.content)
+      ? message.content
+          .filter((block) => block.type === 'text')
+          .map((block) => block.text ?? '')
+          .join('\n')
+      : '';
+}
+
 export function extractJsonFromMessage<T>(messages: Message[], callerContext?: string): T {
   // 마지막 assistant 메시지에서 JSON 추출
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i];
     if (msg?.role !== 'assistant') continue;
 
-    const text =
-      typeof msg.content === 'string'
-        ? msg.content
-        : Array.isArray(msg.content)
-          ? msg.content
-              .filter((b) => b.type === 'text')
-              .map((b) => b.text ?? '')
-              .join('\n')
-          : '';
-
+    const text = messageToText(msg);
     if (!text) continue;
 
     // ```json 블록 추출
@@ -110,15 +126,7 @@ export function extractJsonFromMessage<T>(messages: Message[], callerContext?: s
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i];
     if (msg?.role !== 'assistant') continue;
-    lastText =
-      typeof msg.content === 'string'
-        ? msg.content
-        : Array.isArray(msg.content)
-          ? msg.content
-              .filter((b) => b.type === 'text')
-              .map((b) => b.text ?? '')
-              .join('\n')
-          : '';
+    lastText = messageToText(msg);
     if (lastText) break;
   }
 
@@ -126,6 +134,19 @@ export function extractJsonFromMessage<T>(messages: Message[], callerContext?: s
   throw new Error(
     `${prefix}에이전트 응답에서 JSON을 추출할 수 없습니다. 마지막 응답: "${lastText.slice(0, 200)}"`,
   );
+}
+
+export function extractTextFromMessage(messages: Message[], callerContext?: string): string {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    if (msg?.role !== 'assistant') continue;
+
+    const text = messageToText(msg).trim();
+    if (text) return text;
+  }
+
+  const prefix = callerContext ? `[${callerContext}] ` : '';
+  throw new Error(`${prefix}에이전트 응답에서 텍스트를 추출할 수 없습니다.`);
 }
 
 /**
@@ -179,4 +200,34 @@ export async function extractJsonWithRetry<T>(
 
   // unreachable but satisfies TypeScript
   throw new Error('extractJsonWithRetry: unreachable');
+}
+
+export async function extractTextWithRetry(
+  session: AgentSession,
+  agentName?: string,
+  maxRetries = 2,
+): Promise<string> {
+  try {
+    return extractTextFromMessage(session.state.messages, agentName);
+  } catch {
+    // retry below
+  }
+
+  const prefix = agentName ? `[${agentName}] ` : '';
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    await session.prompt(
+      '이전 응답이 비어 있거나 텍스트를 추출할 수 없었습니다. 동일한 내용을 간결한 Markdown 텍스트로 다시 반환해주세요.',
+    );
+
+    try {
+      return extractTextFromMessage(session.state.messages, agentName);
+    } catch {
+      if (attempt === maxRetries) {
+        throw new Error(`${prefix}${maxRetries}회 재시도 후에도 텍스트 응답을 추출할 수 없습니다.`);
+      }
+    }
+  }
+
+  throw new Error('extractTextWithRetry: unreachable');
 }

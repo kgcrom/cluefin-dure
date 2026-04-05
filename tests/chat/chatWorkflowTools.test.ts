@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockRunEquityAnalysisChat, mockRunStrategyDraft } = vi.hoisted(() => ({
+const { mockRunEquityAnalysisChat, mockRunStrategyDraft, mockRunReviewChecklist } = vi.hoisted(() => ({
   mockRunEquityAnalysisChat: vi.fn(),
   mockRunStrategyDraft: vi.fn(),
+  mockRunReviewChecklist: vi.fn(),
 }));
 
 vi.mock('../../src/workflow/runEquityAnalysisChat.js', () => ({
@@ -13,16 +14,41 @@ vi.mock('../../src/workflow/runStrategyDraft.js', () => ({
   runStrategyDraft: mockRunStrategyDraft,
 }));
 
+vi.mock('../../src/workflow/runReviewChecklist.js', () => ({
+  runReviewChecklist: mockRunReviewChecklist,
+}));
+
 import {
   chatEquityAnalysisTool,
-  chatStrategyResearchTool,
   chatWorkflowTools,
+  reviewChecklistTool,
+  chatStrategyResearchTool,
 } from '../../src/tools/workflowTools.js';
 
 describe('chatWorkflowTools', () => {
   beforeEach(() => {
-    mockRunEquityAnalysisChat.mockResolvedValue({ runId: 'equity-chat-1' });
+    mockRunEquityAnalysisChat.mockResolvedValue({
+      runId: 'equity-1',
+      tickers: ['005930'],
+      fundamentals: [],
+      newsAnalyses: [],
+      criticReport: { verdict: 'revise' },
+      reviewChecklist: {
+        runId: 'review-checklist-1',
+        sourceRunId: 'equity-1',
+        sourceType: 'equity',
+        reviewers: {},
+        finalReview: 'Overall Verdict: revise',
+      },
+    });
     mockRunStrategyDraft.mockResolvedValue({ runId: 'strategy-draft-1' });
+    mockRunReviewChecklist.mockResolvedValue({
+      runId: 'review-checklist-1',
+      sourceRunId: 'equity-123',
+      sourceType: 'equity',
+      reviewers: {},
+      finalReview: 'Overall Verdict: revise',
+    });
   });
 
   afterEach(() => {
@@ -37,6 +63,7 @@ describe('chatWorkflowTools', () => {
       'run_screening',
       'run_strategy_research',
       'run_scenario_analysis',
+      'run_review_checklist',
     ]);
     expect(names).not.toContain('run_backtest_loop');
   });
@@ -70,5 +97,38 @@ describe('chatWorkflowTools', () => {
       { theme: 'quality dividend', tickers: ['005930'] },
       undefined,
     );
+  });
+
+  it('run_review_checklist는 Markdown 리뷰를 반환하고 runId를 필수로 받는다', async () => {
+    const schema = JSON.parse(JSON.stringify(reviewChecklistTool.parameters));
+    expect(schema.required).toContain('runId');
+
+    const result = await reviewChecklistTool.execute(
+      'tool-3',
+      { runId: 'equity-123' },
+      undefined,
+      undefined,
+      {} as never,
+    );
+
+    expect(mockRunReviewChecklist).toHaveBeenCalledWith({ runId: 'equity-123' }, undefined);
+    expect(result.content[0].text).toBe('Overall Verdict: revise');
+    expect(result.details?.workflowResult).toMatchObject({
+      sourceRunId: 'equity-123',
+    });
+  });
+
+  it('run_review_checklist 에러를 그대로 표면화한다', async () => {
+    mockRunReviewChecklist.mockRejectedValueOnce(new Error('missing run'));
+
+    await expect(
+      reviewChecklistTool.execute(
+        'tool-4',
+        { runId: 'equity-missing' },
+        undefined,
+        undefined,
+        {} as never,
+      ),
+    ).rejects.toThrow('missing run');
   });
 });

@@ -9,6 +9,7 @@ import { toolResult } from './_helpers.js';
 
 type WorkflowToolDetails = PiLogDetails & {
   kind: 'workflow-log';
+  workflowResult?: unknown;
 };
 
 async function runWorkflowTool<T>(
@@ -122,7 +123,7 @@ export const chatEquityAnalysisTool: ToolDefinition<typeof equityParams, Workflo
   name: 'run_equity_analysis',
   label: '종목 종합 분석',
   description:
-    '특정 종목 또는 조건에 맞는 종목군의 펀더멘털과 뉴스, 전략 초안을 종합 분석합니다. 대화형 모드에서는 백테스트를 실행하지 않습니다.',
+    '특정 종목 또는 조건에 맞는 종목군의 전체 equity 분석을 실행한 뒤, 투자 리뷰 체크리스트까지 자동으로 이어서 검토합니다.',
   parameters: equityParams,
   async execute(_toolCallId, params: Static<typeof equityParams>, _signal, onUpdate) {
     const { runEquityAnalysisChat } = await import('../workflow/runEquityAnalysisChat.js');
@@ -231,6 +232,34 @@ export const scenarioAnalysisTool: ToolDefinition<typeof scenarioParams, Workflo
   },
 };
 
+// ── run_review_checklist ──
+
+const reviewChecklistParams = Type.Object({
+  runId: Type.String({ description: '리뷰할 기존 equity run ID (예: equity-1712345678901)' }),
+});
+
+export const reviewChecklistTool: ToolDefinition<
+  typeof reviewChecklistParams,
+  WorkflowToolDetails
+> = {
+  name: 'run_review_checklist',
+  label: '투자 리뷰 체크리스트',
+  description:
+    '기존 equity 분석 run을 불러와 회사 분석, 리스크, 비교기업, 교차검증 체크리스트로 다시 검토합니다.',
+  parameters: reviewChecklistParams,
+  async execute(_toolCallId, params: Static<typeof reviewChecklistParams>, _signal, onUpdate) {
+    const { runReviewChecklist } = await import('../workflow/runReviewChecklist.js');
+    const workflowOnUpdate = asWorkflowUpdate(onUpdate);
+    const { result, details } = await runWorkflowTool(onUpdate, () =>
+      runReviewChecklist({ runId: params.runId }, workflowOnUpdate),
+    );
+    return toolResult(result.finalReview, {
+      ...details,
+      workflowResult: result,
+    });
+  },
+};
+
 // ── 전체 도구 목록 ──
 
 export const workflowTools = [
@@ -246,4 +275,5 @@ export const chatWorkflowTools = [
   screeningTool,
   chatStrategyResearchTool,
   scenarioAnalysisTool,
+  reviewChecklistTool,
 ] as unknown as ToolDefinition[];

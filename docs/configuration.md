@@ -68,6 +68,7 @@ npm run strategy -- "quality dividend growth"
 - `DURE_MODEL_BACKTEST`
 - `DURE_MODEL_CRITIC`
 - `DURE_MODEL_SCENARIO`
+- `DURE_MODEL_REVIEW_CHECKLIST`
 - `DURE_MODEL_ROUTER`
 
 ## Unsupported Google Product Logins
@@ -90,7 +91,7 @@ Gemini를 제3자 코딩 에이전트에서 사용해야 한다면 제품 로그
 
 | 역할 티어 | 에이전트 | `openai-codex` | `anthropic` |
 |-----------|---------|----------------|-------------|
-| fast | Universe, News | `gpt-5.4-mini` | `claude-haiku-4-5` |
+| fast | Universe, News, Review Checklist | `gpt-5.4-mini`, `gpt-4.5-mini` | `claude-haiku-4-5` |
 | fast | Router | `gpt-5.3-codex-spark` | `claude-haiku-4-5` |
 | standard | Fundamental, Strategy, Backtest, Scenario | `gpt-5.4` | `claude-sonnet-4-6` |
 | advanced | Critic | `gpt-5.4` | `claude-opus-4-6` |
@@ -106,6 +107,7 @@ Gemini를 제3자 코딩 에이전트에서 사용해야 한다면 제품 로그
 | Backtest | `openai-codex:gpt-5.4` |
 | Critic | `openai-codex:gpt-5.4` |
 | Scenario | `openai-codex:gpt-5.4` |
+| Review Checklist | `openai-codex:gpt-4.5-mini` |
 | Router | `openai-codex:gpt-5.3-codex-spark` |
 
 ## Command Notes

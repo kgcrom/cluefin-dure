@@ -3,7 +3,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { MemoryStore } from '../../src/memory/memoryStore.js';
-import { buildSessionLabel, extractJsonFromMessage, loadPrompt } from '../../src/agents/_utils.js';
+import {
+  buildSessionLabel,
+  extractJsonFromMessage,
+  extractTextFromMessage,
+  loadPrompt,
+} from '../../src/agents/_utils.js';
 
 const tempDirs: string[] = [];
 
@@ -62,6 +67,17 @@ describe("extractJsonFromMessage", () => {
   });
 });
 
+describe('extractTextFromMessage', () => {
+  it('마지막 assistant 텍스트를 그대로 추출', () => {
+    const result = extractTextFromMessage([
+      { role: 'assistant', content: '첫 번째 응답' },
+      { role: 'assistant', content: '최종 Markdown 응답' },
+    ]);
+
+    expect(result).toBe('최종 Markdown 응답');
+  });
+});
+
 describe('loadPrompt', () => {
   it('공통 SOUL 이후에 역할 프롬프트를 조합한다', async () => {
     const prompt = await loadPrompt('fundamental');
@@ -100,6 +116,17 @@ describe('loadPrompt', () => {
 
     expect(prompt).toContain('## Who We Are');
     expect(prompt).toContain('# Dure 투자 분석 어시스턴트');
+    expect(prompt).not.toContain('<agent-memory>');
+  });
+
+  it('review checklist prompt bundle도 동일한 helper로 로드된다', async () => {
+    const prompt = await loadPrompt(
+      ['review_checklist_base', 'review_checklist_company'],
+      { includeMemory: false },
+    );
+
+    expect(prompt).toContain('# 역할: 투자 결과 리뷰 체크리스트');
+    expect(prompt).toContain('# 역할: 회사 분석 완결성 리뷰어');
     expect(prompt).not.toContain('<agent-memory>');
   });
 });

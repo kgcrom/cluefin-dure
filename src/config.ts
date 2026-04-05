@@ -6,6 +6,7 @@ export const agentModelConfig = {
   backtest: { provider: 'openai-codex', modelId: 'gpt-5.4' },
   critic: { provider: 'openai-codex', modelId: 'gpt-5.4' },
   scenario: { provider: 'openai-codex', modelId: 'gpt-5.4' },
+  review_checklist: { provider: 'openai-codex', modelId: 'gpt-4.5-mini' },
   router: { provider: 'openai-codex', modelId: 'gpt-5.3-codex-spark' },
 } as const;
 
@@ -20,6 +21,7 @@ const providerPresets: Record<string, Record<AgentName, { provider: string; mode
     backtest: { provider: 'openai-codex', modelId: 'gpt-5.4' },
     critic: { provider: 'openai-codex', modelId: 'gpt-5.4' },
     scenario: { provider: 'openai-codex', modelId: 'gpt-5.4' },
+    review_checklist: { provider: 'openai-codex', modelId: 'gpt-4.5-mini' },
     router: { provider: 'openai-codex', modelId: 'gpt-5.3-codex-spark' },
   },
   anthropic: {
@@ -30,6 +32,7 @@ const providerPresets: Record<string, Record<AgentName, { provider: string; mode
     backtest: { provider: 'anthropic', modelId: 'claude-sonnet-4-6' },
     critic: { provider: 'anthropic', modelId: 'claude-opus-4-6' },
     scenario: { provider: 'anthropic', modelId: 'claude-sonnet-4-6' },
+    review_checklist: { provider: 'anthropic', modelId: 'claude-haiku-4-5' },
     router: { provider: 'anthropic', modelId: 'claude-haiku-4-5' },
   },
 };
