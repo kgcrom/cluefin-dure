@@ -10,7 +10,6 @@
     "equity": "tsx --env-file=.env src/main.ts equity",
     "screen": "tsx --env-file=.env src/main.ts screen",
     "strategy": "tsx --env-file=.env src/main.ts strategy",
-    "backtest": "tsx --env-file=.env src/main.ts backtest",
     "scenario": "tsx --env-file=.env src/main.ts scenario",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",

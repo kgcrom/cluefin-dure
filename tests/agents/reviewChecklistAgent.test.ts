@@ -97,7 +97,7 @@ beforeEach(() => {
             'Missing Evidence:',
             '- second source for catalyst claim',
             'Questions:',
-            '- why does backtest support this thesis?',
+            '- how is this thesis cross-validated?',
             'Feedback:',
             '- soften recommendation strength',
           ].join('\n');
@@ -214,7 +214,6 @@ describe('runReviewChecklistAgent', () => {
       'review-checklist source run validation failed for equity-789.',
     );
     expect(error.message).toContain(path.join(runDir, 'strategy', 'output.json'));
-    expect(error.message).toContain(path.join(runDir, 'backtest', 'output.json'));
     expect(error.message).toContain(path.join(runDir, 'critic', 'output.json'));
     expect(error.message).toContain(path.join(runDir, 'fundamental', '*.json'));
     expect(error.message).toContain(path.join(runDir, 'news', '*.json'));
@@ -235,10 +234,6 @@ async function writeEquityRun(rootDir: string, runId: string): Promise<void> {
   await writeJson(path.join(runDir, 'strategy', 'output.json'), {
     name: 'Semiconductor Quality',
     hypothesis: 'HBM cycle continues',
-  });
-  await writeJson(path.join(runDir, 'backtest', 'output.json'), {
-    cagr: 0.21,
-    sharpe: 1.4,
   });
   await writeJson(path.join(runDir, 'critic', 'output.json'), {
     verdict: 'revise',

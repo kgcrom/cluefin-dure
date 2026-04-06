@@ -1,7 +1,7 @@
 import type { FundamentalAnalysis, NewsAnalysis } from '../../src/schemas/analysis.js';
-import type { BacktestResult, CriticReport, StrategyDefinition } from '../../src/schemas/backtest.js';
 import type { ScenarioDefinition, ScenarioProjection, ScenarioReport } from '../../src/schemas/scenario.js';
 import type { ExperimentRecord } from '../../src/schemas/signal.js';
+import type { CriticReport, StrategyDefinition } from '../../src/schemas/strategy.js';
 
 export const fundamentals: FundamentalAnalysis[] = [
   {
@@ -115,25 +115,14 @@ export const strategy: StrategyDefinition = {
   config: { lookback: 252, topN: 10 },
 };
 
-export const backtestResult: BacktestResult = {
-  cagr: 0.142,
-  mdd: -0.187,
-  sharpe: 1.23,
-  turnover: 0.45,
-  tradeLog: [
-    { date: '2024-01-15', ticker: '005930', action: 'BUY', price: 78500, quantity: 100 },
-    { date: '2024-03-20', ticker: '005930', action: 'SELL', price: 81200, quantity: 100 },
-    { date: '2024-04-01', ticker: '000660', action: 'BUY', price: 164000, quantity: 50 },
-  ],
-  runArtifactPath: 'data/runs/test-run/backtest',
-  errorLog: [],
-};
-
 export const experimentRecord: ExperimentRecord = {
   id: 'test-run-iter-0',
   strategyId: '저PER 고ROE',
   params: { lookback: 252 },
-  result: backtestResult,
+  result: {
+    note: 'critic 중심 전략 실험 결과',
+    score: 0.82,
+  },
   criticVerdict: 'keep',
   timestamp: '2025-03-15T10:00:00Z',
 };

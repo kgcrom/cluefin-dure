@@ -1,22 +1,14 @@
 /** 데이터 스키마 단위 HTML 렌더링 컴포넌트 */
 
 import type { FundamentalAnalysis, NewsAnalysis } from '../schemas/analysis.js';
-import type { BacktestResult, CriticReport, StrategyDefinition } from '../schemas/backtest.js';
 import type {
   ScenarioDefinition,
   ScenarioProjection,
   ScenarioReport,
 } from '../schemas/scenario.js';
-import {
-  badge,
-  bulletList,
-  detailsBlock,
-  esc,
-  metricCards,
-  pct,
-  section,
-  table,
-} from './layout.js';
+import type { CriticReport, StrategyDefinition } from '../schemas/strategy.js';
+import type { CriticIteration } from '../workflow/runCriticIterationLoop.js';
+import { badge, bulletList, esc, metricCards, pct, section, table } from './layout.js';
 
 // ── Fundamentals ──
 
@@ -103,6 +95,38 @@ export function renderCriticReport(critic: CriticReport): string {
   ].join('\n');
 
   return section('Critic 리포트', content);
+}
+
+export function renderCriticIterationTrail(iterations: CriticIteration[] = []): string {
+  if (iterations.length === 0) {
+    return '';
+  }
+
+  const iterationsHtml = iterations
+    .map((iteration) => {
+      const cards = metricCards([
+        { label: `Iteration ${iteration.iteration} 판정`, value: iteration.verdict.toUpperCase() },
+      ]);
+
+      const recommendations =
+        iteration.criticReport.recommendations.length > 0
+          ? `${bulletList(iteration.criticReport.recommendations)}`
+          : '';
+
+      return section(
+        `Critic 반복 ${iteration.iteration}`,
+        [
+          cards,
+          `<p><strong>전략:</strong> ${esc(iteration.strategy.name)}</p>`,
+          `<p><strong>가설:</strong> ${esc(iteration.strategy.hypothesis)}</p>`,
+          `<p><strong>결과:</strong> ${badge(iteration.criticReport.verdict, iteration.criticReport.verdict)}</p>`,
+          recommendations,
+        ].join('\n'),
+      );
+    })
+    .join('\n');
+
+  return section('Critic 반복 로그', iterationsHtml);
 }
 
 // ── Scenario Definition ──
@@ -193,48 +217,4 @@ export function renderStrategy(strategy: StrategyDefinition): string {
   ].join('\n');
 
   return section('전략 정의', content);
-}
-
-// ── Backtest KPIs ──
-
-export function renderBacktestKPIs(result: BacktestResult): string {
-  const cards = metricCards([
-    { label: 'CAGR', value: pct(result.cagr) },
-    { label: 'MDD', value: pct(result.mdd) },
-    { label: 'Sharpe', value: result.sharpe.toFixed(2) },
-    { label: 'Turnover', value: pct(result.turnover) },
-  ]);
-
-  const errorContent =
-    result.errorLog.length > 0
-      ? `<p><strong>에러 로그:</strong></p>${bulletList(result.errorLog)}`
-      : '';
-
-  return section('백테스트 성과', cards + errorContent);
-}
-
-// ── Trade Log ──
-
-const TRADE_LOG_FOLD_THRESHOLD = 50;
-
-export function renderTradeLog(tradeLog: BacktestResult['tradeLog']): string {
-  if (tradeLog.length === 0) {
-    return section('거래 내역', '<p>거래 내역이 없습니다.</p>');
-  }
-
-  const rows = tradeLog.map((t) => [
-    esc(t.date),
-    esc(t.ticker),
-    esc(t.action),
-    t.price.toLocaleString(),
-    t.quantity.toString(),
-  ]);
-
-  const tradeTable = table(['날짜', '티커', '액션', '가격', '수량'], rows);
-
-  if (tradeLog.length > TRADE_LOG_FOLD_THRESHOLD) {
-    return section('거래 내역', detailsBlock(`거래 ${tradeLog.length}건 보기`, tradeTable));
-  }
-
-  return section('거래 내역', tradeTable);
 }

@@ -31,7 +31,6 @@ interface EquityEvidenceBundle {
   fundamentals: unknown[];
   newsAnalyses: unknown[];
   strategy: unknown;
-  backtest: unknown;
   critic: unknown;
 }
 
@@ -168,10 +167,6 @@ async function loadEquityEvidenceBundle(sourceRunId: string): Promise<EquityEvid
     path.join(runDir, 'strategy', 'output.json'),
     missingPaths,
   );
-  const backtest = await readRequiredJson(
-    path.join(runDir, 'backtest', 'output.json'),
-    missingPaths,
-  );
   const critic = await readRequiredJson(path.join(runDir, 'critic', 'output.json'), missingPaths);
   const fundamentals = await readRequiredJsonDirectory(
     path.join(runDir, 'fundamental'),
@@ -182,7 +177,6 @@ async function loadEquityEvidenceBundle(sourceRunId: string): Promise<EquityEvid
 
   if (
     !strategy ||
-    !backtest ||
     !critic ||
     fundamentals.length === 0 ||
     newsAnalyses.length === 0 ||
@@ -202,7 +196,6 @@ async function loadEquityEvidenceBundle(sourceRunId: string): Promise<EquityEvid
     fundamentals,
     newsAnalyses,
     strategy,
-    backtest,
     critic,
   };
 }
@@ -282,9 +275,6 @@ function buildEvidenceBundle(sourceRunId: string, evidence: EquityEvidenceBundle
     '',
     '=== Strategy ===',
     JSON.stringify(evidence.strategy, null, 2),
-    '',
-    '=== Backtest ===',
-    JSON.stringify(evidence.backtest, null, 2),
     '',
     '=== Critic ===',
     JSON.stringify(evidence.critic, null, 2),

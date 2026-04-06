@@ -3,14 +3,13 @@ import type { ArtifactStore } from '../runtime/artifactStore.js';
 import { createPiSession } from '../runtime/createPiSession.js';
 import type { EventRecorder } from '../runtime/eventRecorder.js';
 import type { FundamentalAnalysis, NewsAnalysis } from '../schemas/analysis.js';
-import type { BacktestResult, CriticReport, StrategyDefinition } from '../schemas/backtest.js';
 import type { ScenarioDefinition, ScenarioReport } from '../schemas/scenario.js';
+import type { CriticReport, StrategyDefinition } from '../schemas/strategy.js';
 import { getMemoryTools } from '../tools/memoryTools.js';
 import { buildSessionLabel, extractJsonWithRetry, loadPrompt } from './_utils.js';
 
 export interface CriticInput {
   strategy: StrategyDefinition;
-  backtestResult: BacktestResult;
   additionalArtifacts?: Record<string, unknown>;
 }
 
@@ -33,13 +32,7 @@ export async function runCriticAgent(
     onUpdate,
   });
 
-  const parts: string[] = [
-    '=== 전략 정의 ===',
-    JSON.stringify(input.strategy, null, 2),
-    '',
-    '=== 백테스트 결과 ===',
-    JSON.stringify(input.backtestResult, null, 2),
-  ];
+  const parts: string[] = ['=== 전략 정의 ===', JSON.stringify(input.strategy, null, 2), ''];
 
   if (input.additionalArtifacts) {
     parts.push('', '=== 추가 분석 데이터 ===');
@@ -50,7 +43,7 @@ export async function runCriticAgent(
 
   parts.push(
     '',
-    '위 전략과 백테스트 결과를 비판적으로 검토하세요. 과적합 위험, 데이터 유출, 생존편향, 레짐 의존성을 평가하고 verdict를 내려주세요.',
+    '전략과 보유 근거를 비판적으로 검토하세요. 전략 가설의 논리 완결성, 반증 가능성, 과적합 위험, 데이터 유출, 생존편향, 레짐 의존성을 평가하고 verdict를 내려주세요.',
   );
   parts.push('결과를 JSON으로 반환하세요.');
 

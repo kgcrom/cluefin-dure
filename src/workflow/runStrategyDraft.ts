@@ -3,7 +3,7 @@ import { runStrategyAgent } from '../agents/strategyAgent.js';
 import { ArtifactStore } from '../runtime/artifactStore.js';
 import { EventRecorder } from '../runtime/eventRecorder.js';
 import { createOnUpdateLogger, log } from '../runtime/log.js';
-import type { StrategyDefinition } from '../schemas/backtest.js';
+import type { StrategyDefinition } from '../schemas/strategy.js';
 
 export interface StrategyDraftOptions {
   theme: string;

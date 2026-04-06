@@ -13,7 +13,6 @@ export type PromptName =
   | 'fundamental'
   | 'news'
   | 'strategy'
-  | 'backtest'
   | 'critic'
   | 'scenario'
   | 'review_checklist_base'

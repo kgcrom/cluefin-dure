@@ -1,8 +1,4 @@
-import type {
-  AgentToolResult,
-  AgentToolUpdateCallback,
-  ToolDefinition,
-} from '@mariozechner/pi-coding-agent';
+import type { AgentToolUpdateCallback, ToolDefinition } from '@mariozechner/pi-coding-agent';
 import { type Static, Type } from '@sinclair/typebox';
 import { createPiLogSink, type PiLogDetails, withLogSink } from '../runtime/log.js';
 import { toolResult } from './_helpers.js';
@@ -94,15 +90,13 @@ export const screeningTool: ToolDefinition<typeof screeningParams, WorkflowToolD
 const strategyParams = Type.Object({
   theme: Type.String({ description: "전략 테마 또는 가설 (예: '저PER 고ROE 퀄리티 밸류')" }),
   tickers: Type.Optional(Type.Array(Type.String(), { description: '대상 종목 코드 목록' })),
-  timeoutMinutes: Type.Optional(
-    Type.Number({ minimum: 0, description: '백테스트 제한 시간(분). 기본 7, 0이면 무제한' }),
-  ),
 });
 
 export const strategyResearchTool: ToolDefinition<typeof strategyParams, WorkflowToolDetails> = {
   name: 'run_strategy_research',
   label: '전략 리서치',
-  description: '투자 테마/가설을 기반으로 전략을 설계하고, 백테스트 및 비평 리포트를 생성합니다.',
+  description:
+    '투자 테마/가설을 기반으로 전략을 설계하고, 전략/논리 검증 루프를 통해 전략 버전을 반복 개선합니다.',
   parameters: strategyParams,
   async execute(_toolCallId, params: Static<typeof strategyParams>, _signal, onUpdate) {
     const { runStrategyResearch } = await import('../workflow/runStrategyResearch.js');
@@ -141,67 +135,13 @@ export const chatStrategyResearchTool: ToolDefinition<
 > = {
   name: 'run_strategy_research',
   label: '전략 초안 생성',
-  description:
-    '투자 테마/가설을 기반으로 전략 초안을 생성합니다. 대화형 모드에서는 백테스트와 비평을 실행하지 않습니다.',
+  description: '투자 테마/가설을 기반으로 전략 초안을 생성합니다.',
   parameters: chatStrategyParams,
   async execute(_toolCallId, params: Static<typeof chatStrategyParams>, _signal, onUpdate) {
     const { runStrategyDraft } = await import('../workflow/runStrategyDraft.js');
     const workflowOnUpdate = asWorkflowUpdate(onUpdate);
     const { result, details } = await runWorkflowTool(onUpdate, () =>
       runStrategyDraft(params, workflowOnUpdate),
-    );
-    return toolResult(JSON.stringify(result), details);
-  },
-};
-
-// ── run_backtest_loop ──
-
-const backtestLoopParams = Type.Object({
-  strategyId: Type.String({ description: '저장된 전략 ID' }),
-  timeoutMinutes: Type.Optional(
-    Type.Number({ minimum: 0, description: '각 백테스트 제한 시간(분). 기본 7, 0이면 무제한' }),
-  ),
-});
-
-export const backtestLoopTool: ToolDefinition<typeof backtestLoopParams, WorkflowToolDetails> = {
-  name: 'run_backtest_loop',
-  label: '백테스트 루프',
-  description:
-    '저장된 전략을 반복 백테스트합니다. 전략 → 백테스트 → 비평 → 전략 수정 루프를 최대 3회 실행합니다.',
-  parameters: backtestLoopParams,
-  async execute(
-    _toolCallId,
-    params: Static<typeof backtestLoopParams>,
-    _signal,
-    onUpdate,
-  ): Promise<AgentToolResult<WorkflowToolDetails>> {
-    const { StrategyRepo } = await import('../memory/strategyRepo.js');
-    const { runBacktestLoop } = await import('../workflow/runBacktestLoop.js');
-    const workflowOnUpdate = asWorkflowUpdate(onUpdate);
-
-    const repo = new StrategyRepo();
-    const stored = await repo.get(params.strategyId);
-    if (!stored) {
-      const all = await repo.list();
-      const ids = all.map((s) => `${s.id}: ${s.strategy.name}`).join(', ');
-      return toolResult(
-        JSON.stringify({
-          error: `전략 '${params.strategyId}'를 찾을 수 없습니다.`,
-          availableStrategies: ids || '저장된 전략이 없습니다.',
-        }),
-      );
-    }
-
-    const { result, details } = await runWorkflowTool(onUpdate, () =>
-      runBacktestLoop(
-        {
-          strategy: stored.strategy,
-          tickers: ['005930', '000660', '035420'],
-          maxIterations: 3,
-          timeoutMinutes: params.timeoutMinutes,
-        },
-        workflowOnUpdate,
-      ),
     );
     return toolResult(JSON.stringify(result), details);
   },
@@ -266,7 +206,6 @@ export const workflowTools = [
   equityAnalysisTool,
   screeningTool,
   strategyResearchTool,
-  backtestLoopTool,
   scenarioAnalysisTool,
 ] as unknown as ToolDefinition[];
 

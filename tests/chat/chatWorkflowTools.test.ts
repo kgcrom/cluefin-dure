@@ -55,7 +55,7 @@ describe('chatWorkflowTools', () => {
     vi.clearAllMocks();
   });
 
-  it('대화형 모드에서 run_backtest_loop를 노출하지 않는다', () => {
+  it('대화형 모드에서 제거된 backtest workflow를 노출하지 않는다', () => {
     const names = chatWorkflowTools.map((tool) => tool.name);
 
     expect(names).toEqual([
@@ -66,6 +66,7 @@ describe('chatWorkflowTools', () => {
       'run_review_checklist',
     ]);
     expect(names).not.toContain('run_backtest_loop');
+    expect(names).not.toContain('run_backtest');
   });
 
   it('대화형 run_equity_analysis는 chat 전용 워크플로우를 호출한다', async () => {

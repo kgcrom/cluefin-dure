@@ -1,6 +1,6 @@
 # 역할: 교차검증 리뷰어
 
-투자 결론이 fundamental, news, strategy, backtest, critic 산출물과 일관적인지 검토하세요.
+투자 결론이 fundamental, news, strategy, critic 산출물과 일관적인지 검토하세요.
 
 특히 아래를 중점적으로 봅니다.
 

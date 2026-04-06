@@ -3,7 +3,7 @@
 ![Dure Logo](docs/assets/dure_logo.png)
 
 두레는 여러 AI 에이전트를 조합해 투자 리서치를 실행하는 CLI 워크벤치입니다.
-종목 분석, 스크리닝, 전략 리서치, 백테스트, 시나리오 분석을 하나의 진입점에서 다룰 수 있습니다.
+종목 분석, 스크리닝, 전략 리서치, 시나리오 분석을 하나의 진입점에서 다룰 수 있습니다.
 
 ## Quick Navigation
 
@@ -20,10 +20,9 @@
 처음 쓰는 사용자라면 Dure를 "투자 리서치용 AI 워크벤치"로 이해하면 됩니다.
 자연어 요청이나 CLI 명령을 입력하면, 작업 종류에 맞는 에이전트 조합이 실행되고 결과가 리포트로 정리됩니다.
 
-- 종목 분석: 특정 종목의 펀더멘털, 뉴스, 비평을 함께 정리하고, 대화형 모드에서는 체크리스트 리뷰까지 이어집니다.
+- 종목 분석: 특정 종목의 펀더멘털, 뉴스, 전략-논리 검증을 함께 정리하고, 대화형 모드에서는 체크리스트 리뷰까지 이어집니다.
 - 스크리닝: 시장과 스타일 기준으로 종목군을 추리고 상위 후보를 보여줍니다.
-- 전략 리서치: 전략 정의, 백테스트, critic 비평을 하나의 흐름으로 묶습니다.
-- 백테스트 루프: 저장된 전략을 반복 개선하면서 성과를 비교합니다.
+- 전략 리서치: 전략 정의 후 critic autoresearch로 반복 개선합니다.
 - 시나리오 분석: 거시 이벤트나 가정이 종목과 섹터에 주는 영향을 요약합니다.
 - 대화형 탐색: 채팅처럼 질문을 이어가며 분석 범위를 좁히거나 확장할 수 있습니다.
 - 투자 리뷰 체크리스트: 기존 `equity-...` run을 수동으로 다시 검토하거나, 대화형 종목 분석 뒤 자동으로 이어서 실행할 수 있습니다.
@@ -70,11 +69,6 @@ npm run screen -- KR value
 
 # 전략 리서치
 npm run strategy -- "quality dividend growth"
-
-# 저장된 전략 백테스트 (기본 7분, 0이면 무제한)
-npm run backtest -- <strategyId>
-npm run backtest -- <strategyId> --timeout-minutes 10
-npm run backtest -- <strategyId> --timeout-minutes 0
 
 # 시나리오 분석
 npm run scenario -- "연준이 50bp 긴급 인하하면 반도체 섹터 어떻게 되나?"
@@ -146,7 +140,7 @@ DURE_PROVIDER=openai-codex npm run screen -- KR value
 
 ### 4. Strategy
 
-언제 쓰나: 투자 아이디어를 전략 규칙으로 바꾸고 백테스트와 비평까지 한 번에 보고 싶을 때
+언제 쓰나: 투자 아이디어를 전략 규칙으로 바꾸고 전략/논리 검토를 반복해 다듬고 싶을 때
 
 ```bash
 DURE_PROVIDER=openai-codex npm run strategy -- "quality dividend growth"
@@ -157,9 +151,8 @@ DURE_PROVIDER=openai-codex npm run strategy -- "quality dividend growth"
 이 예시에서 볼 포인트:
 
 - 전략 가설, 진입 규칙, 청산 규칙, 포지션 사이징, 리밸런싱 주기를 명시합니다.
-- CAGR, MDD, Sharpe, Turnover 같은 백테스트 핵심 지표를 카드 형태로 요약합니다.
-- 거래 내역과 함께 데이터 한계, 유니버스 제약, 계산 방식 같은 주의사항도 드러냅니다.
-- Critic 리포트가 과적합, 데이터 누수, 생존 편향, 체제 의존성을 따로 지적합니다.
+- 각 루프별 critic 판정, 추천사항, 전략 버전 변화를 함께 보여줍니다.
+- 데이터 한계, 유니버스 제약, 근거 정합성에 대한 비평 포인트가 어떻게 개선되는지 확인할 수 있습니다.
 
 ## Outputs
 

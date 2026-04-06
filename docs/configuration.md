@@ -65,7 +65,6 @@ npm run strategy -- "quality dividend growth"
 - `DURE_MODEL_FUNDAMENTAL`
 - `DURE_MODEL_NEWS`
 - `DURE_MODEL_STRATEGY`
-- `DURE_MODEL_BACKTEST`
 - `DURE_MODEL_CRITIC`
 - `DURE_MODEL_SCENARIO`
 - `DURE_MODEL_REVIEW_CHECKLIST`
@@ -93,7 +92,7 @@ Gemini를 제3자 코딩 에이전트에서 사용해야 한다면 제품 로그
 |-----------|---------|----------------|-------------|
 | fast | Universe, News, Review Checklist | `gpt-5.4-mini`, `gpt-4.5-mini` | `claude-haiku-4-5` |
 | fast | Router | `gpt-5.3-codex-spark` | `claude-haiku-4-5` |
-| standard | Fundamental, Strategy, Backtest, Scenario | `gpt-5.4` | `claude-sonnet-4-6` |
+| standard | Fundamental, Strategy, Scenario | `gpt-5.4` | `claude-sonnet-4-6` |
 | advanced | Critic | `gpt-5.4` | `claude-opus-4-6` |
 
 에이전트별 기본 조합은 다음과 같습니다.
@@ -104,7 +103,6 @@ Gemini를 제3자 코딩 에이전트에서 사용해야 한다면 제품 로그
 | Fundamental | `openai-codex:gpt-5.4` |
 | News | `openai-codex:gpt-5.4-mini` |
 | Strategy | `openai-codex:gpt-5.4` |
-| Backtest | `openai-codex:gpt-5.4` |
 | Critic | `openai-codex:gpt-5.4` |
 | Scenario | `openai-codex:gpt-5.4` |
 | Review Checklist | `openai-codex:gpt-4.5-mini` |

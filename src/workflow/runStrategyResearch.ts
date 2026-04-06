@@ -1,24 +1,22 @@
 import type { AgentToolUpdateCallback } from '@mariozechner/pi-coding-agent';
-import { runBacktestAgent } from '../agents/backtestAgent.js';
-import { runCriticAgent } from '../agents/criticAgent.js';
 import { runStrategyAgent } from '../agents/strategyAgent.js';
 import { ArtifactStore } from '../runtime/artifactStore.js';
 import { EventRecorder } from '../runtime/eventRecorder.js';
 import { createOnUpdateLogger, log } from '../runtime/log.js';
-import type { BacktestResult, CriticReport, StrategyDefinition } from '../schemas/backtest.js';
-import { timeoutMinutesToMs } from './backtestTimeout.js';
+import type { CriticReport, StrategyDefinition } from '../schemas/strategy.js';
+import { type CriticIteration, runCriticIterationLoop } from './runCriticIterationLoop.js';
 
 export interface StrategyResearchOptions {
   theme: string;
   tickers?: string[];
-  timeoutMinutes?: number;
+  maxIterations?: number;
 }
 
 export interface StrategyResearchResult {
   runId: string;
   strategy: StrategyDefinition;
-  backtestResult: BacktestResult;
   criticReport: CriticReport;
+  criticIterations: CriticIteration[];
 }
 
 export async function runStrategyResearch(
@@ -42,23 +40,14 @@ export async function runStrategyResearch(
     onUpdate,
   );
 
-  // 2. 백테스트
-  const tickers = options.tickers ?? ['005930', '000660', '035420'];
-  const backtestTimeoutMs = timeoutMinutesToMs(options.timeoutMinutes);
-  emit('[run] 백테스트 실행 중...');
-  const backtestResult = await runBacktestAgent(
-    runId,
-    { strategy, tickers, timeoutMs: backtestTimeoutMs },
-    store,
-    recorder,
-    onUpdate,
-  );
-
-  // 3. Critic 검토
-  emit('[run] Critic 검토 중...');
-  const criticReport = await runCriticAgent(
-    runId,
-    { strategy, backtestResult },
+  // 2. Critic autoresearch (최대 3회 반복)
+  const loopResult = await runCriticIterationLoop(
+    {
+      runId,
+      initialStrategy: strategy,
+      theme: options.theme,
+      maxIterations: options.maxIterations,
+    },
     store,
     recorder,
     onUpdate,
@@ -68,7 +57,17 @@ export async function runStrategyResearch(
   recorder.dispose();
 
   emit(`\n[run] 전략 리서치 완료: ${runId}`);
+  const criticReport = loopResult.iterations.at(-1)?.criticReport;
+  if (!criticReport) {
+    throw new Error('critic 반복 실행 결과가 생성되지 않았습니다.');
+  }
+
   emit(`[run] Critic 판정: ${criticReport.verdict}`);
 
-  return { runId, strategy, backtestResult, criticReport };
+  return {
+    runId,
+    strategy: loopResult.finalStrategy,
+    criticReport,
+    criticIterations: loopResult.iterations,
+  };
 }

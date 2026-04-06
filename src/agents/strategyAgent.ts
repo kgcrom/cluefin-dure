@@ -4,7 +4,7 @@ import type { ArtifactStore } from '../runtime/artifactStore.js';
 import { createPiSession } from '../runtime/createPiSession.js';
 import type { EventRecorder } from '../runtime/eventRecorder.js';
 import type { FundamentalAnalysis, NewsAnalysis } from '../schemas/analysis.js';
-import type { StrategyDefinition } from '../schemas/backtest.js';
+import type { StrategyDefinition } from '../schemas/strategy.js';
 import { getMemoryTools } from '../tools/memoryTools.js';
 import { buildSessionLabel, extractJsonWithRetry, loadPrompt } from './_utils.js';
 

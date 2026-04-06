@@ -1,6 +1,4 @@
 import type { AgentToolUpdateCallback } from '@mariozechner/pi-coding-agent';
-import { runBacktestAgent } from '../agents/backtestAgent.js';
-import { runCriticAgent } from '../agents/criticAgent.js';
 import { runFundamentalAgent } from '../agents/fundamentalAgent.js';
 import { runNewsAgent } from '../agents/newsAgent.js';
 import { runStrategyAgent } from '../agents/strategyAgent.js';
@@ -10,7 +8,8 @@ import { EventRecorder } from '../runtime/eventRecorder.js';
 import { createOnUpdateLogger, log } from '../runtime/log.js';
 import { SessionPool } from '../runtime/sessionPool.js';
 import type { FundamentalAnalysis, NewsAnalysis } from '../schemas/analysis.js';
-import type { CriticReport } from '../schemas/backtest.js';
+import type { CriticReport } from '../schemas/strategy.js';
+import { type CriticIteration, runCriticIterationLoop } from './runCriticIterationLoop.js';
 
 export interface EquityAnalysisOptions {
   ticker?: string;
@@ -25,6 +24,7 @@ export interface EquityAnalysisResult {
   fundamentals: FundamentalAnalysis[];
   newsAnalyses: NewsAnalysis[];
   criticReport: CriticReport;
+  criticIterations: CriticIteration[];
 }
 
 export async function runEquityAnalysis(
@@ -36,6 +36,7 @@ export async function runEquityAnalysis(
   const recorder = new EventRecorder();
   const pool = new SessionPool(3);
   const emit = onUpdate ? createOnUpdateLogger(onUpdate) : log;
+  let universe: unknown;
 
   emit(`\n[run] 종목 분석 시작: ${runId}`);
 
@@ -46,7 +47,7 @@ export async function runEquityAnalysis(
     emit(`[run] 단일 종목 분석: ${options.ticker}`);
   } else {
     emit('[run] 유니버스 구성 중...');
-    const universe = await runUniverseAgent(
+    const universeResult = await runUniverseAgent(
       runId,
       {
         market: options.market,
@@ -57,7 +58,8 @@ export async function runEquityAnalysis(
       recorder,
       onUpdate,
     );
-    tickers = universe.tickers.map((t) => t.ticker);
+    universe = universeResult;
+    tickers = universeResult.tickers.map((t) => t.ticker);
     emit(`[run] 유니버스: ${tickers.join(', ')}`);
   }
 
@@ -80,7 +82,7 @@ export async function runEquityAnalysis(
 
   // 3. 전략 설계
   emit('[run] 전략 설계 중...');
-  const strategy = await runStrategyAgent(
+  const initialStrategy = await runStrategyAgent(
     runId,
     {
       theme: `${tickers.join(',')} 기반 투자전략`,
@@ -92,36 +94,27 @@ export async function runEquityAnalysis(
     onUpdate,
   );
 
-  // 4. 백테스트
-  emit('[run] 백테스트 실행 중...');
-  const backtestResult = await runBacktestAgent(
-    runId,
+  // 4. Critic autoresearch (최대 3회 반복)
+  const theme = `${tickers.join(',')} 기반 투자전략`;
+  const loopResult = await runCriticIterationLoop(
     {
-      strategy,
-      tickers,
-      timeoutMs: undefined,
+      runId,
+      initialStrategy,
+      theme,
+      fundamentals,
+      newsAnalyses,
+      universe,
     },
     store,
     recorder,
     onUpdate,
   );
 
-  // 5. Critic 검토
-  emit('[run] Critic 검토 중...');
-  const criticReport = await runCriticAgent(
-    runId,
-    {
-      strategy,
-      backtestResult,
-      additionalArtifacts: {
-        fundamentals,
-        newsAnalyses,
-      },
-    },
-    store,
-    recorder,
-    onUpdate,
-  );
+  const finalIteration = loopResult.iterations[loopResult.iterations.length - 1];
+  if (!finalIteration) {
+    throw new Error('critic 반복 결과가 생성되지 않았습니다.');
+  }
+  const criticReport = finalIteration.criticReport;
 
   // 6. 이벤트 로그 저장
   await recorder.persist(runId, 'data/runs');
@@ -130,5 +123,12 @@ export async function runEquityAnalysis(
   emit(`\n[run] 분석 완료: ${runId}`);
   emit(`[run] Critic 판정: ${criticReport.verdict}`);
 
-  return { runId, tickers, fundamentals, newsAnalyses, criticReport };
+  return {
+    runId,
+    tickers,
+    fundamentals,
+    newsAnalyses,
+    criticReport,
+    criticIterations: loopResult.iterations,
+  };
 }

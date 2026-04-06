@@ -3,19 +3,16 @@ import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   renderAssessment,
-  renderBacktestKPIs,
   renderCriticReport,
   renderFundamentals,
   renderNewsAnalyses,
   renderScenarioDefinition,
   renderScenarioProjections,
   renderStrategy,
-  renderTradeLog,
 } from '../../src/report/components.js';
 import { generateReport } from '../../src/report/generateReport.js';
 import { badge, table, wrapLayout } from '../../src/report/layout.js';
 import {
-  backtestResult,
   criticReport,
   fundamentals,
   newsAnalyses,
@@ -108,39 +105,6 @@ describe('components', () => {
     expect(html).toContain('PE &lt; 15');
     expect(html).toContain('ROE &lt; 10%');
   });
-
-  it('renderBacktestKPIs: CAGR, MDD, Sharpe 메트릭 카드 포함', () => {
-    const html = renderBacktestKPIs(backtestResult);
-    expect(html).toContain('CAGR');
-    expect(html).toContain('14.20%');
-    expect(html).toContain('MDD');
-    expect(html).toContain('Sharpe');
-    expect(html).toContain('1.23');
-  });
-
-  it('renderTradeLog: 빈 배열 시 빈 메시지', () => {
-    const html = renderTradeLog([]);
-    expect(html).toContain('거래 내역이 없습니다');
-  });
-
-  it('renderTradeLog: 50개 초과 시 details 접기', () => {
-    const trades = Array.from({ length: 60 }, (_, i) => ({
-      date: `2024-01-${String(i + 1).padStart(2, '0')}`,
-      ticker: 'TEST',
-      action: 'BUY',
-      price: 100,
-      quantity: 10,
-    }));
-    const html = renderTradeLog(trades);
-    expect(html).toContain('<details>');
-    expect(html).toContain('60건 보기');
-  });
-
-  it('renderTradeLog: 50개 이하는 접기 없이 테이블', () => {
-    const html = renderTradeLog(backtestResult.tradeLog);
-    expect(html).not.toContain('<details>');
-    expect(html).toContain('005930');
-  });
 });
 
 // ── generateReport ──
@@ -187,6 +151,7 @@ describe('generateReport', () => {
         fundamentals,
         newsAnalyses,
         criticReport,
+        criticIterations: [],
       },
     });
 

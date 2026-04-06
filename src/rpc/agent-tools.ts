@@ -10,7 +10,6 @@ const AGENT_CATEGORIES: Record<string, string[]> = {
   fundamental: ['financial', 'stock', 'dart', 'schedule'],
   news: ['dart'],
   strategy: ['stock', 'chart', 'ta', 'financial'],
-  backtest: ['chart', 'ta'],
   critic: [],
   scenario: ['stock', 'market', 'financial'],
   router: [],

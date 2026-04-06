@@ -1,5 +1,4 @@
 import { type Static, Type } from '@sinclair/typebox';
-import { BacktestResultSchema } from './backtest.js';
 
 export const SignalSchema = Type.Object({
   ticker: Type.String(),
@@ -14,7 +13,7 @@ export const ExperimentRecordSchema = Type.Object({
   id: Type.String(),
   strategyId: Type.String(),
   params: Type.Record(Type.String(), Type.Unknown()),
-  result: BacktestResultSchema,
+  result: Type.Record(Type.String(), Type.Unknown()),
   criticVerdict: Type.Union([Type.Literal('keep'), Type.Literal('revise'), Type.Literal('reject')]),
   timestamp: Type.String(),
 });

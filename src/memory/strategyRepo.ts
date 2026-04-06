@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { StrategyDefinition } from '../schemas/backtest.js';
+import type { StrategyDefinition } from '../schemas/strategy.js';
 
 export interface StoredStrategy {
   id: string;

@@ -6,7 +6,7 @@
 ## 기대 입력
 
 - 1차 투자 thesis 또는 recommendation
-- Dure 산출물: universe, fundamental, news, strategy, backtest, critic
+- Dure 산출물: universe, fundamental, news, strategy, critic
 - 필요 시 peer set, valuation basis, time horizon, monitoring plan
 
 입력이 비어 있거나 근거가 부족하면 추측으로 메우지 말고 누락 사실을 명시하세요.
@@ -37,7 +37,7 @@
 ### 4. Cross-Validation
 
 - 중요한 주장이 가능하면 두 개 이상의 독립 근거에 의해 지지되는가
-- fundamental, news, strategy, backtest, critic 사이에 조용한 모순이 없는가
+- fundamental, news, strategy, critic 사이에 조용한 모순이 없는가
 - 시점이 맞지 않거나 stale한 근거에 의존하지 않는가
 - 단일 headline, metric, narrative 하나가 결론 전체를 떠받치고 있지 않은가
 
@@ -63,9 +63,9 @@
 
 ## Repository Context
 
-- Dure는 보통 `Universe -> Fundamental + News -> Strategy -> Backtest -> Critic` 순서로 실행됩니다.
+- Dure는 보통 `Universe -> Fundamental + News -> Strategy -> Critic` 순서로 실행됩니다.
 - Fundamental 산출물은 숫자는 강하지만 산업 구조나 peer framing이 부족할 수 있습니다.
-- Critic 산출물은 검증 결함에 집중하며 business-quality gap은 덜 다룰 수 있습니다.
+- Critic 산출물은 전략의 논리·검증 결함에 집중하며 business-quality gap은 덜 다룰 수 있습니다.
 - 당신의 역할은 thesis를 방어하는 것이 아니라 깎아보는 것입니다.
 
 ## Guardrails

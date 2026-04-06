@@ -3,21 +3,19 @@
 import { exec } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { BacktestLoopResult } from '../workflow/runBacktestLoop.js';
 import type { EquityAnalysisResult } from '../workflow/runEquityAnalysis.js';
 import type { ScenarioAnalysisResult } from '../workflow/runScenarioAnalysis.js';
 import type { ScreeningResult } from '../workflow/runScreening.js';
 import type { StrategyResearchResult } from '../workflow/runStrategyResearch.js';
 import {
   renderAssessment,
-  renderBacktestKPIs,
+  renderCriticIterationTrail,
   renderCriticReport,
   renderFundamentals,
   renderNewsAnalyses,
   renderScenarioDefinition,
   renderScenarioProjections,
   renderStrategy,
-  renderTradeLog,
 } from './components.js';
 import { wrapLayout } from './layout.js';
 
@@ -25,8 +23,7 @@ type WorkflowResult =
   | { type: 'scenario'; result: ScenarioAnalysisResult }
   | { type: 'equity'; result: EquityAnalysisResult }
   | { type: 'screen'; result: ScreeningResult }
-  | { type: 'strategy'; result: StrategyResearchResult }
-  | { type: 'backtest'; result: BacktestLoopResult };
+  | { type: 'strategy'; result: StrategyResearchResult };
 
 const DATA_DIR = path.resolve('data/runs');
 
@@ -55,6 +52,7 @@ function buildHtml(input: WorkflowResult): string {
           renderFundamentals(r.fundamentals),
           renderNewsAnalyses(r.newsAnalyses),
           renderCriticReport(r.criticReport),
+          renderCriticIterationTrail(r.criticIterations),
         ].join(''),
       );
     }
@@ -69,24 +67,9 @@ function buildHtml(input: WorkflowResult): string {
         r.runId,
         [
           renderStrategy(r.strategy),
-          renderBacktestKPIs(r.backtestResult),
-          renderTradeLog(r.backtestResult.tradeLog),
           renderCriticReport(r.criticReport),
+          renderCriticIterationTrail(r.criticIterations),
         ].join(''),
-      );
-    }
-    case 'backtest': {
-      const r = input.result;
-      const iterSections = r.iterations.map((iter, i) => {
-        return [
-          renderBacktestKPIs(iter.result),
-          `<p><strong>Iteration ${i + 1} Verdict:</strong> ${iter.criticVerdict}</p>`,
-        ].join('');
-      });
-      return wrapLayout(
-        '백테스트 루프',
-        r.runId,
-        [renderStrategy(r.finalStrategy), ...iterSections].join(''),
       );
     }
   }
@@ -136,18 +119,9 @@ export function printTerminalSummary(input: WorkflowResult): void {
     case 'strategy': {
       const r = result as StrategyResearchResult;
       console.log(`\n  전략:    ${r.strategy.name}`);
-      console.log(`  CAGR:    ${(r.backtestResult.cagr * 100).toFixed(2)}%`);
-      console.log(`  Sharpe:  ${r.backtestResult.sharpe.toFixed(2)}`);
+      console.log(`  반복:    ${r.criticIterations.length}회`);
+      console.log(`  최종 판정: ${r.criticReport.verdict}`);
       console.log(`  판정:    ${r.criticReport.verdict}`);
-      break;
-    }
-    case 'backtest': {
-      const r = result as BacktestLoopResult;
-      const best = r.iterations.reduce((a, b) => (a.result.sharpe > b.result.sharpe ? a : b));
-      console.log(`\n  반복:       ${r.iterations.length}회`);
-      console.log(`  최종 판정:  ${r.finalVerdict}`);
-      console.log(`  최고 CAGR:  ${(best.result.cagr * 100).toFixed(2)}%`);
-      console.log(`  최고 Sharpe: ${best.result.sharpe.toFixed(2)}`);
       break;
     }
   }

@@ -30,7 +30,7 @@ const memoryReadTool: ToolDefinition<typeof readParams> = {
 // ── memory_write ──
 
 const writeParams = Type.Object({
-  topic: Type.String({ description: '저장할 토픽 이름 (예: strategy_patterns, backtest_lessons)' }),
+  topic: Type.String({ description: '저장할 토픽 이름 (예: strategy_patterns, critic_findings)' }),
   content: Type.String({ description: '저장할 내용 (5줄 이내, 구체적 수치 포함)' }),
 });
 
@@ -69,7 +69,7 @@ const memorySearchTool: ToolDefinition<typeof searchParams> = {
 
 // ── 에이전트별 도구 세트 ──
 
-const READ_WRITE_AGENTS = new Set(['strategy', 'backtest', 'critic']);
+const READ_WRITE_AGENTS = new Set(['strategy', 'critic']);
 
 export function getMemoryTools(agentName: string): ToolDefinition[] {
   const read = memoryReadTool as unknown as ToolDefinition;

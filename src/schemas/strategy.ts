@@ -11,25 +11,6 @@ export const StrategyDefinitionSchema = Type.Object({
 });
 export type StrategyDefinition = Static<typeof StrategyDefinitionSchema>;
 
-export const BacktestResultSchema = Type.Object({
-  cagr: Type.Number(),
-  mdd: Type.Number(),
-  sharpe: Type.Number(),
-  turnover: Type.Number(),
-  tradeLog: Type.Array(
-    Type.Object({
-      date: Type.String(),
-      ticker: Type.String(),
-      action: Type.String(),
-      price: Type.Number(),
-      quantity: Type.Number(),
-    }),
-  ),
-  runArtifactPath: Type.String(),
-  errorLog: Type.Array(Type.String()),
-});
-export type BacktestResult = Static<typeof BacktestResultSchema>;
-
 export const CriticReportSchema = Type.Object({
   overfittingRisk: Type.String(),
   dataLeakageCheck: Type.String(),
