@@ -6,7 +6,13 @@ import type { FundamentalAnalysis, NewsAnalysis } from '../schemas/analysis.js';
 import type { ScenarioDefinition, ScenarioReport } from '../schemas/scenario.js';
 import type { CriticReport, StrategyDefinition } from '../schemas/strategy.js';
 import { getMemoryTools } from '../tools/memoryTools.js';
-import { buildSessionLabel, extractJsonWithRetry, loadPrompt } from './_utils.js';
+import {
+  buildSessionLabel,
+  extractJsonWithRetry,
+  extractJsonWithValidationRetry,
+  loadPrompt,
+  validateCriticReportEnglish,
+} from './_utils.js';
 
 export interface CriticInput {
   strategy: StrategyDefinition;
@@ -46,9 +52,21 @@ export async function runCriticAgent(
     '전략과 보유 근거를 비판적으로 검토하세요. 전략 가설의 논리 완결성, 반증 가능성, 과적합 위험, 데이터 유출, 생존편향, 레짐 의존성을 평가하고 verdict를 내려주세요.',
   );
   parts.push('결과를 JSON으로 반환하세요.');
+  parts.push('중요: strategy-facing JSON의 모든 문자열 값과 recommendations는 영어로 작성하세요.');
 
   await session.prompt(parts.join('\n'));
-  const result = await extractJsonWithRetry<CriticReport>(session, 'critic');
+  const result = await extractJsonWithValidationRetry<CriticReport>(
+    session,
+    validateCriticReportEnglish,
+    [
+      'The previous critic JSON contains non-English text.',
+      'Return the same critic assessment as valid JSON again, but rewrite every string field in English only.',
+      'Recommendations must remain actionable English sentences.',
+      'Keep the same keys and verdict.',
+      'Wrap the answer in a ```json block.',
+    ].join(' '),
+    'critic',
+  );
   await store.put(runId, 'critic', 'output', result);
   return result;
 }

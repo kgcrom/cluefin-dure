@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { AgentSession } from '@mariozechner/pi-coding-agent';
 import { MemoryStore } from '../memory/memoryStore.js';
+import type { CriticReport, StrategyDefinition } from '../schemas/strategy.js';
 
 const PROMPTS_DIR = path.resolve('research/prompts');
 const SOUL_PROMPT_FILE = 'SOUL.md';
@@ -80,6 +81,8 @@ interface ContentBlock {
   type: string;
   text?: string;
 }
+
+const HANGUL_REGEX = /[\u3131-\u318E\uAC00-\uD7A3]/;
 
 function messageToText(message: Message | undefined): string {
   if (!message) return '';
@@ -199,6 +202,100 @@ export async function extractJsonWithRetry<T>(
 
   // unreachable but satisfies TypeScript
   throw new Error('extractJsonWithRetry: unreachable');
+}
+
+function isEnglishLikeText(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return true;
+  return !HANGUL_REGEX.test(trimmed);
+}
+
+function findNonEnglishValue(value: unknown, pathPrefix: string): string | null {
+  if (typeof value === 'string') {
+    return isEnglishLikeText(value) ? null : pathPrefix;
+  }
+
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i++) {
+      const result = findNonEnglishValue(value[i], `${pathPrefix}[${i}]`);
+      if (result) return result;
+    }
+    return null;
+  }
+
+  if (value && typeof value === 'object') {
+    for (const [key, nested] of Object.entries(value)) {
+      const result = findNonEnglishValue(nested, `${pathPrefix}.${key}`);
+      if (result) return result;
+    }
+  }
+
+  return null;
+}
+
+export function validateStrategyEnglish(strategy: StrategyDefinition): string | null {
+  const fields: Array<[string, unknown]> = [
+    ['strategy.name', strategy.name],
+    ['strategy.hypothesis', strategy.hypothesis],
+    ['strategy.entryRules', strategy.entryRules],
+    ['strategy.exitRules', strategy.exitRules],
+    ['strategy.positionSizing', strategy.positionSizing],
+    ['strategy.rebalancePeriod', strategy.rebalancePeriod],
+    ['strategy.config', strategy.config],
+  ];
+
+  for (const [fieldName, value] of fields) {
+    const result = findNonEnglishValue(value, fieldName);
+    if (result) return result;
+  }
+
+  return null;
+}
+
+export function validateCriticReportEnglish(report: CriticReport): string | null {
+  const fields: Array<[string, unknown]> = [
+    ['critic.overfittingRisk', report.overfittingRisk],
+    ['critic.dataLeakageCheck', report.dataLeakageCheck],
+    ['critic.survivorshipBias', report.survivorshipBias],
+    ['critic.regimeDependency', report.regimeDependency],
+    ['critic.recommendations', report.recommendations],
+  ];
+
+  for (const [fieldName, value] of fields) {
+    const result = findNonEnglishValue(value, fieldName);
+    if (result) return result;
+  }
+
+  return null;
+}
+
+export async function extractJsonWithValidationRetry<T>(
+  session: AgentSession,
+  validator: (value: T) => string | null,
+  repairInstruction: string,
+  agentName?: string,
+  maxRetries = 2,
+): Promise<T> {
+  let parsed = await extractJsonWithRetry<T>(session, agentName, maxRetries);
+  let invalidField = validator(parsed);
+
+  if (!invalidField) {
+    return parsed;
+  }
+
+  const prefix = agentName ? `[${agentName}] ` : '';
+
+  await session.prompt(`${repairInstruction}\nInvalid field: ${invalidField}`);
+  parsed = await extractJsonWithRetry<T>(session, agentName, maxRetries);
+  invalidField = validator(parsed);
+
+  if (invalidField) {
+    throw new Error(
+      `${prefix}JSON payload must be English for strategy-facing fields, but non-English text remains in ${invalidField}.`,
+    );
+  }
+
+  return parsed;
 }
 
 export async function extractTextWithRetry(

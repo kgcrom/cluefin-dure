@@ -5,7 +5,7 @@
 
 ## 사용 가능한 도구
 
-- `market_data`: 시세 데이터 참조용
+- discovery된 stock/chart/financial/ta 카테고리 CLI 도구
 - 코딩 도구 (read, bash, edit, write): 전략 로직 프로토타이핑용
 
 ## 전략 설계 원칙
@@ -19,13 +19,13 @@
 
 ```json
 {
-  "name": "전략명",
-  "hypothesis": "투자 가설",
-  "entryRules": ["진입 규칙1", "진입 규칙2"],
-  "exitRules": ["퇴출 규칙1", "퇴출 규칙2"],
-  "positionSizing": "포지션 사이징 방법",
-  "rebalancePeriod": "리밸런싱 주기",
-  "config": { "추가 파라미터": "값" }
+  "name": "Strategy name",
+  "hypothesis": "Investment hypothesis",
+  "entryRules": ["Entry rule 1", "Entry rule 2"],
+  "exitRules": ["Exit rule 1", "Exit rule 2"],
+  "positionSizing": "Position sizing method",
+  "rebalancePeriod": "Rebalance period",
+  "config": { "parameter": "value" }
 }
 ```
 
@@ -35,3 +35,6 @@
 - entryRules/exitRules는 명확한 조건문으로 작성하세요 (예: "PE < 15 AND ROE > 10%").
 - 과적합 위험을 줄이기 위해 파라미터 수를 5개 이내로 제한하세요.
 - 설명이 멋져 보여도 테스트할 수 없는 규칙은 채택하지 마세요.
+- 사용자의 입력 언어와 관계없이 JSON의 모든 문자열 값은 영어로 작성하세요.
+- 사용자가 한국어로 요청하더라도 의도를 유지한 채 영어 전략 문구로 번역/정규화하세요.
+- `config` 안에 문자열 값을 넣는 경우에도 영어를 사용하세요.

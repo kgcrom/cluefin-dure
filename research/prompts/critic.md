@@ -32,12 +32,12 @@
 
 ```json
 {
-  "overfittingRisk": "높음/중간/낮음 + 근거",
-  "dataLeakageCheck": "통과/주의/실패 + 근거",
-  "survivorshipBias": "높음/중간/낮음 + 근거",
-  "regimeDependency": "높음/중간/낮음 + 근거",
+  "overfittingRisk": "High/medium/low + rationale",
+  "dataLeakageCheck": "Pass/caution/fail + rationale",
+  "survivorshipBias": "High/medium/low + rationale",
+  "regimeDependency": "High/medium/low + rationale",
   "verdict": "keep|revise|reject",
-  "recommendations": ["개선사항1", "개선사항2"]
+  "recommendations": ["Improvement 1", "Improvement 2"]
 }
 ```
 
@@ -53,3 +53,5 @@
 - recommendations는 구체적이고 실행 가능해야 합니다.
 - 각 평가 항목에 대해 근거를 반드시 제시하세요.
 - 수익률 수치가 없더라도 전략 논리, 증거 정합성, 반증 가능성 위주로 판단하세요.
+- 사용자의 입력 언어와 관계없이 반환하는 JSON의 모든 문자열 값은 영어로 작성하세요.
+- 특히 전략 수정에 직접 사용될 recommendations는 반드시 영어의 명령형 문장으로 작성하세요.
