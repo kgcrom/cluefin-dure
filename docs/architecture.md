@@ -102,13 +102,15 @@ README 기준 권한 정책:
 
 macOS에서는 리포트 생성 직후 `open` 명령으로 HTML 파일을 자동으로 엽니다.
 
-## External RPC Dependency
+## External CLI Dependency
 
-RPC 클라이언트는 `CLUEFIN_RPC_CWD`가 `cluefin` 워크스페이스 루트면
-`uv run --project apps/cluefin-rpc -m cluefin_rpc`로,
-`apps/cluefin-rpc` 디렉터리면 `uv run -m cluefin_rpc`로 외부 프로세스를 띄웁니다.
+Dure는 `CLUEFIN_CLI_CWD` 또는 기본 sibling 경로 `../cluefin`를 기준으로
+`uv run cluefin-openapi-cli ... --json`,
+`uv run cluefin-ta-cli ... --json`
+를 stateless subprocess로 실행합니다.
 
-즉, Dure는 자체 TypeScript 오케스트레이션 위에서 cluefin RPC 도구 집합을 사용하는 구조입니다.
+도구 discovery는 각 CLI의 `list --json` / `describe --json` 결과를 사용하며,
+에이전트에는 Dure가 재구성한 alias 이름으로 노출됩니다.
 
 ## Project Layout
 
@@ -122,7 +124,7 @@ src/
 ├── runtime/         # 세션, 이벤트, 아티팩트 관리
 ├── report/          # HTML 리포트 렌더링
 ├── interactive/     # 대화형 모드 진입점
-├── rpc/             # cluefin RPC 브리지
+├── cli/             # cluefin CLI discovery/exec 브리지
 ├── config.ts        # 모델 설정
 └── main.ts          # CLI 라우터
 research/

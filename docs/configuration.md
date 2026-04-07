@@ -5,8 +5,8 @@
 기본 템플릿은 [.env.example](../.env.example)에 있습니다.
 실행 전 `.env`를 만들고 아래 값을 채워야 합니다.
 
-`cluefin-dure`만으로는 실행되지 않고, RPC 백엔드용 `cluefin` 저장소도 로컬에 함께 있어야 합니다.
-`CLUEFIN_RPC_CWD`는 `cluefin` 워크스페이스 루트 또는 `apps/cluefin-rpc` 디렉터리를 가리켜야 합니다.
+`cluefin-dure`만으로는 실행되지 않고, `cluefin-openapi-cli`와 `cluefin-ta-cli`가 들어있는 `cluefin` 저장소도 로컬에 함께 있어야 합니다.
+`CLUEFIN_CLI_CWD`는 `cluefin` 워크스페이스 루트를 가리킵니다.
 
 | 변수 | 설명 |
 |------|------|
@@ -17,18 +17,15 @@
 | `KIS_APP_KEY` | 한국투자 API 앱 키 |
 | `KIS_SECRET_KEY` | 한국투자 API 시크릿 |
 | `KIS_ENV` | 한국투자 실행 환경 (`prod` 등) |
-| `CLUEFIN_RPC_CWD` | `uv run --project apps/cluefin-rpc -m cluefin_rpc` 또는 `uv run -m cluefin_rpc`를 실행할 cluefin 경로 |
+| `CLUEFIN_CLI_CWD` | `uv run cluefin-openapi-cli` / `uv run cluefin-ta-cli`를 실행할 cluefin 워크스페이스 경로 |
 
-`CLUEFIN_RPC_CWD`가 없으면 RPC 클라이언트 초기화 단계에서 바로 오류가 발생합니다.
+`CLUEFIN_CLI_CWD`가 없으면 기본값으로 `../cluefin`을 사용합니다. 해당 위치가 없거나 CLI 앱을 찾지 못하면 초기화 단계에서 바로 오류가 발생합니다.
 
 예시:
 
 ```bash
 # cluefin-dure와 cluefin을 같은 상위 디렉터리에 clone한 경우
-CLUEFIN_RPC_CWD=../cluefin
-
-# 또는
-# CLUEFIN_RPC_CWD=../cluefin/apps/cluefin-rpc
+CLUEFIN_CLI_CWD=../cluefin
 ```
 
 ## Model Selection

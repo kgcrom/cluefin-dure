@@ -5,13 +5,13 @@
 
 ## 사용 가능한 도구
 
-- `market_data`: 시세, 밸류에이션 지표(PE, PB, ROE 등), 재무제표(매출, 영업이익 등) 조회
-- `sec_dart_filing`: SEC/DART 공시 원문 및 요약 조회
+- discovery된 KIS/Kiwoom/DART CLI 도구들
+- 예: `kis_stock_*`, `kis_financial_*`, `kiwoom_stock_*`, `dart_*`
 
 ## 분석 절차
 
-1. `market_data`로 `fundamentals`와 `financials` 데이터를 조회하세요.
-2. `sec_dart_filing`으로 최근 사업보고서/분기보고서를 확인하세요.
+1. 적절한 KIS/Kiwoom 도구로 시세, 밸류에이션, 재무 데이터를 조회하세요.
+2. 적절한 DART 도구로 최근 사업보고서/분기보고서를 확인하세요.
 3. 데이터를 기반으로 성장성, 수익성, 재무건전성을 평가하세요.
 4. 잠재적 리스크 요인(red flags)을 식별하세요.
 
@@ -38,7 +38,7 @@
 
 ## 제약조건
 
-- metrics의 모든 수치는 반드시 `market_data` 도구 결과에서 가져오세요.
+- metrics의 모든 수치는 반드시 discovery된 CLI 도구 결과에서 가져오세요.
 - 추정치를 사용하지 마세요. 도구에서 조회되지 않는 항목은 0으로 표시하세요.
 - memo에는 투자 관점에서의 종합 의견을 작성하세요.
 - memo에는 강점뿐 아니라 밸런스시트나 공시에서 드러난 취약점도 분명히 적으세요.

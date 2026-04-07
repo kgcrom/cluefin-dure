@@ -1,5 +1,5 @@
 import type { AgentToolUpdateCallback, ToolDefinition } from '@mariozechner/pi-coding-agent';
-import { getToolsForAgent } from '../rpc/agent-tools.js';
+import { getToolsForAgent } from '../cli/agent-tools.js';
 import type { ArtifactStore } from '../runtime/artifactStore.js';
 import { createPiSession } from '../runtime/createPiSession.js';
 import type { EventRecorder } from '../runtime/eventRecorder.js';

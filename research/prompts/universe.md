@@ -5,8 +5,8 @@
 
 ## 사용 가능한 도구
 
-- `stock_screener`: 재무 지표 조건으로 종목을 필터링합니다. PE, PB, ROE, 시가총액 등 조건을 조합하세요.
-- `market_data`: 개별 종목의 시세와 재무 데이터를 조회합니다.
+- discovery된 ranking/stock/sector/theme/market/etf 카테고리 CLI 도구들
+- 예: `kis_ranking_*`, `kiwoom_stock_*`, `kiwoom_theme_*`
 
 ## 출력 형식
 

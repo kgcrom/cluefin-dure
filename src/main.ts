@@ -1,6 +1,5 @@
 import { fileURLToPath } from 'node:url';
 import { generateReport, printTerminalSummary } from './report/generateReport.js';
-import { closeRpcClient } from './rpc/rpc-client.js';
 import { runEquityAnalysis } from './workflow/runEquityAnalysis.js';
 import { runScenarioAnalysis } from './workflow/runScenarioAnalysis.js';
 import { runScreening } from './workflow/runScreening.js';
@@ -95,8 +94,7 @@ async function main() {
   }
 }
 
-async function shutdown() {
-  await closeRpcClient();
+function shutdown() {
   process.exit(0);
 }
 
@@ -105,10 +103,9 @@ process.on('SIGTERM', shutdown);
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   main()
-    .then(shutdown)
-    .catch(async (err) => {
+    .then(() => shutdown())
+    .catch((err) => {
       console.error('오류:', err);
-      await closeRpcClient();
       process.exit(1);
     });
 }
