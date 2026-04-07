@@ -6,6 +6,10 @@ import { runScreening } from './workflow/runScreening.js';
 import { runStrategyResearch } from './workflow/runStrategyResearch.js';
 
 const [command, ...args] = process.argv.slice(2);
+export const STRATEGY_USAGE_LINES = [
+  'Usage: strategy <theme/hypothesis>',
+  'Example: strategy "quality value with high ROE"',
+] as const;
 
 async function main() {
   switch (command) {
@@ -48,8 +52,9 @@ async function main() {
     case 'strategy': {
       const theme = args.join(' ');
       if (!theme) {
-        console.error('사용법: strategy <테마/가설>');
-        console.error('예시: strategy "저PER 고ROE 퀄리티 밸류"');
+        for (const line of STRATEGY_USAGE_LINES) {
+          console.error(line);
+        }
         process.exit(1);
       }
       const result = await runStrategyResearch({ theme });

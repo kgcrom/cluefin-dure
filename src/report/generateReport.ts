@@ -63,13 +63,14 @@ function buildHtml(input: WorkflowResult): string {
     case 'strategy': {
       const r = input.result;
       return wrapLayout(
-        '전략 리서치',
+        'Strategy Research',
         r.runId,
         [
           renderStrategy(r.strategy),
           renderCriticReport(r.criticReport),
           renderCriticIterationTrail(r.criticIterations),
         ].join(''),
+        'en',
       );
     }
   }
@@ -118,10 +119,10 @@ export function printTerminalSummary(input: WorkflowResult): void {
     }
     case 'strategy': {
       const r = result as StrategyResearchResult;
-      console.log(`\n  전략:    ${r.strategy.name}`);
-      console.log(`  반복:    ${r.criticIterations.length}회`);
-      console.log(`  최종 판정: ${r.criticReport.verdict}`);
-      console.log(`  판정:    ${r.criticReport.verdict}`);
+      console.log(`\n  Strategy: ${r.strategy.name}`);
+      console.log(`  Iterations: ${r.criticIterations.length}`);
+      console.log(`  Final Verdict: ${r.criticReport.verdict}`);
+      console.log(`  Verdict: ${r.criticReport.verdict}`);
       break;
     }
   }

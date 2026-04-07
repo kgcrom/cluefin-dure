@@ -52,12 +52,12 @@ export const newsAnalyses: NewsAnalysis[] = [
 ];
 
 export const criticReport: CriticReport = {
-  overfittingRisk: '낮음 - 충분한 표본 기간',
-  dataLeakageCheck: '미래 데이터 사용 없음',
-  survivorshipBias: '유니버스 고정으로 편향 제한적',
-  regimeDependency: '금리 상승기에 성과 저하 가능',
+  overfittingRisk: 'Low due to a modest parameter count over a broad sample window.',
+  dataLeakageCheck: 'Pass because the rules rely only on contemporaneous and trailing inputs.',
+  survivorshipBias: 'Moderate because the universe is predefined and may exclude delisted names.',
+  regimeDependency: 'Performance may weaken during rising-rate or sharp liquidity contraction regimes.',
   verdict: 'keep',
-  recommendations: ['리밸런싱 주기 조정 고려', '소형주 비중 확대 검토'],
+  recommendations: ['Test a slower rebalance cadence.', 'Review whether small-cap exposure should be capped.'],
 };
 
 export const scenarioDefinition: ScenarioDefinition = {
@@ -106,14 +106,23 @@ export const scenarioReport: ScenarioReport = {
 };
 
 export const strategy: StrategyDefinition = {
-  name: '저PER 고ROE 퀄리티 밸류',
-  hypothesis: '저평가 고수익 기업이 장기적으로 시장 수익률을 상회',
-  entryRules: ['PE < 15', 'ROE > 15%', '부채비율 < 100%'],
+  name: 'Quality Value With Low Multiples',
+  hypothesis: 'Profitable companies trading at discounted multiples can outperform over a full cycle.',
+  entryRules: ['PE < 15', 'ROE > 15%', 'Debt-to-equity < 100%'],
   exitRules: ['PE > 25', 'ROE < 10%'],
-  positionSizing: '균등 배분',
-  rebalancePeriod: '분기',
+  positionSizing: 'Equal weight across qualifying positions',
+  rebalancePeriod: 'Quarterly',
   config: { lookback: 252, topN: 10 },
 };
+
+export const criticIterations = [
+  {
+    iteration: 1,
+    strategy,
+    criticReport,
+    verdict: criticReport.verdict,
+  },
+];
 
 export const experimentRecord: ExperimentRecord = {
   id: 'test-run-iter-0',

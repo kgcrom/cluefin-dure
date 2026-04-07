@@ -105,7 +105,10 @@ export function renderCriticIterationTrail(iterations: CriticIteration[] = []): 
   const iterationsHtml = iterations
     .map((iteration) => {
       const cards = metricCards([
-        { label: `Iteration ${iteration.iteration} 판정`, value: iteration.verdict.toUpperCase() },
+        {
+          label: `Iteration ${iteration.iteration} Verdict`,
+          value: iteration.verdict.toUpperCase(),
+        },
       ]);
 
       const recommendations =
@@ -114,19 +117,19 @@ export function renderCriticIterationTrail(iterations: CriticIteration[] = []): 
           : '';
 
       return section(
-        `Critic 반복 ${iteration.iteration}`,
+        `Critic Iteration ${iteration.iteration}`,
         [
           cards,
-          `<p><strong>전략:</strong> ${esc(iteration.strategy.name)}</p>`,
-          `<p><strong>가설:</strong> ${esc(iteration.strategy.hypothesis)}</p>`,
-          `<p><strong>결과:</strong> ${badge(iteration.criticReport.verdict, iteration.criticReport.verdict)}</p>`,
+          `<p><strong>Strategy:</strong> ${esc(iteration.strategy.name)}</p>`,
+          `<p><strong>Hypothesis:</strong> ${esc(iteration.strategy.hypothesis)}</p>`,
+          `<p><strong>Verdict:</strong> ${badge(iteration.criticReport.verdict, iteration.criticReport.verdict)}</p>`,
           recommendations,
         ].join('\n'),
       );
     })
     .join('\n');
 
-  return section('Critic 반복 로그', iterationsHtml);
+  return section('Critic Iteration Log', iterationsHtml);
 }
 
 // ── Scenario Definition ──
@@ -208,13 +211,13 @@ export function renderAssessment(report: ScenarioReport): string {
 
 export function renderStrategy(strategy: StrategyDefinition): string {
   const content = [
-    `<p><strong>전략명:</strong> ${esc(strategy.name)}</p>`,
-    `<p><strong>가설:</strong> ${esc(strategy.hypothesis)}</p>`,
-    `<p><strong>진입 규칙:</strong></p>${bulletList(strategy.entryRules)}`,
-    `<p><strong>청산 규칙:</strong></p>${bulletList(strategy.exitRules)}`,
-    `<p><strong>포지션 사이징:</strong> ${esc(strategy.positionSizing)}</p>`,
-    `<p><strong>리밸런싱 주기:</strong> ${esc(strategy.rebalancePeriod)}</p>`,
+    `<p><strong>Strategy Name:</strong> ${esc(strategy.name)}</p>`,
+    `<p><strong>Hypothesis:</strong> ${esc(strategy.hypothesis)}</p>`,
+    `<p><strong>Entry Rules:</strong></p>${bulletList(strategy.entryRules)}`,
+    `<p><strong>Exit Rules:</strong></p>${bulletList(strategy.exitRules)}`,
+    `<p><strong>Position Sizing:</strong> ${esc(strategy.positionSizing)}</p>`,
+    `<p><strong>Rebalance Period:</strong> ${esc(strategy.rebalancePeriod)}</p>`,
   ].join('\n');
 
-  return section('전략 정의', content);
+  return section('Strategy Definition', content);
 }

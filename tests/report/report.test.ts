@@ -1,19 +1,22 @@
 import { mkdir, readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   renderAssessment,
   renderCriticReport,
+  renderCriticIterationTrail,
   renderFundamentals,
   renderNewsAnalyses,
   renderScenarioDefinition,
   renderScenarioProjections,
   renderStrategy,
 } from '../../src/report/components.js';
-import { generateReport } from '../../src/report/generateReport.js';
+import { generateReport, printTerminalSummary } from '../../src/report/generateReport.js';
 import { badge, table, wrapLayout } from '../../src/report/layout.js';
+import { STRATEGY_USAGE_LINES } from '../../src/main.js';
 import {
   criticReport,
+  criticIterations,
   fundamentals,
   newsAnalyses,
   scenarioDefinition,
@@ -21,6 +24,10 @@ import {
   scenarioReport,
   strategy,
 } from './fixtures.js';
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 // ── Layout ──
 
@@ -71,7 +78,7 @@ describe('components', () => {
   it('renderCriticReport: verdict 뱃지와 recommendations 포함', () => {
     const html = renderCriticReport(criticReport);
     expect(html).toContain('badge-keep');
-    expect(html).toContain('리밸런싱 주기 조정 고려');
+    expect(html).toContain('Test a slower rebalance cadence.');
     expect(html).toContain('Critic 리포트');
   });
 
@@ -101,9 +108,23 @@ describe('components', () => {
 
   it('renderStrategy: 전략명과 entry/exit 규칙 포함', () => {
     const html = renderStrategy(strategy);
-    expect(html).toContain('저PER 고ROE 퀄리티 밸류');
+    expect(html).toContain('Quality Value With Low Multiples');
     expect(html).toContain('PE &lt; 15');
     expect(html).toContain('ROE &lt; 10%');
+    expect(html).toContain('Strategy Definition');
+    expect(html).toContain('Strategy Name:');
+    expect(html).toContain('Entry Rules:');
+    expect(html).toContain('Exit Rules:');
+  });
+
+  it('renderCriticIterationTrail: strategy-specific labels render in English', () => {
+    const html = renderCriticIterationTrail(criticIterations);
+    expect(html).toContain('Critic Iteration Log');
+    expect(html).toContain('Critic Iteration 1');
+    expect(html).toContain('Iteration 1 Verdict');
+    expect(html).toContain('Strategy:');
+    expect(html).toContain('Hypothesis:');
+    expect(html).toContain('Verdict:');
   });
 });
 
@@ -169,5 +190,53 @@ describe('generateReport', () => {
     });
 
     expect(filePath).toBe(path.resolve('data/runs/test-report-run/report.html'));
+  });
+
+  it('strategy 타입: 영어 제목과 lang metadata를 사용한다', async () => {
+    const filePath = await generateReport({
+      type: 'strategy',
+      result: {
+        runId: 'test-report-run',
+        strategy,
+        criticReport,
+        criticIterations,
+      },
+    });
+
+    const html = await readFile(filePath, 'utf-8');
+    expect(html).toContain('<html lang="en">');
+    expect(html).toContain('Strategy Research');
+    expect(html).toContain('Strategy Definition');
+    expect(html).toContain('Critic Iteration Log');
+  });
+});
+
+describe('strategy terminal copy', () => {
+  it('printTerminalSummary: strategy labels are English', () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    printTerminalSummary({
+      type: 'strategy',
+      result: {
+        runId: 'strategy-1',
+        strategy,
+        criticReport,
+        criticIterations,
+      },
+    });
+
+    expect(logSpy.mock.calls).toEqual([
+      ['\n  Strategy: Quality Value With Low Multiples'],
+      ['  Iterations: 1'],
+      ['  Final Verdict: keep'],
+      ['  Verdict: keep'],
+    ]);
+  });
+
+  it('strategy usage copy is English', () => {
+    expect(STRATEGY_USAGE_LINES).toEqual([
+      'Usage: strategy <theme/hypothesis>',
+      'Example: strategy "quality value with high ROE"',
+    ]);
   });
 });

@@ -1,9 +1,14 @@
 /** 공통 HTML 레이아웃 + CSS + 헬퍼 함수 */
 
-export function wrapLayout(title: string, runId: string, bodyHtml: string): string {
+export function wrapLayout(
+  title: string,
+  runId: string,
+  bodyHtml: string,
+  language = 'ko',
+): string {
   const timestamp = new Date().toISOString();
   return `<!DOCTYPE html>
-<html lang="ko">
+<html lang="${esc(language)}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
