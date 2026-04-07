@@ -2,34 +2,36 @@
 
 ![Dure Logo](docs/assets/dure_logo.png)
 
-두레는 여러 AI 에이전트를 조합해 투자 리서치를 실행하는 CLI 워크벤치입니다.
-종목 분석, 스크리닝, 전략 리서치, 시나리오 분석을 하나의 진입점에서 다룰 수 있습니다.
+Dure는 투자 리서치 워크플로우를 여러 AI 에이전트로 오케스트레이션하는 CLI 워크벤치입니다.
+한 종목 분석부터 스크리닝, 전략 리서치, 거시 시나리오 분석까지 하나의 진입점에서 실행하고, 결과를 HTML 리포트와 실행 아티팩트로 남깁니다.
 
-## Quick Navigation
+## What Dure Does
 
-- [What It Does](#what-it-does)
-- [Quick Start](#quick-start)
-- [Examples](#examples)
-- [Outputs](#outputs)
-- [Configuration Summary](#configuration-summary)
-- [More Docs](#more-docs)
-- [Development](#development)
+Dure는 요청 유형에 따라 적절한 에이전트 조합을 실행합니다.
 
-## What It Does
+- `chat`: 자연어로 요청하면 router가 적절한 워크플로우 도구로 연결합니다.
+- `equity`: 단일 종목에 대해 펀더멘털, 뉴스, 전략 논리, critic 검토를 종합합니다.
+- `screen`: 시장과 스타일 기준으로 후보 종목을 추리고 상위 종목을 분석합니다.
+- `strategy`: 투자 가설을 전략 규칙으로 만들고 critic 루프로 다듬습니다.
+- `scenario`: 거시 이벤트나 가정이 종목과 섹터에 미칠 영향을 정리합니다.
 
-처음 쓰는 사용자라면 Dure를 "투자 리서치용 AI 워크벤치"로 이해하면 됩니다.
-자연어 요청이나 CLI 명령을 입력하면, 작업 종류에 맞는 에이전트 조합이 실행되고 결과가 리포트로 정리됩니다.
+대표적인 에이전트 구성은 다음과 같습니다.
 
-- 종목 분석: 특정 종목의 펀더멘털, 뉴스, 전략-논리 검증을 함께 정리하고, 대화형 모드에서는 체크리스트 리뷰까지 이어집니다.
-- 스크리닝: 시장과 스타일 기준으로 종목군을 추리고 상위 후보를 보여줍니다.
-- 전략 리서치: 전략 정의 후 critic autoresearch로 반복 개선합니다.
-- 시나리오 분석: 거시 이벤트나 가정이 종목과 섹터에 주는 영향을 요약합니다.
-- 대화형 탐색: 채팅처럼 질문을 이어가며 분석 범위를 좁히거나 확장할 수 있습니다.
-- 투자 리뷰 체크리스트: 기존 `equity-...` run을 수동으로 다시 검토하거나, 대화형 종목 분석 뒤 자동으로 이어서 실행할 수 있습니다.
+- Universe: 유니버스 구성, 스크리닝 후보 수집
+- Fundamental: 재무제표, 밸류에이션, 지표 분석
+- News: 뉴스 이벤트와 감성 요약
+- Strategy: 투자 전략과 실행 규칙 설계
+- Critic: 과적합, 논리 비약, 데이터 한계 검토
+- Scenario: 시나리오 영향 분석
+- Review Checklist: 기존 종목 분석 결과 재검토
+- Router: 대화형 요청 라우팅
 
 ## Quick Start
 
-### 1. Install
+### 1. Clone dependencies
+
+이 저장소는 단독으로 완결되지 않습니다.
+시장 데이터와 보조 도구 실행을 위해 `cluefin` 저장소가 함께 필요합니다.
 
 ```bash
 git clone https://github.com/kgcrom/cluefin-dure
@@ -40,25 +42,35 @@ npm install
 cp .env.example .env
 ```
 
-두 저장소가 모두 필요합니다.
-`cluefin-dure`는 CLI 오케스트레이션을 담당하고, `cluefin`은 `cluefin-openapi-cli`와 `cluefin-ta-cli`를 제공하는 데이터 워크스페이스입니다.
-
-`.env`에는 데이터 소스 키와 선택적으로 `CLUEFIN_CLI_CWD`를 넣을 수 있습니다.
-기본값은 `cluefin-dure` 옆의 `../cluefin`입니다. 다른 위치에 clone했다면 아래처럼 설정합니다.
+기본적으로 Dure는 `../cluefin`을 외부 워크스페이스 경로로 가정합니다.
+다른 위치에 clone했다면 `.env`에 `CLUEFIN_CLI_CWD`를 명시해야 합니다.
 
 ```bash
 CLUEFIN_CLI_CWD=../cluefin
 ```
 
-필수 항목과 모델 설정 방법은 [docs/configuration.md](docs/configuration.md)에서 정리합니다.
+### 2. Fill environment variables
 
-### 2. Run
+`.env`에는 최소한 아래 데이터 소스 설정이 필요합니다.
+
+- `KIWOOM_APP_KEY`
+- `KIWOOM_SECRET_KEY`
+- `KIWOOM_ENV`
+- `DART_AUTH_KEY`
+- `KIS_APP_KEY`
+- `KIS_SECRET_KEY`
+- `KIS_ENV`
+- `CLUEFIN_CLI_CWD`
+
+전체 목록과 모델 설정은 [docs/configuration.md](docs/configuration.md)를 참고하세요.
+
+### 3. Run commands
 
 ```bash
 # 대화형 모드
 npm run chat
 
-# 종목 분석
+# 종목 종합 분석
 npm run equity -- 005930
 
 # 스크리닝
@@ -71,102 +83,44 @@ npm run strategy -- "quality dividend growth"
 npm run scenario -- "연준이 50bp 긴급 인하하면 반도체 섹터 어떻게 되나?"
 ```
 
-> `npm run <script>` 뒤 인수를 넘길 때는 `--` 구분자가 필요합니다.
-> `npm run chat`의 종목 분석 요청은 전체 equity 분석 뒤 체크리스트 리뷰까지 자동으로 이어집니다.
+`npm run <script>` 뒤에 인수를 넘길 때는 `--` 구분자가 필요합니다.
 
-## Examples
+## How It Works
 
-아래 예시는 저장소에 포함된 실제 산출물 기준으로 정리했습니다.
-리포트 예시는 모두 `docs/examples/` 아래에서 바로 확인할 수 있습니다.
+CLI 진입점은 [`src/main.ts`](src/main.ts)입니다.
+각 명령은 워크플로우를 실행한 뒤 리포트를 생성하고, 터미널에 요약을 출력합니다.
 
-### 1. Chat
+주요 흐름은 다음과 같습니다.
 
-언제 쓰나: 한 회사 상태를 빠르게 요약받고 다음 질문으로 이어가고 싶을 때
+- `equity`: Universe 또는 단일 종목 입력 -> Fundamental + News -> Strategy -> Critic 반복
+- `screen`: Universe -> 상위 종목 Fundamental 분석
+- `strategy`: Strategy 초안 -> Critic 반복
+- `scenario`: Scenario 정의 -> 영향 분석 -> 종합 평가
+- `chat`: Router가 `equity`, `screen`, `strategy`, `scenario`, `review_checklist` 도구 중 하나를 호출
 
-```bash
-DURE_PROVIDER=openai-codex npm run chat
-```
-
-```text
-삼성전자 기업분석해주세요.
-```
-
-결과 파일: [docs/examples/chat_result.md](https://kgcrom.github.io/cluefin-dure/examples/chat_result.md)
-
-이 예시에서 볼 포인트:
-
-- 핵심 결론을 먼저 제시하고, 뒤에서 숫자와 근거를 붙입니다.
-- 매출, 영업이익, ROE, PER, PBR, 부채비율 같은 기본 지표를 한 번에 보여줍니다.
-- 긍정 포인트와 리스크 요인을 분리해 후속 질문을 이어가기 쉽습니다.
-- 현재 구현에서는 checklist review verdict와 blocking issue까지 함께 반영됩니다.
-- 마지막에 비교 분석, 시나리오, 전략안 같은 다음 액션을 제안합니다.
-
-### 2. Scenario
-
-언제 쓰나: 특정 거시 이벤트가 섹터와 종목에 어떤 경로로 영향을 줄지 보고 싶을 때
-
-```bash
-DURE_PROVIDER=openai-codex npm run scenario -- "연준이 50bp 긴급 인하하면 반도체 섹터 어떻게 되나?"
-```
-
-결과 파일: [docs/examples/scenario_report.html](https://kgcrom.github.io/cluefin-dure/examples/scenario_report.html)
-
-이 예시에서 볼 포인트:
-
-- 시나리오 설명, 시간 범위, 대상 종목, 핵심 변수 방향을 한 화면에서 정리합니다.
-- SK하이닉스, 삼성전자 등 종목별 영향과 촉매, 리스크를 비교합니다.
-- "단기 긍정, 중기 조건부"처럼 실행 가능한 종합 평가를 제공합니다.
-- 마지막에 확인해야 할 후속 데이터와 체크포인트를 권고사항으로 남깁니다.
-
-### 3. Screen
-
-언제 쓰나: 시장과 스타일을 넣고 우선 검토할 종목 후보를 빠르게 추리고 싶을 때
-
-```bash
-DURE_PROVIDER=openai-codex npm run screen -- KR value
-```
-
-결과 파일: [docs/examples/screen_report.html](https://kgcrom.github.io/cluefin-dure/examples/screen_report.html)
-
-이 예시에서 볼 포인트:
-
-- 상위 랭킹 종목의 매출, 이익률, PE, PB, ROE, D/E를 표로 먼저 보여줍니다.
-- 각 종목마다 성장 트렌드, 분기 변화, 레드 플래그, 메모가 이어져 1차 검토에 적합합니다.
-- 최근 공시와 자본정책 이벤트까지 함께 언급해 숫자만 보는 스크리너보다 맥락이 풍부합니다.
-- 단순 필터 결과가 아니라 "왜 지금 봐야 하는 후보인지"를 서술형으로 정리합니다.
-
-### 4. Strategy
-
-언제 쓰나: 투자 아이디어를 전략 규칙으로 바꾸고 전략/논리 검토를 반복해 다듬고 싶을 때
-
-```bash
-DURE_PROVIDER=openai-codex npm run strategy -- "quality dividend growth"
-```
-
-결과 파일: [docs/examples/strategy_report.html](https://kgcrom.github.io/cluefin-dure/examples/strategy_report.html)
-
-이 예시에서 볼 포인트:
-
-- 전략 가설, 진입 규칙, 청산 규칙, 포지션 사이징, 리밸런싱 주기를 명시합니다.
-- 각 루프별 critic 판정, 추천사항, 전략 버전 변화를 함께 보여줍니다.
-- 데이터 한계, 유니버스 제약, 근거 정합성에 대한 비평 포인트가 어떻게 개선되는지 확인할 수 있습니다.
+대화형 모드의 종목 분석은 equity 워크플로우 뒤 checklist review까지 자동으로 이어집니다.
 
 ## Outputs
 
-각 실행은 `data/runs/<runId>/` 아래에 결과를 저장합니다.
+각 실행 결과는 `data/runs/<runId>/` 아래에 저장됩니다.
 
-- `report.html`: 사람이 읽기 쉬운 HTML 리포트
-- `events.json`: 실행 중 이벤트 로그
+- `report.html`: 사람이 읽는 최종 리포트
+- `events.json`: 실행 이벤트 로그
 - `<agent>/artifact.json`: 에이전트별 중간 산출물
 
-CLI를 실행하면 터미널 요약이 함께 출력되고, macOS에서는 생성된 `report.html`이 자동으로 열립니다.
+macOS에서는 리포트 생성 직후 HTML 파일을 자동으로 엽니다.
 
-## Configuration Summary
+예시 결과는 `docs/examples/` 아래에 있습니다.
 
-기본 모델 프리셋은 `openai-codex`입니다.
-전체 프리셋은 `DURE_PROVIDER`, 개별 에이전트 오버라이드는 `DURE_MODEL_{AGENT}`로 제어합니다.
+- [chat_result.md](docs/examples/chat_result.md)
+- [scenario_report.html](docs/examples/scenario_report.html)
+- [screen_report.html](docs/examples/screen_report.html)
+- [strategy_report.html](docs/examples/strategy_report.html)
 
-우선순위:
+## Model Configuration
+
+기본 provider preset은 `openai-codex`입니다.
+에이전트별 모델 선택 우선순위는 아래와 같습니다.
 
 ```text
 DURE_MODEL_{AGENT} > DURE_PROVIDER > 코드 기본값
@@ -175,32 +129,49 @@ DURE_MODEL_{AGENT} > DURE_PROVIDER > 코드 기본값
 예시:
 
 ```bash
-# 전체 프로바이더 전환
+# 전체 provider 변경
 DURE_PROVIDER=openai-codex npm run chat
 
-# critic만 별도 override
+# critic만 override
 DURE_PROVIDER=openai-codex \
 DURE_MODEL_CRITIC=anthropic:claude-opus-4-6 \
-npm run chat
+npm run strategy -- "quality dividend growth"
 ```
 
-전체 환경 변수 목록, provider preset, `.env.example` 설명은 [docs/configuration.md](docs/configuration.md)에서 다룹니다.
+자세한 preset과 agent별 기본 모델은 [docs/configuration.md](docs/configuration.md)에 정리되어 있습니다.
 
-Google 계열 제품 로그인(`Antigravity`, `Gemini CLI`, `Gemini Code Assist`)을 제3자 코딩 에이전트에 연결해 사용하는 방식은 지원하지 않습니다.
-이 경우 차단 또는 정지될 수 있으므로, 관련 안내와 이의제기 링크는 [docs/configuration.md](docs/configuration.md)에서 확인하세요.
+## Repository Layout
 
-## More Docs
+```text
+src/
+├── agents/        # 에이전트 정의
+├── workflow/      # 워크플로우 오케스트레이션
+├── tools/         # 시장 데이터 및 워크플로우 도구
+├── schemas/       # 분석 결과 스키마
+├── memory/        # 파일 기반 메모리 저장소
+├── runtime/       # 세션/이벤트/아티팩트 관리
+├── report/        # HTML 리포트 생성
+├── interactive/   # 대화형 모드
+├── cli/           # cluefin CLI 브리지
+├── config.ts      # 모델 설정
+└── main.ts        # CLI 엔트리포인트
+research/
+└── prompts/       # 공통 및 역할별 프롬프트
+docs/
+├── architecture.md
+├── configuration.md
+└── examples/
+```
 
-- [docs/configuration.md](docs/configuration.md): `.env` 항목, 모델 선택, provider preset, override 규칙
-- [docs/architecture.md](docs/architecture.md): 에이전트 구성, 워크플로우, 메모리 시스템, 프롬프트 조합, 프로젝트 구조
-- [docs/examples/scenario_report.html](docs/examples/scenario_report.html): 시나리오 리포트 예시
-- [docs/examples/screen_report.html](docs/examples/screen_report.html): 스크리닝 리포트 예시
-- [docs/examples/strategy_report.html](docs/examples/strategy_report.html): 전략 리포트 예시
-- [docs/examples/chat_result.md](docs/examples/chat_result.md): 대화형 분석 예시
+## Related Docs
+
+- [docs/configuration.md](docs/configuration.md): `.env`, provider preset, agent별 모델 override
+- [docs/architecture.md](docs/architecture.md): 워크플로우, 에이전트 구성, 메모리, 실행 산출물
+- [docs/TODO.md](docs/TODO.md): 남아 있는 작업 메모
 
 ## Development
 
-문서 외 변경 작업을 마칠 때는 아래 검증을 실행합니다.
+작업을 마친 뒤 아래 검증을 실행합니다.
 
 ```bash
 npm test
