@@ -34,7 +34,7 @@ export async function runEquityAnalysis(
   const runId = `equity-${Date.now()}`;
   const store = new ArtifactStore();
   const recorder = new EventRecorder();
-  const pool = new SessionPool(3);
+  const pool = new SessionPool();
   const emit = onUpdate ? createOnUpdateLogger(onUpdate) : log;
   let universe: unknown;
 
