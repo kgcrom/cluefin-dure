@@ -30,22 +30,20 @@ export async function runStrategyResearch(
 
   emit(`\n[run] 전략 리서치 시작: ${runId}`);
 
+  const theme = options.tickers?.length
+    ? `${options.theme}\n대상 종목: ${options.tickers.join(', ')}`
+    : options.theme;
+
   // 1. 전략 설계
   emit('[run] 전략 설계 중...');
-  const strategy = await runStrategyAgent(
-    runId,
-    { theme: options.theme },
-    store,
-    recorder,
-    onUpdate,
-  );
+  const strategy = await runStrategyAgent(runId, { theme }, store, recorder, onUpdate);
 
   // 2. Critic autoresearch (최대 3회 반복)
   const loopResult = await runCriticIterationLoop(
     {
       runId,
       initialStrategy: strategy,
-      theme: options.theme,
+      theme,
       maxIterations: options.maxIterations,
     },
     store,

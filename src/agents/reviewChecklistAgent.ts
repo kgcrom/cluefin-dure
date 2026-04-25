@@ -73,6 +73,7 @@ export async function runReviewChecklistAgent(
   const sourceType = validateSourceRunId(input.sourceRunId);
   const evidence = await loadEquityEvidenceBundle(input.sourceRunId);
   const evidenceBundle = buildEvidenceBundle(input.sourceRunId, evidence);
+  const evidenceSummary = buildEvidenceSummary(input.sourceRunId, evidence);
 
   const reviewerSettled = await Promise.allSettled(
     REVIEWER_SPECS.map(async (spec) => {
@@ -125,7 +126,7 @@ export async function runReviewChecklistAgent(
   } else {
     finalReview = await runSynthesizerSession({
       sourceRunId: input.sourceRunId,
-      evidenceBundle,
+      evidenceSummary,
       reviewers: {
         companyAnalysis: reviewers.companyAnalysis ?? '',
         riskManagement: reviewers.riskManagement ?? '',
@@ -283,6 +284,39 @@ function buildEvidenceBundle(sourceRunId: string, evidence: EquityEvidenceBundle
   return sections.join('\n');
 }
 
+function buildEvidenceSummary(sourceRunId: string, evidence: EquityEvidenceBundle): string {
+  return [
+    `Source Run ID: ${sourceRunId}`,
+    `Universe Included: ${evidence.universe ? 'yes' : 'no'}`,
+    `Fundamental Artifacts: ${evidence.fundamentals.length}`,
+    `News Artifacts: ${evidence.newsAnalyses.length}`,
+    `Strategy Summary: ${summarizeJson(evidence.strategy)}`,
+    `Critic Summary: ${summarizeJson(evidence.critic)}`,
+  ].join('\n');
+}
+
+function summarizeJson(value: unknown): string {
+  if (!value || typeof value !== 'object') {
+    return JSON.stringify(value);
+  }
+
+  const objectValue = value as Record<string, unknown>;
+  const summaryKeys = ['name', 'hypothesis', 'verdict', 'recommendations'];
+  const summary: Record<string, unknown> = {};
+
+  for (const key of summaryKeys) {
+    if (key in objectValue) {
+      summary[key] = objectValue[key];
+    }
+  }
+
+  if (Object.keys(summary).length === 0) {
+    return `keys=${Object.keys(objectValue).join(', ')}`;
+  }
+
+  return JSON.stringify(summary);
+}
+
 async function runReviewSession(params: {
   label: string;
   promptNames: PromptName[];
@@ -319,7 +353,7 @@ async function runReviewSession(params: {
 
 async function runSynthesizerSession(params: {
   sourceRunId: string;
-  evidenceBundle: string;
+  evidenceSummary: string;
   reviewers: Required<Omit<ReviewChecklistReviewers, 'fallback'>>;
   recorder: EventRecorder;
   onUpdate?: AgentToolUpdateCallback<null>;
@@ -341,8 +375,8 @@ async function runSynthesizerSession(params: {
       `Source Run ID: ${params.sourceRunId}`,
       'Return concise Markdown using the required headings.',
       '',
-      '=== Original Evidence Bundle ===',
-      params.evidenceBundle,
+      '=== Source Summary ===',
+      params.evidenceSummary,
       '',
       '=== Company Analysis Reviewer ===',
       params.reviewers.companyAnalysis,
