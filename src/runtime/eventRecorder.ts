@@ -17,6 +17,7 @@ interface RecordedEvent {
 export class EventRecorder {
   private events: RecordedEvent[] = [];
   private unsubscribes: (() => void)[] = [];
+  private turnStarts = new Map<string, number>();
 
   constructor(private readonly logSink?: PiLogSink) {}
 
@@ -31,11 +32,17 @@ export class EventRecorder {
     let buffer = '';
 
     const unsub = session.subscribe((event: AgentSessionEvent) => {
+      const timestamp = Date.now();
       this.events.push({
-        timestamp: Date.now(),
+        timestamp,
         sessionLabel,
         type: event.type,
+        data: getRecordedEventData(event, this.turnStarts.get(sessionLabel), timestamp),
       });
+
+      if (event.type === 'turn_start') {
+        this.turnStarts.set(sessionLabel, timestamp);
+      }
 
       if (
         event.type === 'message_update' &&
@@ -94,5 +101,48 @@ export class EventRecorder {
   dispose(): void {
     for (const unsub of this.unsubscribes) unsub();
     this.unsubscribes = [];
+    this.turnStarts.clear();
   }
+}
+
+function getRecordedEventData(
+  event: AgentSessionEvent,
+  turnStart: number | undefined,
+  timestamp: number,
+): Record<string, unknown> | undefined {
+  if (event.type === 'turn_end') {
+    const msg = event.message as unknown as Record<string, unknown> | undefined;
+    return removeUndefinedValues({
+      role: msg?.role,
+      stopReason: msg?.stopReason,
+      errorMessage: msg?.errorMessage,
+      durationMs: turnStart ? timestamp - turnStart : undefined,
+    });
+  }
+
+  if (event.type === 'auto_retry_start') {
+    return {
+      attempt: event.attempt,
+      maxAttempts: event.maxAttempts,
+      delayMs: event.delayMs,
+      errorMessage: event.errorMessage,
+    };
+  }
+
+  if (event.type === 'auto_retry_end') {
+    return removeUndefinedValues({
+      success: event.success,
+      attempt: event.attempt,
+      finalError: event.finalError,
+    });
+  }
+
+  return undefined;
+}
+
+function removeUndefinedValues(data: Record<string, unknown>): Record<string, unknown> | undefined {
+  const compact = Object.fromEntries(
+    Object.entries(data).filter(([, value]) => value !== undefined),
+  );
+  return Object.keys(compact).length > 0 ? compact : undefined;
 }

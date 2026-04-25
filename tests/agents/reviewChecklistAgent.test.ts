@@ -167,6 +167,12 @@ describe('runReviewChecklistAgent', () => {
     expect(
       promptCalls.find((call) => call.label.includes('synthesizer:'))?.userMessage,
     ).toContain('Company Analysis: valuation bridge is weak');
+    expect(
+      promptCalls.find((call) => call.label.includes('synthesizer:'))?.userMessage,
+    ).toContain('=== Source Summary ===');
+    expect(
+      promptCalls.find((call) => call.label.includes('synthesizer:'))?.userMessage,
+    ).not.toContain('=== Original Evidence Bundle ===');
 
     expect(result.sourceType).toBe('equity');
     expect(result.reviewers.companyAnalysis).toContain('Company Analysis');

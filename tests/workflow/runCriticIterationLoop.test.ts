@@ -126,6 +126,51 @@ describe('critic autoresearch loops', () => {
     );
   });
 
+  it('strategy research는 tickers context를 전략 생성과 critic에 전달한다', async () => {
+    const strategy = {
+      name: 'Ticker Strategy',
+      hypothesis: 'Ticker-aware hypothesis',
+      entryRules: ['ROE > 0.1'],
+      exitRules: ['ROE < 0.05'],
+      positionSizing: '3%',
+      rebalancePeriod: 'monthly',
+      config: {},
+    };
+    const critic = {
+      verdict: 'keep' as const,
+      recommendations: ['good'],
+      overfittingRisk: 'low',
+      dataLeakageCheck: 'pass',
+      survivorshipBias: 'low',
+      regimeDependency: 'low',
+    };
+
+    hoisted.mockRunStrategyAgent.mockResolvedValueOnce(strategy);
+    hoisted.mockRunCriticAgent.mockResolvedValueOnce(critic);
+
+    await runStrategyResearch({ theme: 'quality growth', tickers: ['005930', '000660'] });
+
+    const expectedTheme = 'quality growth\n대상 종목: 005930, 000660';
+    expect(hoisted.mockRunStrategyAgent).toHaveBeenCalledWith(
+      expect.any(String),
+      { theme: expectedTheme },
+      expect.anything(),
+      expect.anything(),
+      undefined,
+    );
+    expect(hoisted.mockRunCriticAgent).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        additionalArtifacts: expect.objectContaining({
+          theme: expectedTheme,
+        }),
+      }),
+      expect.anything(),
+      expect.anything(),
+      undefined,
+    );
+  });
+
   it('equity 분석도 revise/keep 루프로 개선한다', async () => {
     const baseStrategy = {
       name: '종목 전략',

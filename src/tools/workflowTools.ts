@@ -66,7 +66,7 @@ const screeningParams = Type.Object({
   market: Type.Optional(Type.String({ description: '시장 (예: KR, KOSPI)' })),
   style: Type.Optional(Type.String({ description: '투자 스타일 (예: value, growth)' })),
   filterRules: Type.Optional(Type.String({ description: '스크리닝 필터 규칙' })),
-  topN: Type.Optional(Type.Number({ description: '상위 N개 종목 반환 (기본: 10)' })),
+  topN: Type.Optional(Type.Number({ description: '상위 N개 종목 반환 (기본: 5)' })),
 });
 
 export const screeningTool: ToolDefinition<typeof screeningParams, WorkflowToolDetails> = {

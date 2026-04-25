@@ -105,6 +105,12 @@ Gemini를 제3자 코딩 에이전트에서 사용해야 한다면 제품 로그
 | Review Checklist | `openai-codex:gpt-4.5-mini` |
 | Router | `openai-codex:gpt-5.3-codex-spark` |
 
+## Runtime Tuning
+
+| 변수 | 설명 |
+|------|------|
+| `DURE_MAX_CONCURRENT_SESSIONS` | workflow 내부 병렬 agent session 수 제한. 기본값은 `3`이며, 1 이상의 정수만 허용합니다. |
+
 ## Command Notes
 
 - 패키지 스크립트는 `tsx --env-file=.env src/main.ts ...` 형태로 실행됩니다.

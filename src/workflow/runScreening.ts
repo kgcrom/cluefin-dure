@@ -26,7 +26,7 @@ export async function runScreening(
   const runId = `screen-${Date.now()}`;
   const store = new ArtifactStore();
   const recorder = new EventRecorder();
-  const pool = new SessionPool(3);
+  const pool = new SessionPool();
   const emit = onUpdate ? createOnUpdateLogger(onUpdate) : log;
 
   emit(`\n[run] 스크리닝 시작: ${runId}`);

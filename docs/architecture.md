@@ -139,5 +139,5 @@ docs/
 ## Reliability Notes
 
 - JSON 추출 실패 시 주요 에이전트는 최대 2회 재시도합니다.
-- 이벤트 레코더는 세션 스트림과 provider retry 이벤트를 `events.json`에 남깁니다.
-- 스크리닝은 `SessionPool(3)`으로 병렬도를 제한해 펀더멘털 분석을 수행합니다.
+- 이벤트 레코더는 세션 스트림, provider retry metadata, provider error metadata를 `events.json`에 남깁니다.
+- 스크리닝은 기본 병렬도 3으로 펀더멘털 분석을 수행하며, `DURE_MAX_CONCURRENT_SESSIONS`로 조정할 수 있습니다.

@@ -30,7 +30,7 @@ export async function runScenarioAnalysis(
   const runId = `scenario-${Date.now()}`;
   const store = new ArtifactStore();
   const recorder = new EventRecorder();
-  const pool = new SessionPool(3);
+  const pool = new SessionPool();
   const emit = onUpdate ? createOnUpdateLogger(onUpdate) : log;
 
   emit(`\n[run] 시나리오 분석 시작: ${runId}`);
