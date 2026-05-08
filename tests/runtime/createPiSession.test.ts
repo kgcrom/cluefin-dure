@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
   resourceLoaderConstructs: [] as unknown[],
 }));
 
-vi.mock('@mariozechner/pi-coding-agent', () => {
+vi.mock('@earendil-works/pi-coding-agent', () => {
   class DefaultResourceLoader {
     constructor(options: unknown) {
       mocks.resourceLoaderConstructs.push(options);
@@ -33,8 +33,6 @@ vi.mock('@mariozechner/pi-coding-agent', () => {
     SessionManager: { inMemory: vi.fn(() => ({ kind: 'session-manager' })) },
     createAgentSession: mocks.createAgentSession,
     getAgentDir: mocks.getAgentDir,
-    codingTools: ['coding-tool'],
-    readOnlyTools: ['read-only-tool'],
   };
 });
 
@@ -68,11 +66,11 @@ describe('createPiSession', () => {
     expect(mocks.createAgentSession).toHaveBeenCalledTimes(2);
     expect(mocks.createAgentSession.mock.calls[0]?.[0]).toMatchObject({
       settingsManager: { kind: 'settings' },
-      tools: ['read-only-tool'],
+      tools: ['read', 'grep', 'find', 'ls'],
     });
   });
 
-  it('useCodeTools가 켜지면 codingTools를 전달한다', async () => {
+  it('useCodeTools가 켜지면 code tool allowlist를 전달한다', async () => {
     const { createPiSession } = await import('../../src/runtime/createPiSession.js');
 
     await createPiSession({
@@ -83,7 +81,7 @@ describe('createPiSession', () => {
     });
 
     expect(mocks.createAgentSession.mock.calls.at(-1)?.[0]).toMatchObject({
-      tools: ['coding-tool'],
+      tools: ['read', 'bash', 'edit', 'write'],
     });
   });
 });

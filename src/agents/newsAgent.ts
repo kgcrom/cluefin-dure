@@ -1,4 +1,4 @@
-import type { AgentToolUpdateCallback, ToolDefinition } from '@mariozechner/pi-coding-agent';
+import type { AgentToolUpdateCallback, ToolDefinition } from '@earendil-works/pi-coding-agent';
 import { getToolsForAgent } from '../cli/agent-tools.js';
 import type { ArtifactStore } from '../runtime/artifactStore.js';
 import { createPiSession } from '../runtime/createPiSession.js';

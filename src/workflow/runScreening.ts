@@ -1,4 +1,4 @@
-import type { AgentToolUpdateCallback } from '@mariozechner/pi-coding-agent';
+import type { AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
 import { runFundamentalAgent } from '../agents/fundamentalAgent.js';
 import { runUniverseAgent } from '../agents/universeAgent.js';
 import { ArtifactStore } from '../runtime/artifactStore.js';

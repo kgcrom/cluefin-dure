@@ -7,11 +7,10 @@ import {
   InteractiveMode,
   ModelRegistry,
   SessionManager,
-} from '@mariozechner/pi-coding-agent';
+} from '@earendil-works/pi-coding-agent';
 import { loadPrompt } from '../agents/_utils.js';
 import { getAgentModel } from '../config.js';
 import { muteStdout } from '../runtime/log.js';
-import { chatWorkflowTools } from '../tools/workflowTools.js';
 
 export async function startInteractive(): Promise<void> {
   muteStdout();
@@ -33,6 +32,7 @@ export async function startInteractive(): Promise<void> {
         resourceLoaderOptions: {
           systemPrompt,
           noExtensions: true,
+          additionalExtensionPaths: ['.pi/extensions/finance-commands.ts'],
           noSkills: true,
           noPromptTemplates: true,
           noThemes: true,
@@ -45,8 +45,7 @@ export async function startInteractive(): Promise<void> {
           sessionManager,
           sessionStartEvent,
           model: model ?? undefined,
-          tools: [],
-          customTools: chatWorkflowTools,
+          noTools: 'builtin',
         })),
         services,
         diagnostics: services.diagnostics,

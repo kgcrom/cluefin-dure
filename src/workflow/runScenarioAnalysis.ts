@@ -1,4 +1,4 @@
-import type { AgentToolUpdateCallback } from '@mariozechner/pi-coding-agent';
+import type { AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
 import { runScenarioCriticAgent } from '../agents/criticAgent.js';
 import { runFundamentalAgent } from '../agents/fundamentalAgent.js';
 import { runNewsAgent } from '../agents/newsAgent.js';

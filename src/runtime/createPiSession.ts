@@ -2,16 +2,14 @@ import {
   type AgentSession,
   type AgentToolUpdateCallback,
   AuthStorage,
-  codingTools,
   createAgentSession,
   DefaultResourceLoader,
   getAgentDir,
   ModelRegistry,
-  readOnlyTools,
   SessionManager,
   SettingsManager,
   type ToolDefinition,
-} from '@mariozechner/pi-coding-agent';
+} from '@earendil-works/pi-coding-agent';
 import { type AgentName, getAgentModel } from '../config.js';
 import type { EventRecorder } from './eventRecorder.js';
 
@@ -45,7 +43,9 @@ function getPiRuntimeServices(): PiRuntimeServices {
         enabled: true,
         maxRetries: 3,
         baseDelayMs: 1000,
-        maxDelayMs: 10000,
+        provider: {
+          maxRetryDelayMs: 10000,
+        },
       },
       compaction: {
         enabled: true,
@@ -119,7 +119,9 @@ export async function createPiSession(options: AgentSessionOptions): Promise<Age
     systemPrompt,
   });
 
-  const builtInTools = useCodeTools ? codingTools : readOnlyTools;
+  const builtInTools = useCodeTools
+    ? ['read', 'bash', 'edit', 'write']
+    : ['read', 'grep', 'find', 'ls'];
 
   const { session } = await createAgentSession({
     sessionManager: SessionManager.inMemory(),

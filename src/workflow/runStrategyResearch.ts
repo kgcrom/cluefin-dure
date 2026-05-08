@@ -1,4 +1,4 @@
-import type { AgentToolUpdateCallback } from '@mariozechner/pi-coding-agent';
+import type { AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
 import { runStrategyAgent } from '../agents/strategyAgent.js';
 import { ArtifactStore } from '../runtime/artifactStore.js';
 import { EventRecorder } from '../runtime/eventRecorder.js';

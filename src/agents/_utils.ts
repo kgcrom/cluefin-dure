@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { AgentSession } from '@mariozechner/pi-coding-agent';
+import type { AgentSession } from '@earendil-works/pi-coding-agent';
 import { MemoryStore } from '../memory/memoryStore.js';
 import type { CriticReport, StrategyDefinition } from '../schemas/strategy.js';
 

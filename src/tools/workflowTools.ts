@@ -1,4 +1,4 @@
-import type { AgentToolUpdateCallback, ToolDefinition } from '@mariozechner/pi-coding-agent';
+import type { AgentToolUpdateCallback, ToolDefinition } from '@earendil-works/pi-coding-agent';
 import { type Static, Type } from '@sinclair/typebox';
 import { createPiLogSink, type PiLogDetails, withLogSink } from '../runtime/log.js';
 import { toolResult } from './_helpers.js';

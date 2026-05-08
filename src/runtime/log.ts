@@ -1,5 +1,5 @@
 import type { Readable } from 'node:stream';
-import type { AgentToolUpdateCallback } from '@mariozechner/pi-coding-agent';
+import type { AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
 
 export interface PiLogDetails {
   logs: string;

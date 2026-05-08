@@ -4,7 +4,7 @@ import type {
   AgentSession,
   AgentSessionEvent,
   AgentToolUpdateCallback,
-} from '@mariozechner/pi-coding-agent';
+} from '@earendil-works/pi-coding-agent';
 import { createPiLogSink, getCurrentLogSink, log, type PiLogSink } from './log.js';
 
 interface RecordedEvent {

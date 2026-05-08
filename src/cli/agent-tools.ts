@@ -1,4 +1,4 @@
-import type { AgentToolResult, ToolDefinition } from '@mariozechner/pi-coding-agent';
+import type { AgentToolResult, ToolDefinition } from '@earendil-works/pi-coding-agent';
 import { type TSchema, Type } from '@sinclair/typebox';
 import {
   type CliCommandSpec,
