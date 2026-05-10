@@ -15,6 +15,7 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "test": "vitest run",
+    "test:coverage": "vitest run --config ./vitest.config.ts --coverage",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -24,6 +25,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.4.7",
     "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "4.1.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
     "vitest": "^4.1.0"
