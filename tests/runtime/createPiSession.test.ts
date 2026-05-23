@@ -64,6 +64,12 @@ describe('createPiSession', () => {
     expect(mocks.resourceLoaderConstructs).toHaveLength(1);
     expect(mocks.resourceLoaderReload).toHaveBeenCalledTimes(1);
     expect(mocks.createAgentSession).toHaveBeenCalledTimes(2);
+    expect(mocks.resourceLoaderConstructs[0]).toMatchObject({
+      noExtensions: true,
+      noSkills: true,
+      noPromptTemplates: true,
+      noThemes: true,
+    });
     expect(mocks.createAgentSession.mock.calls[0]?.[0]).toMatchObject({
       settingsManager: { kind: 'settings' },
       tools: ['read', 'grep', 'find', 'ls'],

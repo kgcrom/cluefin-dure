@@ -51,7 +51,7 @@
     {
       "id": "phase-2",
       "title": "Interactive discovery restore",
-      "status": "pending",
+      "status": "completed",
       "scope": [
         "Interactive router project resource discovery",
         "internal workflow agent discovery isolation",
@@ -61,17 +61,17 @@
         {
           "id": "phase-2-task-1",
           "title": "Restore interactive project resource discovery",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "phase-2-task-2",
           "title": "Preserve createPiSession resource isolation",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "phase-2-task-3",
           "title": "Add interactive resource loader tests",
-          "status": "pending"
+          "status": "completed"
         }
       ],
       "verification": [
@@ -258,4 +258,3 @@
     }
   ]
 }
-
