@@ -164,12 +164,12 @@ describe('runReviewChecklistAgent', () => {
     expect(new Set(reviewerCalls.map((call) => call.userMessage)).size).toBe(1);
     expect(reviewerCalls[0]?.userMessage).toContain('"ticker": "005930"');
     expect(reviewerCalls[0]?.userMessage).toContain('"name": "Semiconductor Quality"');
-    expect(
-      promptCalls.find((call) => call.label.includes('synthesizer:'))?.userMessage,
-    ).toContain('Company Analysis: valuation bridge is weak');
-    expect(
-      promptCalls.find((call) => call.label.includes('synthesizer:'))?.userMessage,
-    ).toContain('=== Source Summary ===');
+    expect(promptCalls.find((call) => call.label.includes('synthesizer:'))?.userMessage).toContain(
+      'Company Analysis: valuation bridge is weak',
+    );
+    expect(promptCalls.find((call) => call.label.includes('synthesizer:'))?.userMessage).toContain(
+      '=== Source Summary ===',
+    );
     expect(
       promptCalls.find((call) => call.label.includes('synthesizer:'))?.userMessage,
     ).not.toContain('=== Original Evidence Bundle ===');

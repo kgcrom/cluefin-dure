@@ -1,13 +1,15 @@
 # Pi Resource Structure PRD
 
+> Historical planning artifact. 현재 구현 상태의 source of truth는 `README.md`, `docs/architecture.md`, `.pi/extensions/dure-workflow-tools.ts`, `.pi/prompts/`, `.pi/skills/`입니다.
+
 ## Summary
 
 Dure 대화형 모드를 Pi project-local resource discovery 흐름에 맞춘다. Extension은 런타임 도구 등록에 집중하고, slash UX는 prompt template로 옮기며, 반복 작업 지침은 skill로 분리한다.
 
 ## Problem
 
-- `src/interactive/startInteractive.ts`가 `.pi/extensions/finance-commands.ts`만 명시 로드하고 skills/prompt templates discovery를 비활성화한다.
-- `.pi/extensions/finance-commands.ts`가 workflow tool 등록과 slash command prompt 생성 책임을 함께 가진다.
+- 과거 구현에서는 `src/interactive/startInteractive.ts`가 단일 extension만 명시 로드하고 skills/prompt templates discovery를 비활성화했다.
+- 과거 extension은 workflow tool 등록과 slash command prompt 생성 책임을 함께 가졌다.
 - `src/cli/*`의 cluefin CLI bridge는 존재하지만, cluefin의 domain/tag discovery를 Dure workflow 의도와 연결하는 규칙이 명확하지 않다.
 - README와 architecture 문서가 Pi resource별 위치, 목적, 검증 방법을 충분히 설명하지 않는다.
 
@@ -58,4 +60,3 @@ Phase gate:
 5. `git status`
 6. 현재 phase 파일만 stage
 7. 한국어 commit 생성
-

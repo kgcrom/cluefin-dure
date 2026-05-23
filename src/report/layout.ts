@@ -118,7 +118,3 @@ export function bulletList(items: string[]): string {
 export function pct(n: number): string {
   return `${(n * 100).toFixed(2)}%`;
 }
-
-export function detailsBlock(summary: string, content: string): string {
-  return `<details><summary>${esc(summary)}</summary>${content}</details>`;
-}

@@ -1,10 +1,11 @@
 import { mkdir, readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { STRATEGY_USAGE_LINES } from '../../src/main.js';
 import {
   renderAssessment,
-  renderCriticReport,
   renderCriticIterationTrail,
+  renderCriticReport,
   renderFundamentals,
   renderNewsAnalyses,
   renderScenarioDefinition,
@@ -13,10 +14,9 @@ import {
 } from '../../src/report/components.js';
 import { generateReport, printTerminalSummary } from '../../src/report/generateReport.js';
 import { badge, table, wrapLayout } from '../../src/report/layout.js';
-import { STRATEGY_USAGE_LINES } from '../../src/main.js';
 import {
-  criticReport,
   criticIterations,
+  criticReport,
   fundamentals,
   newsAnalyses,
   scenarioDefinition,
@@ -47,7 +47,13 @@ describe('layout', () => {
   });
 
   it('table: 헤더와 행 렌더링', () => {
-    const t = table(['A', 'B'], [['1', '2'], ['3', '4']]);
+    const t = table(
+      ['A', 'B'],
+      [
+        ['1', '2'],
+        ['3', '4'],
+      ],
+    );
     expect(t).toContain('<th>A</th>');
     expect(t).toContain('<th>B</th>');
     expect(t).toContain('<td>1</td>');

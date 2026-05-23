@@ -1,11 +1,11 @@
-import { describe, expect, it } from 'vitest';
 import { Value } from '@sinclair/typebox/value';
+import { describe, expect, it } from 'vitest';
+import { runScenarioAgent } from '../../src/agents/scenarioAgent.js';
 import {
   ScenarioDefinitionSchema,
   ScenarioProjectionSchema,
   ScenarioReportSchema,
 } from '../../src/schemas/scenario.js';
-import { runScenarioAgent } from '../../src/agents/scenarioAgent.js';
 
 describe('ScenarioDefinition 스키마 검증', () => {
   it('유효한 ScenarioDefinition을 통과', () => {

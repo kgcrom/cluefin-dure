@@ -113,10 +113,16 @@ Gemini를 제3자 코딩 에이전트에서 사용해야 한다면 제품 로그
 
 ## Command Notes
 
-- 패키지 스크립트는 대화형 실행을 위한 `npm run chat`만 제공합니다.
-- 종목 분석, 스크리닝, 전략 리서치, 시나리오 분석은 대화형 모드에서 Pi prompt template으로 실행합니다.
+- 패키지 스크립트는 `chat`, `build`, `lint`, `format`, `test` 등 개발/검증 명령을 제공합니다.
+- 종목 분석, 스크리닝, 전략 리서치, 시나리오 분석을 위한 개별 npm script는 없습니다. 직접 workflow를 확인할 때는 `npx tsx --env-file=.env src/main.ts ...` 형식으로 실행합니다.
+- 대화형 모드에서는 Pi prompt template으로 workflow를 실행합니다.
 
 예시:
+
+```bash
+npx tsx --env-file=.env src/main.ts equity 005930
+npx tsx --env-file=.env src/main.ts scenario "연준이 50bp 긴급 인하하면?"
+```
 
 ```text
 /equity 005930

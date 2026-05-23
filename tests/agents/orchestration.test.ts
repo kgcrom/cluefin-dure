@@ -111,7 +111,9 @@ describe('agent orchestration', () => {
       'memory_search',
     ]);
     expect(sessions[0]?.prompts[0]).toContain('기간: 최근 3개월');
-    expect(sessions[0]?.prompts[0]).toContain('위 시나리오 가정 하에서 이 종목의 뉴스/이벤트 영향을 분석하세요.');
+    expect(sessions[0]?.prompts[0]).toContain(
+      '위 시나리오 가정 하에서 이 종목의 뉴스/이벤트 영향을 분석하세요.',
+    );
     expect(store.put).toHaveBeenCalledWith('run-2', 'news', '000660', result);
   });
 

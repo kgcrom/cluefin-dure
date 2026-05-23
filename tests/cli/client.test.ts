@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { PassThrough } from 'node:stream';
@@ -57,8 +57,14 @@ function makeWorkspace(): string {
   const root = createTempDir('cluefin-');
   mkdirSync(join(root, 'apps', 'cluefin-openapi-cli'), { recursive: true });
   mkdirSync(join(root, 'apps', 'cluefin-ta-cli'), { recursive: true });
-  writeFileSync(join(root, 'apps', 'cluefin-openapi-cli', 'pyproject.toml'), '[project]\nname="cluefin-openapi-cli"\n');
-  writeFileSync(join(root, 'apps', 'cluefin-ta-cli', 'pyproject.toml'), '[project]\nname="cluefin-ta-cli"\n');
+  writeFileSync(
+    join(root, 'apps', 'cluefin-openapi-cli', 'pyproject.toml'),
+    '[project]\nname="cluefin-openapi-cli"\n',
+  );
+  writeFileSync(
+    join(root, 'apps', 'cluefin-ta-cli', 'pyproject.toml'),
+    '[project]\nname="cluefin-ta-cli"\n',
+  );
   return root;
 }
 
@@ -136,7 +142,11 @@ describe('cli client', () => {
             qualified_name: 'kis.stock.current-price',
             path_segments: ['kis', 'stock', 'current-price'],
             description: 'Get current price.',
-            parameters: { type: 'object', properties: { stock_code: { type: 'string' } }, required: ['stock_code'] },
+            parameters: {
+              type: 'object',
+              properties: { stock_code: { type: 'string' } },
+              required: ['stock_code'],
+            },
             returns: { type: 'object' },
             has_executor: true,
             domains: ['quote'],
@@ -158,7 +168,11 @@ describe('cli client', () => {
           qualified_name: 'kis.stock.current-price',
           path_segments: ['kis', 'stock', 'current-price'],
           description: 'Get current price.',
-          parameters: { type: 'object', properties: { stock_code: { type: 'string' } }, required: ['stock_code'] },
+          parameters: {
+            type: 'object',
+            properties: { stock_code: { type: 'string' } },
+            required: ['stock_code'],
+          },
           returns: { type: 'object' },
           has_executor: true,
           domains: ['quote'],
@@ -445,9 +459,7 @@ describe('cli client', () => {
       exitCode: 2,
     });
 
-    await expect(
-      describeCliCommand('ta', ['ta', 'sma']),
-    ).rejects.toThrow(/exit=2/);
+    await expect(describeCliCommand('ta', ['ta', 'sma'])).rejects.toThrow(/exit=2/);
   });
 
   it('stdout JSON이 깨지면 파싱 에러를 올린다', async () => {

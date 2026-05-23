@@ -1,7 +1,7 @@
-import type { ToolDefinition } from '@earendil-works/pi-coding-agent';
 import { mkdir, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import type { ToolDefinition } from '@earendil-works/pi-coding-agent';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const originalCwd = process.cwd();
@@ -47,9 +47,7 @@ describe('getMemoryTools', () => {
       content: 'ROE deterioration before price weakness is a warning sign.',
     });
 
-    await expect(executeText(read, { topic: 'index' })).resolves.toContain(
-      'strategy_patterns.md',
-    );
+    await expect(executeText(read, { topic: 'index' })).resolves.toContain('strategy_patterns.md');
     await expect(executeText(read, { topic: 'strategy_patterns' })).resolves.toContain(
       'ROE deterioration',
     );
@@ -78,6 +76,12 @@ function findTool(tools: ToolDefinition[], name: string): ToolDefinition {
 }
 
 async function executeText(tool: ToolDefinition, params: unknown): Promise<string> {
-  const result = await tool.execute('tool-call', params as never, undefined, undefined, {} as never);
+  const result = await tool.execute(
+    'tool-call',
+    params as never,
+    undefined,
+    undefined,
+    {} as never,
+  );
   return result.content[0].text;
 }

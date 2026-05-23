@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../src/cli/client.js', () => ({
   executeCliCommand: vi.fn(),
@@ -9,18 +9,16 @@ vi.mock('../../src/cli/client.js', () => ({
   validateRequiredParams: vi.fn(),
 }));
 
+import { createCallCliTool, getToolsForAgent } from '../../src/cli/agent-tools.js';
 import {
   executeCliCommand,
   getCliCommandByName,
-  getCliCommandsForCategories,
   getCliCommandsForTaxonomy,
   validateRequiredParams,
 } from '../../src/cli/client.js';
-import { createCallCliTool, getToolsForAgent } from '../../src/cli/agent-tools.js';
 
 const mockExecuteCliCommand = vi.mocked(executeCliCommand);
 const mockGetCliCommandByName = vi.mocked(getCliCommandByName);
-const mockGetCliCommandsForCategories = vi.mocked(getCliCommandsForCategories);
 const mockGetCliCommandsForTaxonomy = vi.mocked(getCliCommandsForTaxonomy);
 const mockValidateRequiredParams = vi.mocked(validateRequiredParams);
 
@@ -83,7 +81,9 @@ describe('cli agent tools', () => {
     mockExecuteCliCommand.mockResolvedValue({ price: 70000 });
 
     const tools = await getToolsForAgent('fundamental');
-    const result = await tools[0]!.execute(
+    const [tool] = tools;
+    if (!tool) throw new Error('expected fundamental CLI tool');
+    const result = await tool.execute(
       'call-1',
       { stock_code: '005930' },
       undefined,
@@ -100,7 +100,9 @@ describe('cli agent tools', () => {
     mockValidateRequiredParams.mockReturnValue(['stock_code']);
 
     const tools = await getToolsForAgent('fundamental');
-    const result = await tools[0]!.execute('call-1', {}, undefined, undefined, {} as never);
+    const [tool] = tools;
+    if (!tool) throw new Error('expected fundamental CLI tool');
+    const result = await tool.execute('call-1', {}, undefined, undefined, {} as never);
 
     expect(result.content[0]?.text).toContain('필수 파라미터 누락');
     expect(result.content[0]?.text).toContain('stock_code');

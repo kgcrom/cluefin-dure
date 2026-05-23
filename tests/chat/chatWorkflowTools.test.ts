@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockRunEquityAnalysisChat, mockRunStrategyDraft, mockRunReviewChecklist } = vi.hoisted(() => ({
-  mockRunEquityAnalysisChat: vi.fn(),
-  mockRunStrategyDraft: vi.fn(),
-  mockRunReviewChecklist: vi.fn(),
-}));
+const { mockRunEquityAnalysisChat, mockRunStrategyDraft, mockRunReviewChecklist } = vi.hoisted(
+  () => ({
+    mockRunEquityAnalysisChat: vi.fn(),
+    mockRunStrategyDraft: vi.fn(),
+    mockRunReviewChecklist: vi.fn(),
+  }),
+);
 
 vi.mock('../../src/workflow/runEquityAnalysisChat.js', () => ({
   runEquityAnalysisChat: mockRunEquityAnalysisChat,
@@ -20,9 +22,9 @@ vi.mock('../../src/workflow/runReviewChecklist.js', () => ({
 
 import {
   chatEquityAnalysisTool,
+  chatStrategyResearchTool,
   chatWorkflowTools,
   reviewChecklistTool,
-  chatStrategyResearchTool,
 } from '../../src/tools/workflowTools.js';
 
 describe('chatWorkflowTools', () => {
@@ -65,8 +67,6 @@ describe('chatWorkflowTools', () => {
       'run_scenario_analysis',
       'run_review_checklist',
     ]);
-    expect(names).not.toContain('run_backtest_loop');
-    expect(names).not.toContain('run_backtest');
   });
 
   it('대화형 run_equity_analysis는 chat 전용 워크플로우를 호출한다', async () => {

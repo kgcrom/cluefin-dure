@@ -9,7 +9,15 @@
     }
   },
   "files": {
-    "includes": ["src/**", "biome.json", "package.json", "tsconfig.json"]
+    "includes": [
+      "src/**",
+      "tests/**",
+      ".pi/**/*.ts",
+      "biome.json",
+      "package.json",
+      "tsconfig.json",
+      "vitest.config.ts"
+    ]
   },
   "linter": {
     "enabled": true,
