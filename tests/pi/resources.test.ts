@@ -55,4 +55,19 @@ describe('Pi project resources', () => {
       expect(content).toContain('$ARGUMENTS');
     }
   });
+
+  it('initial skills follow Pi skill naming and description rules', () => {
+    const skills = ['dure-investing-workflows', 'cluefin-data-discovery'];
+
+    for (const skill of skills) {
+      const path = `.pi/skills/${skill}/SKILL.md`;
+      expect(existsSync(new URL(path, root))).toBe(true);
+
+      const content = readProjectFile(path);
+      const frontmatter = parseFrontmatter(content);
+      expect(frontmatter.name).toBe(skill);
+      expect(frontmatter.description.length).toBeGreaterThan(20);
+      expect(frontmatter.description.length).toBeLessThanOrEqual(1024);
+    }
+  });
 });
