@@ -147,7 +147,8 @@ data/
 ├── memory/          # 세션 간 메모리
 └── runs/            # 실행별 산출물
 docs/
-└── examples/        # README에서 참조하는 예시 결과
+├── architecture.md  # 구조 문서
+└── configuration.md # 설정 문서
 ```
 
 ## Reliability Notes

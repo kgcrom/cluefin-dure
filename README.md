@@ -3,7 +3,7 @@
 ![Dure Logo](docs/assets/dure_logo.png)
 
 Dure는 투자 리서치 워크플로우를 여러 AI 에이전트로 오케스트레이션하는 CLI 워크벤치입니다.
-한 종목 분석부터 스크리닝, 전략 리서치, 거시 시나리오 분석까지 하나의 진입점에서 실행하고, 직접 CLI 워크플로우는 HTML 리포트와 실행 아티팩트를 남깁니다.
+한 종목 분석부터 스크리닝, 전략 리서치, 거시 시나리오 분석까지 하나의 진입점에서 실행하고, 실행 아티팩트를 남깁니다.
 
 ## What Dure Does
 
@@ -89,7 +89,7 @@ npx tsx --env-file=.env src/main.ts equity 005930
 ## How It Works
 
 CLI 진입점은 [`src/main.ts`](src/main.ts)입니다.
-직접 CLI 워크플로우 명령은 워크플로우를 실행한 뒤 리포트를 생성하고, 터미널에 요약을 출력합니다.
+직접 CLI 워크플로우 명령은 워크플로우를 실행한 뒤 터미널에 요약을 출력합니다.
 
 주요 흐름은 다음과 같습니다.
 
@@ -118,19 +118,20 @@ cluefin CLI fallback은 Dure workflow tool만으로 부족한 데이터가 있�
 
 각 실행 결과는 `data/runs/<runId>/` 아래에 저장됩니다.
 
-- `report.html`: 직접 CLI 워크플로우에서 생성하는 사람이 읽는 최종 리포트
 - `events.json`: 실행 이벤트 로그
 - `<agent>/<artifact>.json`: 에이전트별 중간 산출물
 
-대화형 Pi 도구는 워크플로우 결과를 반환하고 이벤트/아티팩트를 저장하지만, HTML 리포트를 자동 생성하지는 않습니다.
-macOS에서는 직접 CLI 리포트 생성 직후 HTML 파일을 자동으로 엽니다.
+## GitHub Pages
 
-예시 결과는 `docs/examples/` 아래에 있습니다.
+GitHub Pages는 `docs/` 디렉터리를 publish source로 두는 구성을 권장합니다.
+이 경우 공개할 정적 문서만 `docs/`에 두고, 로컬 실행 결과인 `data/runs/<runId>/`는
+커밋하지 않는 임시 산출물로 유지합니다.
 
-- [chat_result.md](docs/examples/chat_result.md)
-- [scenario_report.html](docs/examples/scenario_report.html)
-- [screen_report.html](docs/examples/screen_report.html)
-- [strategy_report.html](docs/examples/strategy_report.html)
+Pages 정리는 아래 기준으로 유지합니다.
+
+- 공개할 정적 문서만 `docs/`에 둡니다.
+- 실행 로그, 중간 artifact, 원본 run 디렉터리는 `data/runs/`에만 둡니다.
+- Pages에 노출할 새 문서는 `docs/` 아래의 명확한 경로와 README 링크를 함께 추가합니다.
 
 ## Model Configuration
 
@@ -165,7 +166,7 @@ src/
 ├── schemas/       # 분석 결과 스키마
 ├── memory/        # 파일 기반 메모리 저장소
 ├── runtime/       # 세션/이벤트/아티팩트 관리
-├── report/        # HTML 리포트 생성
+├── report/        # 리포트 렌더링
 ├── interactive/   # 대화형 모드
 ├── cli/           # cluefin CLI 브리지
 ├── config.ts      # 모델 설정
@@ -174,8 +175,7 @@ research/
 └── prompts/       # 공통 및 역할별 프롬프트
 docs/
 ├── architecture.md
-├── configuration.md
-└── examples/
+└── configuration.md
 ```
 
 ## Related Docs
