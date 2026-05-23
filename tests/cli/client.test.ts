@@ -337,6 +337,91 @@ describe('cli client', () => {
     expect(commands[0]?.domains).toEqual(['chart']);
   });
 
+  it('domain/tag metadata가 일부만 있으면 category fallback command도 함께 유지한다', async () => {
+    const root = makeWorkspace();
+    process.env.CLUEFIN_CLI_CWD = root;
+
+    queueProcess({
+      stdout: JSON.stringify({
+        commands: [
+          {
+            broker: 'kis',
+            category: 'chart',
+            name: 'period',
+            qualified_name: 'kis.chart.period',
+            path_segments: ['kis', 'chart', 'period'],
+            description: 'Get OHLCV.',
+            parameters: { type: 'object', properties: {} },
+            returns: { type: 'object' },
+            has_executor: true,
+            domains: ['chart'],
+            tags: ['ohlcv'],
+          },
+        ],
+      }),
+    });
+    queueProcess({
+      stdout: JSON.stringify({
+        commands: [
+          {
+            broker: null,
+            category: 'ta',
+            name: 'sma',
+            qualified_name: 'ta.sma',
+            path_segments: ['ta', 'sma'],
+            description: 'Simple Moving Average.',
+            parameters: { type: 'object', properties: {} },
+            returns: { type: 'object' },
+            has_executor: true,
+          },
+        ],
+      }),
+    });
+    queueProcess({
+      stdout: JSON.stringify({
+        command: {
+          broker: 'kis',
+          category: 'chart',
+          name: 'period',
+          qualified_name: 'kis.chart.period',
+          path_segments: ['kis', 'chart', 'period'],
+          description: 'Get OHLCV.',
+          parameters: { type: 'object', properties: {} },
+          returns: { type: 'object' },
+          has_executor: true,
+          domains: ['chart'],
+          tags: ['ohlcv'],
+        },
+      }),
+    });
+    queueProcess({
+      stdout: JSON.stringify({
+        command: {
+          broker: null,
+          category: 'ta',
+          name: 'sma',
+          qualified_name: 'ta.sma',
+          path_segments: ['ta', 'sma'],
+          description: 'Simple Moving Average.',
+          parameters: { type: 'object', properties: {} },
+          returns: { type: 'object' },
+          has_executor: true,
+        },
+      }),
+    });
+
+    const commands = await getCliCommandsForTaxonomy({
+      domains: ['chart'],
+      tags: [],
+      fallbackCategories: ['chart', 'ta'],
+    });
+
+    expect(commands.map((command) => command.qualifiedName)).toEqual([
+      'kis.chart.period',
+      'ta.sma',
+    ]);
+  });
+
   it('domain/tag metadata가 없으면 category fallback을 사용한다', async () => {
     const root = makeWorkspace();
     process.env.CLUEFIN_CLI_CWD = root;

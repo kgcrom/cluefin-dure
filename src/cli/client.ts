@@ -323,13 +323,22 @@ export async function getCliCommandsForTaxonomy(filters: {
     return true;
   });
 
-  if (matched.length === 0 && filters.fallbackCategories?.length) {
-    return getCliCommandsForCategories(filters.fallbackCategories);
-  }
-
-  return Promise.all(
+  const taxonomyCommands = await Promise.all(
     matched.map((command) => describeCliCommand(command.app, command.pathSegments)),
   );
+
+  if (!filters.fallbackCategories?.length) {
+    return taxonomyCommands;
+  }
+
+  const fallbackCommands = await getCliCommandsForCategories(filters.fallbackCategories);
+  const merged = new Map<string, CliCommandSpec>();
+
+  for (const command of [...taxonomyCommands, ...fallbackCommands]) {
+    merged.set(`${command.app}:${command.pathSegments.join('/')}`, command);
+  }
+
+  return [...merged.values()];
 }
 
 function splitParams(

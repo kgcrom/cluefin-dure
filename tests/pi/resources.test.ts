@@ -20,7 +20,7 @@ function parseFrontmatter(markdown: string): Record<string, string> {
 }
 
 describe('Pi project resources', () => {
-  it('workflow extension registers chat workflow tools without slash commands', async () => {
+  it('workflow extension registers chat workflow tools and CLI fallback without slash commands', async () => {
     const extension = await import('../../.pi/extensions/dure-workflow-tools.ts');
     const pi = {
       registerTool: vi.fn(),
@@ -36,6 +36,7 @@ describe('Pi project resources', () => {
       'run_strategy_research',
       'run_scenario_analysis',
       'run_review_checklist',
+      'call_cli_command',
     ]);
     expect(new Set(toolNames).size).toBe(toolNames.length);
     expect(pi.registerCommand).not.toHaveBeenCalled();
