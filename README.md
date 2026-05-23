@@ -3,7 +3,7 @@
 ![Dure Logo](docs/assets/dure_logo.png)
 
 Dure는 투자 리서치 워크플로우를 여러 AI 에이전트로 오케스트레이션하는 CLI 워크벤치입니다.
-한 종목 분석부터 스크리닝, 전략 리서치, 거시 시나리오 분석까지 하나의 진입점에서 실행하고, 결과를 HTML 리포트와 실행 아티팩트로 남깁니다.
+한 종목 분석부터 스크리닝, 전략 리서치, 거시 시나리오 분석까지 하나의 진입점에서 실행하고, 실행 아티팩트를 남깁니다.
 
 ## What Dure Does
 
@@ -64,31 +64,32 @@ CLUEFIN_CLI_CWD=../cluefin
 
 전체 목록과 모델 설정은 [docs/configuration.md](docs/configuration.md)를 참고하세요.
 
-### 3. Run commands
+### 3. Run chat
 
 ```bash
-# 대화형 모드
 npm run chat
-
-# 종목 종합 분석
-npm run equity -- 005930
-
-# 스크리닝
-npm run screen -- KR value
-
-# 전략 리서치
-npm run strategy -- "quality dividend growth"
-
-# 시나리오 분석
-npm run scenario -- "연준이 50bp 긴급 인하하면 반도체 섹터 어떻게 되나?"
 ```
 
-`npm run <script>` 뒤에 인수를 넘길 때는 `--` 구분자가 필요합니다.
+대화형 모드에서는 Pi prompt template을 사용합니다.
+
+```text
+/equity 005930
+/screen KR value
+/strategy quality dividend growth
+/scenario 연준이 50bp 긴급 인하하면 반도체 섹터 어떻게 되나?
+/review equity-1712345678901
+```
+
+개발 중 router를 거치지 않고 workflow를 직접 확인해야 할 때는 `src/main.ts`의 내부 명령을 직접 실행할 수 있습니다.
+
+```bash
+npx tsx --env-file=.env src/main.ts equity 005930
+```
 
 ## How It Works
 
 CLI 진입점은 [`src/main.ts`](src/main.ts)입니다.
-각 명령은 워크플로우를 실행한 뒤 리포트를 생성하고, 터미널에 요약을 출력합니다.
+직접 CLI 워크플로우 명령은 워크플로우를 실행한 뒤 터미널에 요약을 출력합니다.
 
 주요 흐름은 다음과 같습니다.
 
@@ -100,22 +101,37 @@ CLI 진입점은 [`src/main.ts`](src/main.ts)입니다.
 
 대화형 모드의 종목 분석은 equity 워크플로우 뒤 checklist review까지 자동으로 이어집니다.
 
+## Pi Project Resources
+
+대화형 모드는 Pi의 project-local resource discovery를 사용합니다.
+
+- `.pi/extensions/dure-workflow-tools.ts`: Dure workflow tools를 Pi runtime에 등록합니다.
+- `.pi/prompts/*.md`: `/equity`, `/screen`, `/strategy`, `/scenario`, `/review` prompt template을 제공합니다.
+- `.pi/skills/dure-investing-workflows/`: Dure workflow tool 선택 기준을 제공합니다.
+- `.pi/skills/cluefin-data-discovery/`: cluefin CLI discovery와 fallback 호출 기준을 제공합니다.
+
+내부 workflow agent 세션은 prompt 오염과 tool 중복을 막기 위해 project-local skills/prompt templates를 자동 주입하지 않고, 코드에서 명시한 system prompt와 tool allowlist를 사용합니다.
+
+cluefin CLI fallback은 Dure workflow tool만으로 부족한 데이터가 있을 때 사용합니다. Dure의 `equity-research`, `market-screening`, `strategy-research`, `scenario-analysis`, `review-checklist` 도메인은 cluefin CLI의 `domain`/`tag` taxonomy로 매핑되어 command discovery를 좁힙니다.
+
 ## Outputs
 
 각 실행 결과는 `data/runs/<runId>/` 아래에 저장됩니다.
 
-- `report.html`: 사람이 읽는 최종 리포트
 - `events.json`: 실행 이벤트 로그
-- `<agent>/artifact.json`: 에이전트별 중간 산출물
+- `<agent>/<artifact>.json`: 에이전트별 중간 산출물
 
-macOS에서는 리포트 생성 직후 HTML 파일을 자동으로 엽니다.
+## GitHub Pages
 
-예시 결과는 `docs/examples/` 아래에 있습니다.
+GitHub Pages는 `docs/` 디렉터리를 publish source로 두는 구성을 권장합니다.
+이 경우 공개할 정적 문서만 `docs/`에 두고, 로컬 실행 결과인 `data/runs/<runId>/`는
+커밋하지 않는 임시 산출물로 유지합니다.
 
-- [chat_result.md](docs/examples/chat_result.md)
-- [scenario_report.html](docs/examples/scenario_report.html)
-- [screen_report.html](docs/examples/screen_report.html)
-- [strategy_report.html](docs/examples/strategy_report.html)
+Pages 정리는 아래 기준으로 유지합니다.
+
+- 공개할 정적 문서만 `docs/`에 둡니다.
+- 실행 로그, 중간 artifact, 원본 run 디렉터리는 `data/runs/`에만 둡니다.
+- Pages에 노출할 새 문서는 `docs/` 아래의 명확한 경로와 README 링크를 함께 추가합니다.
 
 ## Model Configuration
 
@@ -135,7 +151,7 @@ DURE_PROVIDER=openai-codex npm run chat
 # critic만 override
 DURE_PROVIDER=openai-codex \
 DURE_MODEL_CRITIC=anthropic:claude-opus-4-6 \
-npm run strategy -- "quality dividend growth"
+npm run chat
 ```
 
 자세한 preset과 agent별 기본 모델은 [docs/configuration.md](docs/configuration.md)에 정리되어 있습니다.
@@ -150,7 +166,7 @@ src/
 ├── schemas/       # 분석 결과 스키마
 ├── memory/        # 파일 기반 메모리 저장소
 ├── runtime/       # 세션/이벤트/아티팩트 관리
-├── report/        # HTML 리포트 생성
+├── report/        # 리포트 렌더링
 ├── interactive/   # 대화형 모드
 ├── cli/           # cluefin CLI 브리지
 ├── config.ts      # 모델 설정
@@ -159,8 +175,7 @@ research/
 └── prompts/       # 공통 및 역할별 프롬프트
 docs/
 ├── architecture.md
-├── configuration.md
-└── examples/
+└── configuration.md
 ```
 
 ## Related Docs
@@ -176,4 +191,5 @@ docs/
 ```bash
 npm test
 npm run lint
+npm run format
 ```

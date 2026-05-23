@@ -1,6 +1,9 @@
 import type { FundamentalAnalysis, NewsAnalysis } from '../../src/schemas/analysis.js';
-import type { ScenarioDefinition, ScenarioProjection, ScenarioReport } from '../../src/schemas/scenario.js';
-import type { ExperimentRecord } from '../../src/schemas/signal.js';
+import type {
+  ScenarioDefinition,
+  ScenarioProjection,
+  ScenarioReport,
+} from '../../src/schemas/scenario.js';
 import type { CriticReport, StrategyDefinition } from '../../src/schemas/strategy.js';
 
 export const fundamentals: FundamentalAnalysis[] = [
@@ -55,9 +58,13 @@ export const criticReport: CriticReport = {
   overfittingRisk: 'Low due to a modest parameter count over a broad sample window.',
   dataLeakageCheck: 'Pass because the rules rely only on contemporaneous and trailing inputs.',
   survivorshipBias: 'Moderate because the universe is predefined and may exclude delisted names.',
-  regimeDependency: 'Performance may weaken during rising-rate or sharp liquidity contraction regimes.',
+  regimeDependency:
+    'Performance may weaken during rising-rate or sharp liquidity contraction regimes.',
   verdict: 'keep',
-  recommendations: ['Test a slower rebalance cadence.', 'Review whether small-cap exposure should be capped.'],
+  recommendations: [
+    'Test a slower rebalance cadence.',
+    'Review whether small-cap exposure should be capped.',
+  ],
 };
 
 export const scenarioDefinition: ScenarioDefinition = {
@@ -107,7 +114,8 @@ export const scenarioReport: ScenarioReport = {
 
 export const strategy: StrategyDefinition = {
   name: 'Quality Value With Low Multiples',
-  hypothesis: 'Profitable companies trading at discounted multiples can outperform over a full cycle.',
+  hypothesis:
+    'Profitable companies trading at discounted multiples can outperform over a full cycle.',
   entryRules: ['PE < 15', 'ROE > 15%', 'Debt-to-equity < 100%'],
   exitRules: ['PE > 25', 'ROE < 10%'],
   positionSizing: 'Equal weight across qualifying positions',
@@ -123,15 +131,3 @@ export const criticIterations = [
     verdict: criticReport.verdict,
   },
 ];
-
-export const experimentRecord: ExperimentRecord = {
-  id: 'test-run-iter-0',
-  strategyId: '저PER 고ROE',
-  params: { lookback: 252 },
-  result: {
-    note: 'critic 중심 전략 실험 결과',
-    score: 0.82,
-  },
-  criticVerdict: 'keep',
-  timestamp: '2025-03-15T10:00:00Z',
-};

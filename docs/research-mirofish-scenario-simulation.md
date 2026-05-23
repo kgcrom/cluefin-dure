@@ -2,6 +2,7 @@
 
 > 작성일: 2026-03-18
 > 대상: MiroFish (github.com/666ghj/MiroFish)
+> 상태: historical design research. 현재 구현 상태의 source of truth는 `src/workflow/runScenarioAnalysis.ts`, `src/agents/scenarioAgent.ts`, `src/schemas/scenario.ts`, `docs/architecture.md`입니다.
 
 ---
 

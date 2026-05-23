@@ -96,7 +96,9 @@ describe('workflowTools', () => {
         {} as never,
       ),
     ).resolves.toMatchObject({
-      content: [{ text: JSON.stringify({ runId: 'strategy-1', finalStrategy: { name: 'Quality' } }) }],
+      content: [
+        { text: JSON.stringify({ runId: 'strategy-1', finalStrategy: { name: 'Quality' } }) },
+      ],
     });
 
     await expect(
@@ -108,7 +110,9 @@ describe('workflowTools', () => {
         {} as never,
       ),
     ).resolves.toMatchObject({
-      content: [{ text: JSON.stringify({ runId: 'scenario-1', report: { scenarioName: 'rate cut' } }) }],
+      content: [
+        { text: JSON.stringify({ runId: 'scenario-1', report: { scenarioName: 'rate cut' } }) },
+      ],
     });
   });
 

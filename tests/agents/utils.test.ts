@@ -2,13 +2,13 @@ import { rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { MemoryStore } from '../../src/memory/memoryStore.js';
 import {
   buildSessionLabel,
   extractJsonFromMessage,
   extractTextFromMessage,
   loadPrompt,
 } from '../../src/agents/_utils.js';
+import { MemoryStore } from '../../src/memory/memoryStore.js';
 
 const tempDirs: string[] = [];
 
@@ -17,50 +17,48 @@ afterEach(async () => {
   tempDirs.length = 0;
 });
 
-describe("buildSessionLabel", () => {
-  it("agentName:context 포맷으로 반환", () => {
-    expect(buildSessionLabel("fundamental", "005930")).toBe("fundamental:005930");
+describe('buildSessionLabel', () => {
+  it('agentName:context 포맷으로 반환', () => {
+    expect(buildSessionLabel('fundamental', '005930')).toBe('fundamental:005930');
   });
 });
 
-describe("extractJsonFromMessage", () => {
-  it("```json 블록에서 JSON 추출", () => {
+describe('extractJsonFromMessage', () => {
+  it('```json 블록에서 JSON 추출', () => {
     const messages = [
       {
-        role: "assistant",
+        role: 'assistant',
         content: '분석 결과입니다:\n```json\n{"ticker": "005930", "score": 85}\n```',
       },
     ];
     const result = extractJsonFromMessage<{ ticker: string; score: number }>(messages);
-    expect(result).toEqual({ ticker: "005930", score: 85 });
+    expect(result).toEqual({ ticker: '005930', score: 85 });
   });
 
-  it("bare JSON object 추출", () => {
+  it('bare JSON object 추출', () => {
     const messages = [
       {
-        role: "assistant",
+        role: 'assistant',
         content: '결과: {"ticker": "000660", "score": 90}',
       },
     ];
     const result = extractJsonFromMessage<{ ticker: string; score: number }>(messages);
-    expect(result).toEqual({ ticker: "000660", score: 90 });
+    expect(result).toEqual({ ticker: '000660', score: 90 });
   });
 
-  it("JSON이 없으면 에러 발생", () => {
-    const messages = [
-      { role: "assistant", content: "JSON이 없는 응답입니다." },
-    ];
+  it('JSON이 없으면 에러 발생', () => {
+    const messages = [{ role: 'assistant', content: 'JSON이 없는 응답입니다.' }];
     expect(() => extractJsonFromMessage(messages)).toThrow(
-      "에이전트 응답에서 JSON을 추출할 수 없습니다."
+      '에이전트 응답에서 JSON을 추출할 수 없습니다.',
     );
   });
 
-  it("여러 메시지 중 마지막 assistant 메시지에서 추출", () => {
+  it('여러 메시지 중 마지막 assistant 메시지에서 추출', () => {
     const messages = [
-      { role: "user", content: "분석해주세요" },
-      { role: "assistant", content: '{"old": true}' },
-      { role: "user", content: "다시 해주세요" },
-      { role: "assistant", content: '{"latest": true}' },
+      { role: 'user', content: '분석해주세요' },
+      { role: 'assistant', content: '{"old": true}' },
+      { role: 'user', content: '다시 해주세요' },
+      { role: 'assistant', content: '{"latest": true}' },
     ];
     const result = extractJsonFromMessage<{ latest: boolean }>(messages);
     expect(result).toEqual({ latest: true });
@@ -93,7 +91,9 @@ describe('loadPrompt', () => {
     const tempDir = path.join(os.tmpdir(), `prompt-memory-${Date.now()}`);
     tempDirs.push(tempDir);
     const memoryStore = new MemoryStore(tempDir);
-    await memoryStore.writeIndex('# Memory Index\n- [market_observations.md](market_observations.md)\n');
+    await memoryStore.writeIndex(
+      '# Memory Index\n- [market_observations.md](market_observations.md)\n',
+    );
 
     const prompt = await loadPrompt('strategy', { memoryStore });
 
@@ -120,10 +120,9 @@ describe('loadPrompt', () => {
   });
 
   it('review checklist prompt bundle도 동일한 helper로 로드된다', async () => {
-    const prompt = await loadPrompt(
-      ['review_checklist_base', 'review_checklist_company'],
-      { includeMemory: false },
-    );
+    const prompt = await loadPrompt(['review_checklist_base', 'review_checklist_company'], {
+      includeMemory: false,
+    });
 
     expect(prompt).toContain('# 역할: 투자 결과 리뷰 체크리스트');
     expect(prompt).toContain('# 역할: 회사 분석 완결성 리뷰어');

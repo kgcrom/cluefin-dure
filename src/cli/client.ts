@@ -17,6 +17,11 @@ type RawListCommand = {
   parameters: JsonSchema;
   returns: JsonSchema;
   has_executor: boolean;
+  domains?: string[];
+  tags?: string[];
+  use_cases?: string[];
+  examples?: Array<Record<string, unknown>>;
+  agent_notes?: string | null;
 };
 
 type RawListResponse = {
@@ -36,6 +41,11 @@ export type CliCommandSummary = {
   pathSegments: string[];
   description: string;
   hasExecutor: boolean;
+  domains: string[];
+  tags: string[];
+  useCases: string[];
+  examples: Array<Record<string, unknown>>;
+  agentNotes: string | null;
 };
 
 export type CliCommandSpec = CliCommandSummary & {
@@ -202,6 +212,11 @@ function toSummary(app: CliAppName, command: RawListCommand): CliCommandSummary 
     pathSegments: [...command.path_segments],
     description: command.description,
     hasExecutor: command.has_executor,
+    domains: command.domains ?? [],
+    tags: command.tags ?? [],
+    useCases: command.use_cases ?? [],
+    examples: command.examples ?? [],
+    agentNotes: command.agent_notes ?? null,
   };
 }
 
@@ -276,6 +291,41 @@ export async function getCliCommandsForCategories(categories: string[]): Promise
   const matched = listed.filter(
     (command) => unique.includes(command.category) && command.hasExecutor,
   );
+
+  return Promise.all(
+    matched.map((command) => describeCliCommand(command.app, command.pathSegments)),
+  );
+}
+
+function intersects(values: string[], filters: Set<string>): boolean {
+  return values.some((value) => filters.has(value));
+}
+
+export async function getCliCommandsForTaxonomy(filters: {
+  domains: string[];
+  tags: string[];
+  fallbackCategories?: string[];
+}): Promise<CliCommandSpec[]> {
+  const domainFilters = new Set(filters.domains);
+  const tagFilters = new Set(filters.tags);
+  const all = await Promise.all([listCliCommands('openapi'), listCliCommands('ta')]);
+  const listed = all.flat();
+  const seen = new Set<string>();
+  const matched = listed.filter((command) => {
+    if (!command.hasExecutor) return false;
+    if (!intersects(command.domains, domainFilters) && !intersects(command.tags, tagFilters)) {
+      return false;
+    }
+
+    const key = `${command.app}:${command.pathSegments.join('/')}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  if (matched.length === 0 && filters.fallbackCategories?.length) {
+    return getCliCommandsForCategories(filters.fallbackCategories);
+  }
 
   return Promise.all(
     matched.map((command) => describeCliCommand(command.app, command.pathSegments)),

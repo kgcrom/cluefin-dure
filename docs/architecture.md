@@ -2,7 +2,7 @@
 
 ## System Overview
 
-Dure는 CLI 또는 대화형 모드에서 요청을 받아, 워크플로우별 에이전트를 실행하고 결과를 HTML 리포트와 실행 아티팩트로 저장합니다.
+Dure는 CLI 또는 대화형 모드에서 요청을 받아 워크플로우별 에이전트를 실행합니다. 직접 CLI 워크플로우는 HTML 리포트와 실행 아티팩트를 저장하고, 대화형 Pi 도구는 워크플로우 결과와 이벤트/아티팩트를 남깁니다.
 
 - CLI 진입점: [`src/main.ts`](../src/main.ts)
 - 대화형 모드 진입점: [`src/interactive/startInteractive.ts`](../src/interactive/startInteractive.ts)
@@ -20,7 +20,7 @@ Dure는 CLI 또는 대화형 모드에서 요청을 받아, 워크플로우별 �
 - `strategy <theme...>`
 - `scenario <시나리오>`
 
-각 워크플로우는 실행 후 `generateReport()`로 `data/runs/<runId>/report.html`을 만들고, 터미널 요약을 함께 출력합니다.
+`equity`, `screen`, `strategy`, `scenario` 직접 CLI 명령은 워크플로우 실행 후 `generateReport()`로 `data/runs/<runId>/report.html`을 만들고, 터미널 요약을 함께 출력합니다. `chat`은 대화형 모드를 시작합니다.
 
 ### Interactive Mode
 
@@ -38,6 +38,18 @@ Dure는 CLI 또는 대화형 모드에서 요청을 받아, 워크플로우별 �
 대화형 모드 제약:
 
 - `run_equity_analysis`는 전체 equity 분석 뒤 checklist review까지 자동 실행합니다.
+- workflow tool은 결과를 반환하고 이벤트/아티팩트를 저장하지만, HTML 리포트를 자동 생성하지 않습니다.
+- router 세션은 `.pi/extensions`, `.pi/prompts`, `.pi/skills` project-local discovery를 사용합니다.
+- 내부 workflow agent 세션은 prompt 오염과 tool 중복을 막기 위해 project-local Pi resource discovery를 비활성화하고 명시 system prompt/tool allowlist를 사용합니다.
+
+### Pi Resources
+
+Project-local Pi resources는 책임별로 분리합니다.
+
+- Extension: `.pi/extensions/dure-workflow-tools.ts`가 workflow tools만 등록합니다.
+- Prompt templates: `.pi/prompts/*.md`가 `/equity`, `/screen`, `/strategy`, `/scenario`, `/review` UX를 제공합니다.
+- Skills: `.pi/skills/dure-investing-workflows`와 `.pi/skills/cluefin-data-discovery`가 workflow 선택 및 CLI fallback 지침을 제공합니다.
+
 ## Agents and Workflows
 
 | 에이전트 | 역할 | 기본 모델 |
@@ -89,7 +101,7 @@ README 기준 권한 정책:
 
 실행 결과는 `data/runs/<runId>/` 아래에 저장됩니다.
 
-- `report.html`: 워크플로우별 요약 리포트
+- `report.html`: 직접 CLI 워크플로우별 요약 리포트
 - `events.json`: 세션 이벤트 로그
 - `<agent>/<artifact>.json`: 에이전트별 중간 산출물
 
@@ -100,7 +112,7 @@ README 기준 권한 정책:
 - `equity`: 펀더멘털, 뉴스, critic 리포트, critic 반복 로그
 - `strategy`: 전략 정의, critic 리포트, critic 반복 로그
 
-macOS에서는 리포트 생성 직후 `open` 명령으로 HTML 파일을 자동으로 엽니다.
+macOS에서는 직접 CLI 리포트 생성 직후 `open` 명령으로 HTML 파일을 자동으로 엽니다.
 
 ## External CLI Dependency
 
@@ -112,6 +124,8 @@ Dure는 `CLUEFIN_CLI_CWD` 또는 기본 sibling 경로 `../cluefin`를 기준으
 도구 discovery는 각 CLI의 `list --json` / `describe --json` 결과를 사용하며,
 에이전트에는 Dure가 재구성한 alias 이름으로 노출됩니다.
 
+`../cluefin`의 agent-facing taxonomy가 제공되면 Dure는 `category`를 직접 사용자 의도로 보지 않고 Dure domain을 cluefin `domain`/`tag` 조합으로 매핑합니다. 초기 Dure domain은 `equity-research`, `market-screening`, `strategy-research`, `scenario-analysis`, `review-checklist`입니다. taxonomy metadata가 없는 오래된 CLI 응답에서는 기존 category 기반 discovery를 fallback으로 유지합니다.
+
 ## Project Layout
 
 ```text
@@ -119,7 +133,7 @@ src/
 ├── agents/          # 에이전트 정의
 ├── workflow/        # 워크플로우 오케스트레이션
 ├── tools/           # 워크플로우/시장 데이터 도구
-├── schemas/         # 분석/시그널/시나리오/전략 스키마
+├── schemas/         # 분석/시나리오/전략 스키마
 ├── memory/          # 파일 기반 메모리 저장소
 ├── runtime/         # 세션, 이벤트, 아티팩트 관리
 ├── report/          # HTML 리포트 렌더링
@@ -133,7 +147,8 @@ data/
 ├── memory/          # 세션 간 메모리
 └── runs/            # 실행별 산출물
 docs/
-└── examples/        # README에서 참조하는 예시 결과
+├── architecture.md  # 구조 문서
+└── configuration.md # 설정 문서
 ```
 
 ## Reliability Notes

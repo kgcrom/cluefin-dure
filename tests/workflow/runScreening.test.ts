@@ -13,8 +13,8 @@ vi.mock('../../src/agents/fundamentalAgent.js', () => ({
   runFundamentalAgent: mocks.runFundamentalAgent,
 }));
 
-import { runScreening } from '../../src/workflow/runScreening.js';
 import { screeningTool } from '../../src/tools/workflowTools.js';
+import { runScreening } from '../../src/workflow/runScreening.js';
 
 describe('runScreening', () => {
   const originalMaxConcurrent = process.env.DURE_MAX_CONCURRENT_SESSIONS;

@@ -1,0 +1,260 @@
+{
+  "project": "dure-pi-resource-structure",
+  "status": "completed",
+  "updated_at": "2026-05-23",
+  "completion_policy": {
+    "phase_end_commands": ["npm run format", "npm run lint", "npm test"],
+    "requires_tests": true,
+    "requires_test_execution": true,
+    "commit_rule": "Run targeted phase tests, npm run format, npm run lint, and npm test. Commit only after all commands pass."
+  },
+  "phases": [
+    {
+      "id": "phase-1",
+      "title": "Planning artifacts",
+      "status": "completed",
+      "scope": [
+        "docs/plan/pi-resource-structure-prd.md",
+        "docs/plan/feature_list.json",
+        "docs/plan/pi-resource-taxonomy-map.md",
+        "plan artifact smoke tests"
+      ],
+      "tasks": [
+        {
+          "id": "phase-1-task-1",
+          "title": "Add Pi resource structure PRD",
+          "status": "completed"
+        },
+        {
+          "id": "phase-1-task-2",
+          "title": "Add phase feature list",
+          "status": "completed"
+        },
+        {
+          "id": "phase-1-task-3",
+          "title": "Add Dure to cluefin taxonomy map",
+          "status": "completed"
+        },
+        {
+          "id": "phase-1-task-4",
+          "title": "Add plan artifact smoke tests",
+          "status": "completed"
+        }
+      ],
+      "verification": [
+        "npm test -- tests/docs/plan.test.ts",
+        "npm run format",
+        "npm run lint",
+        "npm test"
+      ]
+    },
+    {
+      "id": "phase-2",
+      "title": "Interactive discovery restore",
+      "status": "completed",
+      "scope": [
+        "Interactive router project resource discovery",
+        "internal workflow agent discovery isolation",
+        "resource loader option tests"
+      ],
+      "tasks": [
+        {
+          "id": "phase-2-task-1",
+          "title": "Restore interactive project resource discovery",
+          "status": "completed"
+        },
+        {
+          "id": "phase-2-task-2",
+          "title": "Preserve createPiSession resource isolation",
+          "status": "completed"
+        },
+        {
+          "id": "phase-2-task-3",
+          "title": "Add interactive resource loader tests",
+          "status": "completed"
+        }
+      ],
+      "verification": [
+        "npm test -- tests/interactive/startInteractive.test.ts tests/runtime/createPiSession.test.ts",
+        "npm run format",
+        "npm run lint",
+        "npm test"
+      ]
+    },
+    {
+      "id": "phase-3",
+      "title": "Extension and prompt responsibility split",
+      "status": "completed",
+      "scope": [
+        ".pi/extensions/dure-workflow-tools.ts",
+        ".pi/prompts/*.md",
+        "extension and prompt smoke tests"
+      ],
+      "tasks": [
+        {
+          "id": "phase-3-task-1",
+          "title": "Move workflow tool registration to dure-workflow-tools extension",
+          "status": "completed"
+        },
+        {
+          "id": "phase-3-task-2",
+          "title": "Move slash UX to prompt templates",
+          "status": "completed"
+        },
+        {
+          "id": "phase-3-task-3",
+          "title": "Add extension and prompt smoke tests",
+          "status": "completed"
+        }
+      ],
+      "verification": [
+        "npm test -- tests/pi/resources.test.ts",
+        "npm run format",
+        "npm run lint",
+        "npm test"
+      ]
+    },
+    {
+      "id": "phase-4",
+      "title": "Initial skills",
+      "status": "completed",
+      "scope": [
+        ".pi/skills/dure-investing-workflows/SKILL.md",
+        ".pi/skills/cluefin-data-discovery/SKILL.md",
+        "skill metadata smoke tests"
+      ],
+      "tasks": [
+        {
+          "id": "phase-4-task-1",
+          "title": "Add Dure investing workflows skill",
+          "status": "completed"
+        },
+        {
+          "id": "phase-4-task-2",
+          "title": "Add cluefin data discovery skill",
+          "status": "completed"
+        },
+        {
+          "id": "phase-4-task-3",
+          "title": "Add skill smoke tests",
+          "status": "completed"
+        }
+      ],
+      "verification": [
+        "npm test -- tests/pi/resources.test.ts",
+        "npm run format",
+        "npm run lint",
+        "npm test"
+      ]
+    },
+    {
+      "id": "phase-5",
+      "title": "cluefin taxonomy type acceptance",
+      "status": "completed",
+      "scope": [
+        "optional CLI domains/tags/use_cases/examples/agent_notes fields",
+        "category compatibility",
+        "taxonomy metadata tests"
+      ],
+      "tasks": [
+        {
+          "id": "phase-5-task-1",
+          "title": "Add optional taxonomy fields to CLI command types",
+          "status": "completed"
+        },
+        {
+          "id": "phase-5-task-2",
+          "title": "Preserve existing category discovery behavior",
+          "status": "completed"
+        },
+        {
+          "id": "phase-5-task-3",
+          "title": "Add taxonomy response compatibility tests",
+          "status": "completed"
+        }
+      ],
+      "verification": [
+        "npm test -- tests/cli/client.test.ts tests/cli/agent-tools.test.ts",
+        "npm run format",
+        "npm run lint",
+        "npm test"
+      ]
+    },
+    {
+      "id": "phase-6",
+      "title": "Dure domain mapping",
+      "status": "completed",
+      "scope": [
+        "Dure AI domain definitions",
+        "cluefin domain/tag matching",
+        "agent tool exposure via domain mappings"
+      ],
+      "tasks": [
+        {
+          "id": "phase-6-task-1",
+          "title": "Add Dure domain to cluefin taxonomy mapping",
+          "status": "completed"
+        },
+        {
+          "id": "phase-6-task-2",
+          "title": "Add domain/tag CLI command lookup",
+          "status": "completed"
+        },
+        {
+          "id": "phase-6-task-3",
+          "title": "Switch agent tool exposure to Dure domain mappings with category fallback",
+          "status": "completed"
+        },
+        {
+          "id": "phase-6-task-4",
+          "title": "Add Dure domain mapping tests",
+          "status": "completed"
+        }
+      ],
+      "verification": [
+        "npm test -- tests/cli/client.test.ts tests/cli/agent-tools.test.ts",
+        "npm run format",
+        "npm run lint",
+        "npm test"
+      ]
+    },
+    {
+      "id": "phase-7",
+      "title": "Docs finalization",
+      "status": "completed",
+      "scope": [
+        "README Pi resource usage",
+        "architecture Pi resource guidance",
+        "completed feature list"
+      ],
+      "tasks": [
+        {
+          "id": "phase-7-task-1",
+          "title": "Update README with Pi resource usage",
+          "status": "completed"
+        },
+        {
+          "id": "phase-7-task-2",
+          "title": "Update architecture with resource and taxonomy flow",
+          "status": "completed"
+        },
+        {
+          "id": "phase-7-task-3",
+          "title": "Mark feature list completed",
+          "status": "completed"
+        },
+        {
+          "id": "phase-7-task-4",
+          "title": "Add docs smoke tests",
+          "status": "completed"
+        }
+      ],
+      "verification": [
+        "npm test -- tests/docs/plan.test.ts",
+        "npm run format",
+        "npm run lint",
+        "npm test"
+      ]
+    }
+  ]
+}

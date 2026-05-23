@@ -31,10 +31,6 @@ export async function startInteractive(): Promise<void> {
         modelRegistry,
         resourceLoaderOptions: {
           systemPrompt,
-          noExtensions: true,
-          additionalExtensionPaths: ['.pi/extensions/finance-commands.ts'],
-          noSkills: true,
-          noPromptTemplates: true,
           noThemes: true,
         },
       });
