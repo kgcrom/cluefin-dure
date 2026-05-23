@@ -100,6 +100,19 @@ CLI 진입점은 [`src/main.ts`](src/main.ts)입니다.
 
 대화형 모드의 종목 분석은 equity 워크플로우 뒤 checklist review까지 자동으로 이어집니다.
 
+## Pi Project Resources
+
+대화형 모드는 Pi의 project-local resource discovery를 사용합니다.
+
+- `.pi/extensions/dure-workflow-tools.ts`: Dure workflow tools를 Pi runtime에 등록합니다.
+- `.pi/prompts/*.md`: `/equity`, `/screen`, `/strategy`, `/scenario`, `/review` prompt template을 제공합니다.
+- `.pi/skills/dure-investing-workflows/`: Dure workflow tool 선택 기준을 제공합니다.
+- `.pi/skills/cluefin-data-discovery/`: cluefin CLI discovery와 fallback 호출 기준을 제공합니다.
+
+내부 workflow agent 세션은 prompt 오염과 tool 중복을 막기 위해 project-local skills/prompt templates를 자동 주입하지 않고, 코드에서 명시한 system prompt와 tool allowlist를 사용합니다.
+
+cluefin CLI fallback은 Dure workflow tool만으로 부족한 데이터가 있을 때 사용합니다. Dure의 `equity-research`, `market-screening`, `strategy-research`, `scenario-analysis`, `review-checklist` 도메인은 cluefin CLI의 `domain`/`tag` taxonomy로 매핑되어 command discovery를 좁힙니다.
+
 ## Outputs
 
 각 실행 결과는 `data/runs/<runId>/` 아래에 저장됩니다.
@@ -176,4 +189,5 @@ docs/
 ```bash
 npm test
 npm run lint
+npm run format
 ```

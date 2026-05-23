@@ -1,6 +1,6 @@
 {
   "project": "dure-pi-resource-structure",
-  "status": "in_progress",
+  "status": "completed",
   "updated_at": "2026-05-23",
   "completion_policy": {
     "phase_end_commands": ["npm run format", "npm run lint", "npm test"],
@@ -221,7 +221,7 @@
     {
       "id": "phase-7",
       "title": "Docs finalization",
-      "status": "pending",
+      "status": "completed",
       "scope": [
         "README Pi resource usage",
         "architecture Pi resource guidance",
@@ -231,22 +231,22 @@
         {
           "id": "phase-7-task-1",
           "title": "Update README with Pi resource usage",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "phase-7-task-2",
           "title": "Update architecture with resource and taxonomy flow",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "phase-7-task-3",
           "title": "Mark feature list completed",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "phase-7-task-4",
           "title": "Add docs smoke tests",
-          "status": "pending"
+          "status": "completed"
         }
       ],
       "verification": [
