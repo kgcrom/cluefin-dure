@@ -5,12 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/main.js --no-skills",
+    "start": "node dist/main.js chat",
     "chat": "tsx --env-file=.env src/main.ts chat",
-    "equity": "tsx --env-file=.env src/main.ts equity",
-    "screen": "tsx --env-file=.env src/main.ts screen",
-    "strategy": "tsx --env-file=.env src/main.ts strategy",
-    "scenario": "tsx --env-file=.env src/main.ts scenario",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",

@@ -64,26 +64,27 @@ CLUEFIN_CLI_CWD=../cluefin
 
 전체 목록과 모델 설정은 [docs/configuration.md](docs/configuration.md)를 참고하세요.
 
-### 3. Run commands
+### 3. Run chat
 
 ```bash
-# 대화형 모드
 npm run chat
-
-# 종목 종합 분석
-npm run equity -- 005930
-
-# 스크리닝
-npm run screen -- KR value
-
-# 전략 리서치
-npm run strategy -- "quality dividend growth"
-
-# 시나리오 분석
-npm run scenario -- "연준이 50bp 긴급 인하하면 반도체 섹터 어떻게 되나?"
 ```
 
-`npm run <script>` 뒤에 인수를 넘길 때는 `--` 구분자가 필요합니다.
+대화형 모드에서는 Pi prompt template을 사용합니다.
+
+```text
+/equity 005930
+/screen KR value
+/strategy quality dividend growth
+/scenario 연준이 50bp 긴급 인하하면 반도체 섹터 어떻게 되나?
+/review equity-1712345678901
+```
+
+개발 중 router를 거치지 않고 workflow를 직접 확인해야 할 때는 `src/main.ts`의 내부 명령을 직접 실행할 수 있습니다.
+
+```bash
+npx tsx --env-file=.env src/main.ts equity 005930
+```
 
 ## How It Works
 
@@ -148,7 +149,7 @@ DURE_PROVIDER=openai-codex npm run chat
 # critic만 override
 DURE_PROVIDER=openai-codex \
 DURE_MODEL_CRITIC=anthropic:claude-opus-4-6 \
-npm run strategy -- "quality dividend growth"
+npm run chat
 ```
 
 자세한 preset과 agent별 기본 모델은 [docs/configuration.md](docs/configuration.md)에 정리되어 있습니다.

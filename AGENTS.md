@@ -12,7 +12,7 @@
 
 - 설치: `npm install`
 - 대화형 실행: `npm run chat`
-- 개별 실행: `npm run equity -- ...`, `npm run screen -- ...`, `npm run strategy -- ...`, `npm run scenario -- ...`
+- 대화형 명령: `/equity ...`, `/screen ...`, `/strategy ...`, `/scenario ...`, `/review ...`
 
 ## Completion Checks
 
