@@ -15,6 +15,7 @@ import {
   executeCliCommand,
   getCliCommandByName,
   getCliCommandsForCategories,
+  getCliCommandsForTaxonomy,
   listCliCommands,
   resetCliDiscoveryCache,
   resolveCliLaunchOptions,
@@ -268,6 +269,106 @@ describe('cli client', () => {
       properties: { close: { type: 'array' }, timeperiod: { type: 'integer' } },
       required: ['close'],
     });
+  });
+
+  it('domain/tag discovery는 taxonomy metadata로 command를 찾는다', async () => {
+    const root = makeWorkspace();
+    process.env.CLUEFIN_CLI_CWD = root;
+
+    queueProcess({
+      stdout: JSON.stringify({
+        commands: [
+          {
+            broker: 'kis',
+            category: 'chart',
+            name: 'period',
+            qualified_name: 'kis.chart.period',
+            path_segments: ['kis', 'chart', 'period'],
+            description: 'Get OHLCV.',
+            parameters: { type: 'object', properties: {} },
+            returns: { type: 'object' },
+            has_executor: true,
+            domains: ['chart'],
+            tags: ['ohlcv'],
+          },
+        ],
+      }),
+    });
+    queueProcess({ stdout: JSON.stringify({ commands: [] }) });
+    queueProcess({
+      stdout: JSON.stringify({
+        command: {
+          broker: 'kis',
+          category: 'chart',
+          name: 'period',
+          qualified_name: 'kis.chart.period',
+          path_segments: ['kis', 'chart', 'period'],
+          description: 'Get OHLCV.',
+          parameters: { type: 'object', properties: {} },
+          returns: { type: 'object' },
+          has_executor: true,
+          domains: ['chart'],
+          tags: ['ohlcv'],
+        },
+      }),
+    });
+
+    const commands = await getCliCommandsForTaxonomy({
+      domains: ['chart'],
+      tags: [],
+    });
+
+    expect(commands).toHaveLength(1);
+    expect(commands[0]?.qualifiedName).toBe('kis.chart.period');
+    expect(commands[0]?.domains).toEqual(['chart']);
+  });
+
+  it('domain/tag metadata가 없으면 category fallback을 사용한다', async () => {
+    const root = makeWorkspace();
+    process.env.CLUEFIN_CLI_CWD = root;
+
+    queueProcess({ stdout: JSON.stringify({ commands: [] }) });
+    queueProcess({
+      stdout: JSON.stringify({
+        commands: [
+          {
+            broker: null,
+            category: 'ta',
+            name: 'sma',
+            qualified_name: 'ta.sma',
+            path_segments: ['ta', 'sma'],
+            description: 'Simple Moving Average.',
+            parameters: { type: 'object', properties: {} },
+            returns: { type: 'object' },
+            has_executor: true,
+          },
+        ],
+      }),
+    });
+    queueProcess({
+      stdout: JSON.stringify({
+        command: {
+          broker: null,
+          category: 'ta',
+          name: 'sma',
+          qualified_name: 'ta.sma',
+          path_segments: ['ta', 'sma'],
+          description: 'Simple Moving Average.',
+          parameters: { type: 'object', properties: {} },
+          returns: { type: 'object' },
+          has_executor: true,
+        },
+      }),
+    });
+
+    const commands = await getCliCommandsForTaxonomy({
+      domains: ['technical-indicator'],
+      tags: ['moving-average'],
+      fallbackCategories: ['ta'],
+    });
+
+    expect(commands).toHaveLength(1);
+    expect(commands[0]?.qualifiedName).toBe('ta.sma');
   });
 
   it('필수 카테고리가 없으면 drift 에러를 던진다', async () => {

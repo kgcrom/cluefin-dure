@@ -4,6 +4,7 @@ vi.mock('../../src/cli/client.js', () => ({
   executeCliCommand: vi.fn(),
   getCliCommandByName: vi.fn(),
   getCliCommandsForCategories: vi.fn(),
+  getCliCommandsForTaxonomy: vi.fn(),
   getParamSummary: vi.fn().mockReturnValue('  stock_code: string'),
   validateRequiredParams: vi.fn(),
 }));
@@ -12,6 +13,7 @@ import {
   executeCliCommand,
   getCliCommandByName,
   getCliCommandsForCategories,
+  getCliCommandsForTaxonomy,
   validateRequiredParams,
 } from '../../src/cli/client.js';
 import { createCallCliTool, getToolsForAgent } from '../../src/cli/agent-tools.js';
@@ -19,6 +21,7 @@ import { createCallCliTool, getToolsForAgent } from '../../src/cli/agent-tools.j
 const mockExecuteCliCommand = vi.mocked(executeCliCommand);
 const mockGetCliCommandByName = vi.mocked(getCliCommandByName);
 const mockGetCliCommandsForCategories = vi.mocked(getCliCommandsForCategories);
+const mockGetCliCommandsForTaxonomy = vi.mocked(getCliCommandsForTaxonomy);
 const mockValidateRequiredParams = vi.mocked(validateRequiredParams);
 
 const sampleCommand = {
@@ -30,6 +33,11 @@ const sampleCommand = {
   pathSegments: ['kis', 'stock', 'current-price'],
   description: 'Get current price.',
   hasExecutor: true,
+  domains: ['quote'],
+  tags: ['current-price'],
+  useCases: [],
+  examples: [],
+  agentNotes: null,
   alias: 'kis_stock_current_price',
   parameters: {
     type: 'object',
@@ -45,31 +53,33 @@ describe('cli agent tools', () => {
     mockValidateRequiredParams.mockReturnValue([]);
   });
 
-  it('strategy 에이전트는 strategy 카테고리 세트를 요청한다', async () => {
-    mockGetCliCommandsForCategories.mockResolvedValue([sampleCommand]);
+  it('strategy 에이전트는 Dure 도메인 taxonomy와 category fallback을 요청한다', async () => {
+    mockGetCliCommandsForTaxonomy.mockResolvedValue([sampleCommand]);
 
     await getToolsForAgent('strategy');
 
-    expect(mockGetCliCommandsForCategories).toHaveBeenCalledWith([
-      'stock',
-      'chart',
-      'ta',
-      'financial',
-    ]);
+    expect(mockGetCliCommandsForTaxonomy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        domains: expect.arrayContaining(['chart', 'technical-indicator', 'statements']),
+        tags: expect.arrayContaining(['ohlcv', 'momentum', 'portfolio-risk']),
+        fallbackCategories: ['stock', 'chart', 'ta', 'financial'],
+      }),
+    );
   });
 
   it('command alias를 tool name으로 노출한다', async () => {
-    mockGetCliCommandsForCategories.mockResolvedValue([sampleCommand]);
+    mockGetCliCommandsForTaxonomy.mockResolvedValue([sampleCommand]);
 
     const tools = await getToolsForAgent('fundamental');
 
     expect(tools).toHaveLength(1);
     expect(tools[0]?.name).toBe('kis_stock_current_price');
     expect(tools[0]?.description).toContain('CLI path: kis stock current-price');
+    expect(tools[0]?.description).toContain('Domains: quote');
   });
 
   it('도구 실행 시 CLI 결과를 JSON 텍스트로 반환한다', async () => {
-    mockGetCliCommandsForCategories.mockResolvedValue([sampleCommand]);
+    mockGetCliCommandsForTaxonomy.mockResolvedValue([sampleCommand]);
     mockExecuteCliCommand.mockResolvedValue({ price: 70000 });
 
     const tools = await getToolsForAgent('fundamental');
@@ -86,7 +96,7 @@ describe('cli agent tools', () => {
   });
 
   it('필수 파라미터 누락 시 사전 에러를 반환한다', async () => {
-    mockGetCliCommandsForCategories.mockResolvedValue([sampleCommand]);
+    mockGetCliCommandsForTaxonomy.mockResolvedValue([sampleCommand]);
     mockValidateRequiredParams.mockReturnValue(['stock_code']);
 
     const tools = await getToolsForAgent('fundamental');

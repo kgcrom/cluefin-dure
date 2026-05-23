@@ -183,7 +183,7 @@
     {
       "id": "phase-6",
       "title": "Dure domain mapping",
-      "status": "pending",
+      "status": "completed",
       "scope": [
         "Dure AI domain definitions",
         "cluefin domain/tag matching",
@@ -193,22 +193,22 @@
         {
           "id": "phase-6-task-1",
           "title": "Add Dure domain to cluefin taxonomy mapping",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "phase-6-task-2",
           "title": "Add domain/tag CLI command lookup",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "phase-6-task-3",
           "title": "Switch agent tool exposure to Dure domain mappings with category fallback",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "phase-6-task-4",
           "title": "Add Dure domain mapping tests",
-          "status": "pending"
+          "status": "completed"
         }
       ],
       "verification": [

@@ -5,9 +5,11 @@ import {
   executeCliCommand,
   getCliCommandByName,
   getCliCommandsForCategories,
+  getCliCommandsForTaxonomy,
   getParamSummary,
   validateRequiredParams,
 } from './client.js';
+import { getDureCliMappingForAgent } from './dure-domains.js';
 
 const AGENT_CATEGORIES: Record<string, string[]> = {
   universe: ['ranking', 'stock', 'sector', 'theme', 'market', 'etf'],
@@ -59,13 +61,26 @@ async function executeTool(
 
 export async function getToolsForAgent(agentName: string): Promise<ToolDefinition[]> {
   const categories = AGENT_CATEGORIES[agentName];
-  if (!categories || categories.length === 0) return [];
+  const mapping = getDureCliMappingForAgent(agentName);
+  if (!mapping && (!categories || categories.length === 0)) return [];
 
-  const commands = await getCliCommandsForCategories(categories);
+  const commands = mapping
+    ? await getCliCommandsForTaxonomy({
+        ...mapping,
+        fallbackCategories: categories,
+      })
+    : await getCliCommandsForCategories(categories);
   return commands.map((command) => ({
     name: command.alias,
     label: command.alias,
-    description: `${command.description}\nCLI path: ${command.pathSegments.join(' ')}`,
+    description: [
+      command.description,
+      `CLI path: ${command.pathSegments.join(' ')}`,
+      command.domains.length ? `Domains: ${command.domains.join(', ')}` : '',
+      command.tags.length ? `Tags: ${command.tags.join(', ')}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n'),
     parameters: Type.Unsafe(command.parameters as TSchema),
     async execute(_toolCallId: string, toolParams: Record<string, unknown>) {
       return executeTool(command, toolParams);

@@ -297,6 +297,41 @@ export async function getCliCommandsForCategories(categories: string[]): Promise
   );
 }
 
+function intersects(values: string[], filters: Set<string>): boolean {
+  return values.some((value) => filters.has(value));
+}
+
+export async function getCliCommandsForTaxonomy(filters: {
+  domains: string[];
+  tags: string[];
+  fallbackCategories?: string[];
+}): Promise<CliCommandSpec[]> {
+  const domainFilters = new Set(filters.domains);
+  const tagFilters = new Set(filters.tags);
+  const all = await Promise.all([listCliCommands('openapi'), listCliCommands('ta')]);
+  const listed = all.flat();
+  const seen = new Set<string>();
+  const matched = listed.filter((command) => {
+    if (!command.hasExecutor) return false;
+    if (!intersects(command.domains, domainFilters) && !intersects(command.tags, tagFilters)) {
+      return false;
+    }
+
+    const key = `${command.app}:${command.pathSegments.join('/')}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  if (matched.length === 0 && filters.fallbackCategories?.length) {
+    return getCliCommandsForCategories(filters.fallbackCategories);
+  }
+
+  return Promise.all(
+    matched.map((command) => describeCliCommand(command.app, command.pathSegments)),
+  );
+}
+
 function splitParams(
   schema: JsonSchema,
   params: Record<string, unknown>,
