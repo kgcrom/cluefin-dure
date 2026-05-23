@@ -84,7 +84,7 @@
     {
       "id": "phase-3",
       "title": "Extension and prompt responsibility split",
-      "status": "pending",
+      "status": "completed",
       "scope": [
         ".pi/extensions/dure-workflow-tools.ts",
         ".pi/prompts/*.md",
@@ -94,17 +94,17 @@
         {
           "id": "phase-3-task-1",
           "title": "Move workflow tool registration to dure-workflow-tools extension",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "phase-3-task-2",
           "title": "Move slash UX to prompt templates",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "phase-3-task-3",
           "title": "Add extension and prompt smoke tests",
-          "status": "pending"
+          "status": "completed"
         }
       ],
       "verification": [
