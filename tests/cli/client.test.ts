@@ -138,6 +138,11 @@ describe('cli client', () => {
             parameters: { type: 'object', properties: { stock_code: { type: 'string' } }, required: ['stock_code'] },
             returns: { type: 'object' },
             has_executor: true,
+            domains: ['quote'],
+            tags: ['current-price'],
+            use_cases: ['Use for latest stock state.'],
+            examples: [{ description: 'Samsung current price.' }],
+            agent_notes: 'Requires stock code.',
           },
         ],
       }),
@@ -155,6 +160,11 @@ describe('cli client', () => {
           parameters: { type: 'object', properties: { stock_code: { type: 'string' } }, required: ['stock_code'] },
           returns: { type: 'object' },
           has_executor: true,
+          domains: ['quote'],
+          tags: ['current-price'],
+          use_cases: ['Use for latest stock state.'],
+          examples: [{ description: 'Samsung current price.' }],
+          agent_notes: 'Requires stock code.',
         },
       }),
     });
@@ -162,9 +172,50 @@ describe('cli client', () => {
     const commands = await listCliCommands('openapi');
     expect(commands).toHaveLength(1);
     expect(commands[0]?.qualifiedName).toBe('kis.stock.current-price');
+    expect(commands[0]).toMatchObject({
+      domains: ['quote'],
+      tags: ['current-price'],
+      useCases: ['Use for latest stock state.'],
+      examples: [{ description: 'Samsung current price.' }],
+      agentNotes: 'Requires stock code.',
+    });
 
     const command = await getCliCommandByName('kis_stock_current_price');
     expect(command?.alias).toBe('kis_stock_current_price');
+    expect(command?.domains).toEqual(['quote']);
+  });
+
+  it('taxonomy metadata가 없는 기존 discovery 응답도 빈 metadata로 정규화한다', async () => {
+    const root = makeWorkspace();
+    process.env.CLUEFIN_CLI_CWD = root;
+
+    queueProcess({
+      stdout: JSON.stringify({
+        commands: [
+          {
+            broker: 'kis',
+            category: 'stock',
+            name: 'current-price',
+            qualified_name: 'kis.stock.current-price',
+            path_segments: ['kis', 'stock', 'current-price'],
+            description: 'Get current price.',
+            parameters: { type: 'object', properties: {} },
+            returns: { type: 'object' },
+            has_executor: true,
+          },
+        ],
+      }),
+    });
+
+    const commands = await listCliCommands('openapi');
+
+    expect(commands[0]).toMatchObject({
+      domains: [],
+      tags: [],
+      useCases: [],
+      examples: [],
+      agentNotes: null,
+    });
   });
 
   it('카테고리별 discovery는 describe를 통해 상세 스키마를 가져온다', async () => {
@@ -247,6 +298,11 @@ describe('cli client', () => {
         pathSegments: ['ta', 'sma'],
         description: 'Simple Moving Average.',
         hasExecutor: true,
+        domains: [],
+        tags: [],
+        useCases: [],
+        examples: [],
+        agentNotes: null,
         alias: 'ta_sma',
         parameters: {
           type: 'object',

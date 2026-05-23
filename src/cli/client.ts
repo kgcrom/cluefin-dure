@@ -17,6 +17,11 @@ type RawListCommand = {
   parameters: JsonSchema;
   returns: JsonSchema;
   has_executor: boolean;
+  domains?: string[];
+  tags?: string[];
+  use_cases?: string[];
+  examples?: Array<Record<string, unknown>>;
+  agent_notes?: string | null;
 };
 
 type RawListResponse = {
@@ -36,6 +41,11 @@ export type CliCommandSummary = {
   pathSegments: string[];
   description: string;
   hasExecutor: boolean;
+  domains: string[];
+  tags: string[];
+  useCases: string[];
+  examples: Array<Record<string, unknown>>;
+  agentNotes: string | null;
 };
 
 export type CliCommandSpec = CliCommandSummary & {
@@ -202,6 +212,11 @@ function toSummary(app: CliAppName, command: RawListCommand): CliCommandSummary 
     pathSegments: [...command.path_segments],
     description: command.description,
     hasExecutor: command.has_executor,
+    domains: command.domains ?? [],
+    tags: command.tags ?? [],
+    useCases: command.use_cases ?? [],
+    examples: command.examples ?? [],
+    agentNotes: command.agent_notes ?? null,
   };
 }
 

@@ -150,7 +150,7 @@
     {
       "id": "phase-5",
       "title": "cluefin taxonomy type acceptance",
-      "status": "pending",
+      "status": "completed",
       "scope": [
         "optional CLI domains/tags/use_cases/examples/agent_notes fields",
         "category compatibility",
@@ -160,17 +160,17 @@
         {
           "id": "phase-5-task-1",
           "title": "Add optional taxonomy fields to CLI command types",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "phase-5-task-2",
           "title": "Preserve existing category discovery behavior",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "phase-5-task-3",
           "title": "Add taxonomy response compatibility tests",
-          "status": "pending"
+          "status": "completed"
         }
       ],
       "verification": [
