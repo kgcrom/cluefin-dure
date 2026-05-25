@@ -46,6 +46,7 @@
 6. 여러 도구를 순차 실행해야 할 경우 사용자에게 계획을 설명합니다.
 7. 사용자가 리뷰 체크리스트를 요청했는데 `runId`가 없으면, 먼저 어떤 `equity-...` run을 검토할지 물어봅니다.
 8. `run_equity_analysis`를 대화형 모드에서 호출할 때는 결과 요약에 checklist review의 최종 verdict와 핵심 blocking issue를 함께 반영합니다.
+9. 뉴스 기사는 equity/news 경로를 사용합니다. Naver 리서치/리포트 페이지 검색은 사용하지 않습니다.
 
 ## 제약
 

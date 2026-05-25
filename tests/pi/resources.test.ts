@@ -42,6 +42,23 @@ describe('Pi project resources', () => {
     expect(pi.registerCommand).not.toHaveBeenCalled();
   });
 
+  it('browser extension registers only browser manual tools', async () => {
+    const extension = await import('../../.pi/extensions/dure-browser/index.ts');
+    const pi = {
+      exec: vi.fn(),
+      registerTool: vi.fn(),
+    };
+
+    extension.default(pi);
+
+    const toolNames = pi.registerTool.mock.calls.map(([tool]) => tool.name);
+    expect(toolNames).toEqual([
+      'browser_doctor',
+      'browser_news_search',
+      'browser_capture_evidence',
+    ]);
+  });
+
   it('slash UX is represented as project prompt templates', () => {
     const prompts = ['equity', 'screen', 'strategy', 'scenario', 'review'];
 
@@ -58,7 +75,7 @@ describe('Pi project resources', () => {
   });
 
   it('initial skills follow Pi skill naming and description rules', () => {
-    const skills = ['dure-investing-workflows', 'cluefin-data-discovery'];
+    const skills = ['dure-investing-workflows', 'cluefin-data-discovery', 'dure-browser'];
 
     for (const skill of skills) {
       const path = `.pi/skills/${skill}/SKILL.md`;
@@ -70,5 +87,15 @@ describe('Pi project resources', () => {
       expect(frontmatter.description.length).toBeGreaterThan(20);
       expect(frontmatter.description.length).toBeLessThanOrEqual(1024);
     }
+  });
+
+  it('dure browser skill documents browser news boundaries', () => {
+    const content = readProjectFile('.pi/skills/dure-browser/SKILL.md');
+
+    expect(content).toContain('browser_news_search');
+    expect(content).toContain('https://stock.naver.com/news');
+    expect(content).toContain('browser_capture_evidence');
+    expect(content).not.toContain('browser_research_search');
+    expect(content).not.toContain('pdf_analyze');
   });
 });
