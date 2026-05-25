@@ -43,5 +43,18 @@ export const NewsAnalysisSchema = Type.Object({
   sentimentSummary: Type.String(),
   catalysts: Type.Array(Type.String()),
   risks: Type.Array(Type.String()),
+  sources: Type.Optional(
+    Type.Array(
+      Type.Object({
+        title: Type.String(),
+        url: Type.String(),
+        source: Type.Optional(Type.String()),
+        publisher: Type.Optional(Type.String()),
+        publishedAt: Type.Optional(Type.String()),
+        topic: Type.Optional(Type.String()),
+        sourceUrl: Type.Optional(Type.String()),
+      }),
+    ),
+  ),
 });
 export type NewsAnalysis = Static<typeof NewsAnalysisSchema>;

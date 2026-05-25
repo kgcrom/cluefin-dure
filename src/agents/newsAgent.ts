@@ -5,6 +5,7 @@ import { createPiSession } from '../runtime/createPiSession.js';
 import type { EventRecorder } from '../runtime/eventRecorder.js';
 import type { NewsAnalysis } from '../schemas/analysis.js';
 import type { ScenarioDefinition } from '../schemas/scenario.js';
+import { browserNewsSearchTool } from '../tools/browserNewsTool.js';
 import { getMemoryTools } from '../tools/memoryTools.js';
 import { newsTool } from '../tools/newsTool.js';
 import { buildSessionLabel, extractJsonWithRetry, loadPrompt } from './_utils.js';
@@ -30,7 +31,12 @@ export async function runNewsAgent(
     agentName: 'news',
     sessionLabel: label,
     systemPrompt: prompt,
-    customTools: [newsTool as unknown as ToolDefinition, ...rpcTools, ...getMemoryTools('news')],
+    customTools: [
+      newsTool as unknown as ToolDefinition,
+      browserNewsSearchTool as unknown as ToolDefinition,
+      ...rpcTools,
+      ...getMemoryTools('news'),
+    ],
     eventRecorder: recorder,
     onUpdate,
   });

@@ -103,7 +103,7 @@ describe('workflowTools', () => {
 
     await expect(
       scenarioAnalysisTool.execute(
-        'tool-4',
+        'tool-5',
         { scenario: 'rate cut', tickers: ['005930'] },
         undefined,
         undefined,

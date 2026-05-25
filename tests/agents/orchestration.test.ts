@@ -104,8 +104,9 @@ describe('agent orchestration', () => {
     );
 
     expect(result).toMatchObject({ ticker: '000660' });
-    expect(sessions[0]?.options.customTools?.map((tool) => tool.name).slice(0, 4)).toEqual([
+    expect(sessions[0]?.options.customTools?.map((tool) => tool.name).slice(0, 5)).toEqual([
       'news_search',
+      'browser_news_search',
       'rpc_lookup',
       'memory_read',
       'memory_search',
