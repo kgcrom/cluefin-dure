@@ -5,17 +5,17 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/main.js chat",
-    "chat": "tsx --env-file=.env src/main.ts chat",
+    "start": "npm run chat",
+    "chat": "node --env-file=.env ./node_modules/@earendil-works/pi-coding-agent/dist/cli.js",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:coverage": "vitest run --config ./vitest.config.ts --coverage",
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@earendil-works/pi-coding-agent": "0.75.5",
+    "@earendil-works/pi-coding-agent": "0.78.1",
     "@sinclair/typebox": "0.34.49"
   },
   "devDependencies": {
