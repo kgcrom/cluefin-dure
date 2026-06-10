@@ -1,12 +1,12 @@
-import { runOpenApiCli } from "../cli.js";
+import { runOpenApiCli } from '../cli.js';
 
 type Signal = AbortSignal | undefined;
 
 export function lookupCorpCodes(signal?: Signal) {
   return runOpenApiCli(
     {
-      broker: "dart",
-      name: "corp-code-lookup",
+      broker: 'dart',
+      name: 'corp-code-lookup',
     },
     signal,
   );
@@ -15,8 +15,8 @@ export function lookupCorpCodes(signal?: Signal) {
 export function getCompanyOverview(params: { corpCode: string }, signal?: Signal) {
   return runOpenApiCli(
     {
-      broker: "dart",
-      name: "company-overview",
+      broker: 'dart',
+      name: 'company-overview',
       params: {
         corp_code: params.corpCode,
       },
@@ -25,20 +25,23 @@ export function getCompanyOverview(params: { corpCode: string }, signal?: Signal
   );
 }
 
-export function searchDisclosures(params: {
-  corpCode?: string;
-  beginDate?: string;
-  endDate?: string;
-  lastReportOnly?: "Y" | "N";
-  disclosureType?: "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J";
-  corpClass?: "Y" | "K" | "N" | "E";
-  pageNo?: number;
-  pageCount?: number;
-}, signal?: Signal) {
+export function searchDisclosures(
+  params: {
+    corpCode?: string;
+    beginDate?: string;
+    endDate?: string;
+    lastReportOnly?: 'Y' | 'N';
+    disclosureType?: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J';
+    corpClass?: 'Y' | 'K' | 'N' | 'E';
+    pageNo?: number;
+    pageCount?: number;
+  },
+  signal?: Signal,
+) {
   return runOpenApiCli(
     {
-      broker: "dart",
-      name: "disclosure-search",
+      broker: 'dart',
+      name: 'disclosure-search',
       params: {
         corp_code: params.corpCode,
         bgn_de: params.beginDate,
