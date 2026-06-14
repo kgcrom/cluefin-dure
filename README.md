@@ -2,36 +2,55 @@
 
 ![Dure Logo](docs/assets/dure_logo.png)
 
-Dure는 투자 리서치 워크플로우를 여러 AI 에이전트로 오케스트레이션하는 CLI 워크벤치입니다.
-한 종목 분석부터 스크리닝, 전략 리서치, 거시 시나리오 분석까지 하나의 진입점에서 실행하고, 실행 아티팩트를 남깁니다.
+Dure는 [Pi coding agent](https://www.npmjs.com/package/@earendil-works/pi-coding-agent) 위에서 동작하는 투자 리서치 워크벤치입니다.
+별도의 CLI를 만들지 않고, Pi의 project-local resource(`.pi/`)로 시장 데이터 도구와 분석 워크플로우를 구성합니다.
+시장과 종목을 입력하면 데이터 수집부터 기본적/기술적/뉴스/매크로 분석, 데이터 점검, 포트폴리오 적합성, bull/bear 의견, 최종 판단까지 하나의 진입점에서 실행합니다.
 
 ## What Dure Does
 
-Dure는 요청 유형에 따라 적절한 에이전트 조합을 실행합니다.
+Dure는 세 가지 Pi 리소스로 구성됩니다.
 
-- `chat`: 자연어로 요청하면 router가 적절한 워크플로우 도구로 연결합니다.
-- `equity`: 단일 종목에 대해 펀더멘털, 뉴스, 전략 논리, critic 검토를 종합합니다.
-- `screen`: 시장과 스타일 기준으로 후보 종목을 추리고 상위 종목을 분석합니다.
-- `strategy`: 투자 가설을 전략 규칙으로 만들고 critic 루프로 다듬습니다.
-- `scenario`: 거시 이벤트나 가정이 종목과 섹터에 미칠 영향을 정리합니다.
+- **Extension** (`.pi/extensions/market-data/`): 한국투자증권(KIS)과 DART 데이터를 가져오는 도구를 Pi runtime에 등록합니다. 도구는 cluefin 프로젝트의 Python CLI(`cluefin-openapi-cli`)를 `uv run`으로 호출합니다.
+- **Prompt** (`.pi/prompts/market-review.md`): `/market-review` 진입점 프롬프트로, 시장/종목 입력부터 최종 판단까지의 진행 순서를 지시합니다.
+- **Skills** (`.pi/skills/*`): 수집된 데이터를 역할별 관점으로 해석하는 분석 스킬 모음입니다.
 
-대표적인 에이전트 구성은 다음과 같습니다.
+### Analysis skills
 
-- Universe: 유니버스 구성, 스크리닝 후보 수집
-- Fundamental: 재무제표, 밸류에이션, 지표 분석
-- News: 뉴스 이벤트와 감성 요약
-- Strategy: 투자 전략과 실행 규칙 설계
-- Critic: 과적합, 논리 비약, 데이터 한계 검토
-- Scenario: 시나리오 영향 분석
-- Review Checklist: 기존 종목 분석 결과 재검토
-- Router: 대화형 요청 라우팅
+| Skill | 역할 |
+| --- | --- |
+| `fundamental-analysis` | 재무제표, 밸류에이션, 성장성, 수익성, 현금흐름, 부채 구조 |
+| `technical-analysis` | 이동평균, 거래량, RSI, MACD, 지지/저항, 추세 전환 |
+| `news-analysis` | 뉴스, 공시, 실적, 산업 이벤트를 호재/악재/중립으로 분류 |
+| `macro-analysis` | 환율, 미국/한국 금리, 미국채/국고채, 유동성 환경 |
+| `data-sanity-check` | 기준일, 누락, 충돌, 종목 식별, 가격 조정 여부 점검 |
+| `portfolio-fit` | 기존 포트폴리오와 신규/기존 종목의 적합성 |
+| `scenario-planner` | bull / base / bear 시나리오와 조건, 예상 가격 범위 |
+| `risk-position-sizing` | 진입가, 손절가, 목표가, 손익비, 포지션 크기 |
+| `bull-analyst` | 동일 데이터에서 긍정 투자 논리 구성 |
+| `bear-analyst` | 동일 데이터에서 부정 투자 논리 구성 |
+| `final-decision` | buy/hold/sell/watch, 기준선, 무효화 조건, 추적 지표 |
+| `investment-journal` | 투자 판단과 사후 복기를 `.pi/investments/journal/`에 기록 |
+
+### Market data tools
+
+`market-data` extension이 등록하는 도구는 다음과 같습니다.
+
+- `market_data_health`: cluefin CLI 실행 가능 여부와 KIS/DART 키 설정 여부 점검 (키 값은 노출하지 않음)
+- `kis_stock_current_price`: 현재가
+- `kis_price_history`: OHLCV 가격 이력 (기술적 분석용)
+- `kis_financials`: 재무제표 및 재무비율 번들
+- `kis_financials_windowed`: 최근 5개년 연간(YYYY12) 우선, 부족하면 최근 12개 기간으로 fallback
+- `kis_market_announcement`: KIS 시장 뉴스/공시 제목
+- `dart_corp_code_lookup`: DART 기업 고유번호 목록 다운로드
+- `dart_company_overview`: 8자리 corp code로 기업 개요 조회
+- `dart_disclosure_search`: corp code, 기간, 공시 유형 기준 공시 검색
 
 ## Quick Start
 
 ### 1. Clone dependencies
 
 이 저장소는 단독으로 완결되지 않습니다.
-시장 데이터와 보조 도구 실행을 위해 `cluefin` 저장소가 함께 필요합니다.
+시장 데이터 도구는 `cluefin` 저장소의 Python CLI(`cluefin-openapi-cli`)를 `uv run`으로 호출하므로, `cluefin`과 [`uv`](https://docs.astral.sh/uv/)가 함께 필요합니다.
 
 ```bash
 git clone https://github.com/kgcrom/cluefin-dure
@@ -42,27 +61,21 @@ npm install
 cp .env.example .env
 ```
 
-기본적으로 Dure는 `../cluefin`을 외부 워크스페이스 경로로 가정합니다.
-다른 위치에 clone했다면 `.env`에 `CLUEFIN_CLI_CWD`를 명시해야 합니다.
+`market-data` extension은 기본적으로 `~/workspace/cluefin`을 cluefin CLI 실행 경로로 가정합니다.
+다른 위치에 clone했다면 `.env`에 `CLUEFIN_OPENAPI_CWD`로 경로를 지정합니다.
 
 ```bash
-CLUEFIN_CLI_CWD=../cluefin
+CLUEFIN_OPENAPI_CWD=/path/to/cluefin
 ```
 
 ### 2. Fill environment variables
 
-`.env`에는 최소한 아래 데이터 소스 설정이 필요합니다.
+`.env`에는 데이터 소스 키가 필요합니다.
 
-- `KIWOOM_APP_KEY`
-- `KIWOOM_SECRET_KEY`
-- `KIWOOM_ENV`
+- `KIWOOM_APP_KEY`, `KIWOOM_SECRET_KEY`, `KIWOOM_ENV`
+- `KIS_APP_KEY`, `KIS_SECRET_KEY`, `KIS_ENV`
 - `DART_AUTH_KEY`
-- `KIS_APP_KEY`
-- `KIS_SECRET_KEY`
-- `KIS_ENV`
-- `CLUEFIN_CLI_CWD`
-
-전체 목록과 모델 설정은 [docs/configuration.md](docs/configuration.md)를 참고하세요.
+- `CLUEFIN_OPENAPI_CWD` (cluefin이 `~/workspace/cluefin`이 아닐 때만)
 
 ### 3. Run chat
 
@@ -70,126 +83,78 @@ CLUEFIN_CLI_CWD=../cluefin
 npm run chat
 ```
 
-대화형 모드에서는 Pi prompt template을 사용합니다.
+`npm run chat`은 Pi coding agent CLI를 `.env`와 함께 실행합니다.
+대화형 모드에서 `/market-review` 프롬프트로 투자 검토를 시작합니다.
 
 ```text
-/equity 005930
-/screen KR value
-/strategy quality dividend growth
-/scenario 연준이 50bp 긴급 인하하면 반도체 섹터 어떻게 되나?
-/review equity-1712345678901
-```
-
-개발 중 router를 거치지 않고 workflow를 직접 확인해야 할 때는 `src/main.ts`의 내부 명령을 직접 실행할 수 있습니다.
-
-```bash
-npx tsx --env-file=.env src/main.ts equity 005930
+/market-review KOSPI 005930
+/market-review KOSDAQ 247540
 ```
 
 ## How It Works
 
-CLI 진입점은 [`src/main.ts`](src/main.ts)입니다.
-직접 CLI 워크플로우 명령은 워크플로우를 실행한 뒤 터미널에 요약을 출력합니다.
+`/market-review`는 다음 순서를 지시합니다.
 
-주요 흐름은 다음과 같습니다.
+1. 시장과 종목 식별
+2. 기본적 분석 데이터 수집 (가능하면 최근 5개년 연간, 부족하면 최근 12개 기간)
+3. 기술적 분석 데이터 수집 (가능하면 수정주가 일봉 2년치, 한도 초과 시 구간 분할 후 병합)
+4. 최근 뉴스 수집
+5. 환율, 미국/국내 금리, 채권 등 매크로 데이터 수집
+6. `data-sanity-check`로 기준일, 누락, 충돌, 사용 가능 여부 점검
+7. `portfolio-fit`로 기존 포트폴리오 적합성 확인
+8. `bull-analyst` 긍정 의견
+9. `bear-analyst` 부정 의견
+10. `final-decision`으로 buy/hold/sell/watch, 기준선, 손절선, 확인 조건 제시
+11. 필요 시 `investment-journal` 형식으로 기록 제안
 
-- `equity`: Universe 또는 단일 종목 입력 -> Fundamental + News -> Strategy -> Critic 반복
-- `screen`: Universe -> 상위 종목 Fundamental 분석
-- `strategy`: Strategy 초안 -> Critic 반복
-- `scenario`: Scenario 정의 -> 영향 분석 -> 종합 평가
-- `chat`: Router가 `equity`, `screen`, `strategy`, `scenario`, `review_checklist` 도구 중 하나를 호출
+주요 가드레일:
 
-대화형 모드의 종목 분석은 equity 워크플로우 뒤 checklist review까지 자동으로 이어집니다.
+- 데이터가 없으면 없다고 명시하며, 투자 조언이 아닌 의사결정 보조 리포트로 작성합니다.
+- `data-sanity-check` 결과가 blocked이면 확정적인 buy/sell 의견을 내지 않습니다.
+- KIS API 요청은 동시에 최대 2개로 제한하고, 토큰/호출 제한 오류 시 확정 판단을 미룹니다.
+- 사용자의 명시적 요청 없이 `.pi/investments/`의 보유 수량, 평균단가, 현금 잔고를 수정하지 않습니다.
 
-## Pi Project Resources
+## Investments Data
 
-대화형 모드는 Pi의 project-local resource discovery를 사용합니다.
+`portfolio-fit`과 `investment-journal` 스킬은 사용자별 로컬 데이터를 읽고 씁니다.
 
-- `.pi/extensions/dure-workflow-tools.ts`: Dure workflow tools를 Pi runtime에 등록합니다.
-- `.pi/prompts/*.md`: `/equity`, `/screen`, `/strategy`, `/scenario`, `/review` prompt template을 제공합니다.
-- `.pi/skills/dure-investing-workflows/`: Dure workflow tool 선택 기준을 제공합니다.
-- `.pi/skills/cluefin-data-discovery/`: cluefin CLI discovery와 fallback 호출 기준을 제공합니다.
+- `.pi/investments/portfolio.yaml`, `watchlist.yaml`, `transactions.csv`: 보유/관심 종목과 거래 기록
+- `.pi/investments/journal/`: 투자 판단과 사후 복기 기록
 
-내부 workflow agent 세션은 prompt 오염과 tool 중복을 막기 위해 project-local skills/prompt templates를 자동 주입하지 않고, 코드에서 명시한 system prompt와 tool allowlist를 사용합니다.
-
-cluefin CLI fallback은 Dure workflow tool만으로 부족한 데이터가 있을 때 사용합니다. Dure의 `equity-research`, `market-screening`, `strategy-research`, `scenario-analysis`, `review-checklist` 도메인은 cluefin CLI의 `domain`/`tag` taxonomy로 매핑되어 command discovery를 좁힙니다.
-
-## Outputs
-
-각 실행 결과는 `data/runs/<runId>/` 아래에 저장됩니다.
-
-- `events.json`: 실행 이벤트 로그
-- `<agent>/<artifact>.json`: 에이전트별 중간 산출물
-
-## GitHub Pages
-
-GitHub Pages는 `docs/` 디렉터리를 publish source로 두는 구성을 권장합니다.
-이 경우 공개할 정적 문서만 `docs/`에 두고, 로컬 실행 결과인 `data/runs/<runId>/`는
-커밋하지 않는 임시 산출물로 유지합니다.
-
-Pages 정리는 아래 기준으로 유지합니다.
-
-- 공개할 정적 문서만 `docs/`에 둡니다.
-- 실행 로그, 중간 artifact, 원본 run 디렉터리는 `data/runs/`에만 둡니다.
-- Pages에 노출할 새 문서는 `docs/` 아래의 명확한 경로와 README 링크를 함께 추가합니다.
-
-## Model Configuration
-
-기본 provider preset은 `openai-codex`입니다.
-에이전트별 모델 선택 우선순위는 아래와 같습니다.
-
-```text
-DURE_MODEL_{AGENT} > DURE_PROVIDER > 코드 기본값
-```
-
-예시:
-
-```bash
-# 전체 provider 변경
-DURE_PROVIDER=openai-codex npm run chat
-
-# critic만 override
-DURE_PROVIDER=openai-codex \
-DURE_MODEL_CRITIC=anthropic:claude-opus-4-6 \
-npm run chat
-```
-
-자세한 preset과 agent별 기본 모델은 [docs/configuration.md](docs/configuration.md)에 정리되어 있습니다.
+이 데이터는 개인 자료이므로 커밋하지 않습니다.
 
 ## Repository Layout
 
 ```text
-src/
-├── agents/        # 에이전트 정의
-├── workflow/      # 워크플로우 오케스트레이션
-├── tools/         # 시장 데이터 및 워크플로우 도구
-├── schemas/       # 분석 결과 스키마
-├── memory/        # 파일 기반 메모리 저장소
-├── runtime/       # 세션/이벤트/아티팩트 관리
-├── report/        # 리포트 렌더링
-├── interactive/   # 대화형 모드
-├── cli/           # cluefin CLI 브리지
-├── config.ts      # 모델 설정
-└── main.ts        # CLI 엔트리포인트
-research/
-└── prompts/       # 공통 및 역할별 프롬프트
+.pi/
+├── extensions/
+│   └── market-data/      # KIS, DART 데이터 도구 — cluefin CLI(uv) 브리지
+│       ├── index.ts      # Pi tool 등록
+│       ├── cli.ts        # cluefin-openapi-cli 실행
+│       ├── providers/    # kis.ts, dart.ts
+│       └── types.ts
+├── prompts/
+│   └── market-review.md  # /market-review 진입점 프롬프트
+└── skills/               # 분석 역할 스킬 (fundamental, technical, news, macro,
+                          # data-sanity-check, portfolio-fit, scenario-planner,
+                          # risk-position-sizing, bull/bear-analyst,
+                          # final-decision, investment-journal)
 docs/
-├── architecture.md
-└── configuration.md
+├── TODO.md               # 남아 있는 작업 메모
+└── assets/               # 로고 등 정적 리소스
 ```
-
-## Related Docs
-
-- [docs/configuration.md](docs/configuration.md): `.env`, provider preset, agent별 모델 override
-- [docs/architecture.md](docs/architecture.md): 워크플로우, 에이전트 구성, 메모리, 실행 산출물
-- [docs/TODO.md](docs/TODO.md): 남아 있는 작업 메모
 
 ## Development
 
 작업을 마친 뒤 아래 검증을 실행합니다.
 
 ```bash
-npm test
-npm run lint
-npm run format
+npm test       # vitest (--passWithNoTests)
+npm run lint   # biome check
+npm run format # biome format --write
+npm run build  # tsc
 ```
+
+## Related Docs
+
+- [docs/TODO.md](docs/TODO.md): `investment-decision` extension 도입 검토 등 남아 있는 작업 메모
