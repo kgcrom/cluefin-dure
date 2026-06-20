@@ -7,17 +7,28 @@ description: 시장과 기업명/종목코드를 받아 데이터 수집부터 b
 수집하고, 분석가 스킬을 호출해 검토 리포트를 만든다. 투자 조언이 아니라 의사결정 보조
 리포트를 작성한다.
 
-## 데이터 도구 (MCP: market-data)
+## 데이터 수집 (cluefin CLI, bash)
 
-- `mcp__market-data__market_data_health` — cluefin CLI/키 상태 점검
-- `mcp__market-data__kis_stock_current_price` — 현재가
-- `mcp__market-data__kis_price_history` — 일/주/월/년봉 (기술적 분석용)
-- `mcp__market-data__kis_financials` — 재무제표/비율 번들
-- `mcp__market-data__kis_financials_windowed` — 연간 5개년 우선, 부족 시 최근 12기간
-- `mcp__market-data__kis_market_announcement` — 시장 공시/뉴스 제목
-- `mcp__market-data__dart_corp_code_lookup` — DART 고유번호 조회
-- `mcp__market-data__dart_company_overview` — DART 기업 개요
-- `mcp__market-data__dart_disclosure_search` — DART 공시 검색
+모든 시장 데이터는 cluefin CLI를 bash(`Bash` 도구)로 직접 호출해 얻는다.
+
+- 작업 디렉터리: `$CLUEFIN_OPENAPI_CWD`(기본 `~/workspace/cluefin`)에서 실행한다.
+- 키는 dure 저장소 `.env`(`DART_AUTH_KEY`, `KIS_APP_KEY`/`KIS_SECRET_KEY`/`KIS_ENV`)를 로드한다.
+  예: `set -a && . /path/to/cluefin-dure/.env && set +a` 후 cluefin 디렉터리에서 실행.
+- 형식: `uv run cluefin-openapi-cli <broker> [<category>] <name> --params-json '<json>' --json`
+
+| 용도 | 명령 |
+| --- | --- |
+| 상태 점검 | `uv run cluefin-openapi-cli --help --json` |
+| 현재가 | `uv run cluefin-openapi-cli kis stock current-price --params-json '{"stock_code":"005930"}' --json` |
+| 가격이력 | `uv run cluefin-openapi-cli kis chart period --params-json '{...}' --json` (>120일은 날짜 구간을 나눠 여러 번 호출 후 병합) |
+| 재무(번들) | `uv run cluefin-openapi-cli kis financial {income-statement,balance-sheet,ratio,growth,profitability,stability}` 6종을 각각 호출해 합친다 |
+| windowed 재무 | 연간(`divClsCode=0`) 우선 조회 → 5개년 부족 시 분기/반기(`divClsCode=1`) 최근 12기간으로 보완 |
+| 시장 공시 | `uv run cluefin-openapi-cli kis market announcement --params-json '{...}' --json` |
+| DART 기업코드 | `uv run cluefin-openapi-cli dart corp-code-lookup --json` |
+| DART 개요 | `uv run cluefin-openapi-cli dart company-overview --params-json '{...}' --json` |
+| DART 공시검색 | `uv run cluefin-openapi-cli dart disclosure-search --params-json '{...}' --json` |
+
+정확한 서브커맨드/파라미터명은 `--help` 또는 `.pi/extensions/market-data/providers/{kis,dart}.ts`를 참고한다.
 
 ## 분석가 스킬
 
@@ -43,11 +54,11 @@ description: 시장과 기업명/종목코드를 받아 데이터 수집부터 b
 ## 데이터 수집 기준
 
 - 기술적 분석 가격 데이터는 가능하면 **수정주가 기준 일봉 2년치**를 사용한다.
-- KIS 일봉 응답 한도로 2년치가 한 번에 내려오지 않으면 **날짜 구간을 분할 조회한 뒤 병합**한다.
-  (`kis_price_history`는 일봉 장기 구간을 내부에서 분할·병합한다.)
+- KIS 일봉 응답 한도(약 120일)로 2년치가 한 번에 내려오지 않으면 **날짜 구간을 분할 조회한 뒤 병합**한다.
+  (`kis chart period`를 구간별로 여러 번 호출하고 날짜 기준으로 합친다.)
 - 기본적 분석은 가능하면 **최근 5개년 연간 데이터(YYYY12, 사업보고서 대응)** 를 우선 사용한다.
 - 연간 데이터가 5개년보다 부족하면 **반기/분기/사업 기준 최근 12개 기간**으로 보완한다.
-- 가능하면 `kis_financials_windowed` 결과를 우선 사용하고, 최종 리포트에 **재무 데이터 기준(annual-5y 또는 period-12)** 과 **사용 기간 목록**을 명시한다.
+- 가능하면 연간(`divClsCode=0`) 우선의 windowed 방식을 사용하고, 최종 리포트에 **재무 데이터 기준(annual-5y 또는 period-12)** 과 **사용 기간 목록**을 명시한다.
 
 ## 주의
 

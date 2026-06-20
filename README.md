@@ -9,16 +9,16 @@ Dure는 한국 시장 투자 리서치 워크벤치입니다.
 Dure는 **두 가지 에이전트 런타임**을 지원합니다.
 
 - **[Pi coding agent](https://www.npmjs.com/package/@earendil-works/pi-coding-agent)** — `.pi/` 리소스로 동작 (`npm run chat`)
-- **[Claude Code](https://docs.claude.com/en/docs/claude-code)** — `.claude/` 리소스 + `.mcp.json`으로 동작
+- **[Claude Code](https://docs.claude.com/en/docs/claude-code)** — `.claude/` 리소스로 동작
 
-두 런타임은 동일한 cluefin 기반 시장 데이터 계층(`.pi/extensions/market-data/`)을 공유합니다.
-도구를 등록하는 진입점만 런타임별로 다릅니다(Pi extension vs MCP server).
+Pi 런타임은 `.pi/extensions/market-data/`의 도구로 cluefin CLI를 호출하고,
+Claude Code 런타임은 `market-review` 에이전트가 cluefin CLI를 bash로 직접 호출합니다.
 
 ## What Dure Does
 
 | 구성 | Pi | Claude Code |
 | --- | --- | --- |
-| 도구 등록 | Extension `index.ts` (Pi runtime) | MCP server `mcp-server.ts` (`.mcp.json`) |
+| 데이터 수집 | Extension `index.ts` (Pi tool) | `market-review` 에이전트가 cluefin CLI를 bash로 직접 호출 |
 | 오케스트레이션 | Prompt `/market-review` | `market-review` 서브에이전트 (`.claude/agents/`) |
 | 분석 역할 | Skills `.pi/skills/*` | Skills `.claude/skills/*` |
 
@@ -43,19 +43,19 @@ Dure는 **두 가지 에이전트 런타임**을 지원합니다.
 | `final-decision` | buy/hold/sell/watch, 기준선, 무효화 조건, 추적 지표 |
 | `investment-journal` | 투자 판단과 사후 복기를 `investments/journal/`에 기록 |
 
-### Market data tools
+### Market data
 
-`market-data` 계층이 노출하는 도구는 다음과 같습니다. Claude Code에서는 `mcp__market-data__<tool>` 형태로 호출됩니다.
+KIS·DART 데이터는 cluefin CLI(`uv run cluefin-openapi-cli`)로 가져옵니다.
+Pi 런타임은 `.pi/extensions/market-data/`의 도구로, Claude Code 런타임은 `market-review`
+에이전트가 bash로 직접 호출합니다. 주요 조회 항목:
 
-- `market_data_health`: cluefin CLI 실행 가능 여부와 KIS/DART 키 설정 여부 점검 (키 값은 노출하지 않음)
-- `kis_stock_current_price`: 현재가
-- `kis_price_history`: OHLCV 가격 이력 (기술적 분석용)
-- `kis_financials`: 재무제표 및 재무비율 번들
-- `kis_financials_windowed`: 최근 5개년 연간(YYYY12) 우선, 부족하면 최근 12개 기간으로 fallback
-- `kis_market_announcement`: KIS 시장 뉴스/공시 제목
-- `dart_corp_code_lookup`: DART 기업 고유번호 목록 다운로드
-- `dart_company_overview`: 8자리 corp code로 기업 개요 조회
-- `dart_disclosure_search`: corp code, 기간, 공시 유형 기준 공시 검색
+- 현재가: `kis stock current-price`
+- 가격 이력(기술적 분석용): `kis chart period` (장기 구간은 분할 후 병합)
+- 재무제표/비율 번들: `kis financial {income-statement,balance-sheet,ratio,growth,profitability,stability}`
+- 시장 뉴스/공시 제목: `kis market announcement`
+- DART 기업 고유번호: `dart corp-code-lookup`
+- DART 기업 개요: `dart company-overview`
+- DART 공시 검색: `dart disclosure-search`
 
 ## Quick Start
 
@@ -107,14 +107,14 @@ npm run chat
 
 #### Claude Code
 
-MCP server는 컴파일된 JS(`dist/.pi/extensions/market-data/mcp-server.js`)를 실행하므로, 먼저 빌드한 뒤 저장소 안에서 Claude Code를 실행합니다.
+저장소 안에서 Claude Code를 실행하면 `.claude/`의 스킬과 `market-review` 서브에이전트가
+자동 등록됩니다. 시장 데이터는 에이전트가 cluefin CLI를 bash로 직접 호출하므로 별도 빌드는
+필요하지 않습니다.
 
 ```bash
-npm run build   # mcp-server.js 생성 (.mcp.json이 참조)
 claude          # 저장소 안에서 실행
 ```
 
-`.mcp.json`이 `market-data` MCP server를, `.claude/`가 스킬과 `market-review` 서브에이전트를 자동 등록합니다.
 `market-review` 에이전트에 시장/종목을 전달하면 동일한 검토 흐름이 실행됩니다.
 
 ```text
@@ -161,7 +161,6 @@ claude          # 저장소 안에서 실행
 ├── extensions/
 │   └── market-data/        # KIS, DART 데이터 도구 — cluefin CLI(uv) 브리지
 │       ├── index.ts        # Pi tool 등록 진입점
-│       ├── mcp-server.ts   # MCP stdio server 진입점 (Claude Code용)
 │       ├── cli.ts          # cluefin-openapi-cli 실행
 │       ├── providers/      # kis.ts, dart.ts (런타임 비의존)
 │       └── types.ts
@@ -172,7 +171,6 @@ claude          # 저장소 안에서 실행
 ├── agents/
 │   └── market-review.md    # market-review 서브에이전트 (Claude Code 오케스트레이터)
 └── skills/                 # 분석 역할 스킬 (Claude Code, .pi/skills와 동일)
-.mcp.json                   # market-data MCP server 등록 (Claude Code)
 docs/
 ├── TODO.md                 # 남아 있는 작업 메모
 └── assets/                 # 로고 등 정적 리소스
@@ -186,7 +184,7 @@ docs/
 npm test       # vitest (--passWithNoTests)
 npm run lint   # biome check
 npm run format # biome format --write
-npm run build  # tsc (mcp-server.js 등 dist/ 생성)
+npm run build  # tsc (Pi 확장 dist/ 생성)
 ```
 
 ## Related Docs

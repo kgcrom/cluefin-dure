@@ -2,23 +2,24 @@
 
 Dure (두레) is an agent configuration for Korean-market investment research.
 There is **no `src/`** — all code and config live under `.pi/` and `.claude/`.
-It runs on **two agent runtimes** that share the same cluefin-backed market-data
-layer (`.pi/extensions/market-data/`):
+It runs on **two agent runtimes**, both backed by the external cluefin CLI:
 
 - **Pi** — `npm run chat` launches `@earendil-works/pi-coding-agent` against the
   `.pi/` setup (extension `index.ts`, `/market-review` prompt, `.pi/skills/`).
-- **Claude Code** — `.mcp.json` registers the `market-data` MCP server (run
-  `claude` in-repo); analyst skills live in `.claude/skills/`, the orchestrator
-  in `.claude/agents/market-review.md`.
+  Tools call cluefin via `.pi/extensions/market-data/` (`cli.ts`/`providers/*`).
+- **Claude Code** — run `claude` in-repo; analyst skills live in `.claude/skills/`,
+  the orchestrator in `.claude/agents/market-review.md`. The agent calls the
+  cluefin CLI directly via bash (no MCP server, no build required).
 
-The two entrypoints differ only in tool registration: Pi extension (`index.ts`)
-vs MCP server (`mcp-server.ts`). `cli.ts`/`providers/*` are runtime-agnostic.
+So the runtimes differ in *how* they reach cluefin: Pi registers TS tools
+(`index.ts`), Claude Code shells out to `uv run cluefin-openapi-cli` from the
+`market-review` agent.
 
 ## Commands
 
 ```bash
 npm run chat          # launch the Pi agent (reads .env)
-npm run build         # tsc -> dist/ (compiles .pi/**/*.ts; required for the MCP server)
+npm run build         # tsc -> dist/ (compiles .pi/**/*.ts for the Pi runtime)
 npm test              # vitest run --passWithNoTests
 npm run test:coverage # vitest with v8 coverage
 npm run lint          # biome check .
@@ -26,17 +27,15 @@ npm run lint:fix      # biome check --write .
 npm run format        # biome format --write .
 ```
 
-The Claude Code MCP server runs compiled JS
-(`dist/.pi/extensions/market-data/mcp-server.js`), so `npm run build` must run
-before launching `claude`.
+`npm run build` is only needed for the Pi runtime. Claude Code needs no build —
+the `market-review` agent shells out to the cluefin CLI directly.
 
 ## Layout
 
 ```
 .pi/
-├── extensions/market-data/   # 9 tools (kis_*, dart_*, market_data_health)
+├── extensions/market-data/   # Pi tools (kis_*, dart_*, market_data_health)
 │   ├── index.ts              # Pi tool registration entrypoint
-│   ├── mcp-server.ts         # MCP stdio server entrypoint (Claude Code)
 │   ├── cli.ts                # bridge to external cluefin CLI
 │   └── providers/            # dart.ts, kis.ts (runtime-agnostic)
 ├── prompts/market-review.md  # /market-review prompt (Pi)
@@ -47,7 +46,6 @@ before launching `claude`.
 .claude/
 ├── agents/market-review.md   # market-review subagent (Claude Code orchestrator)
 └── skills/                   # same 12 analyst skills, ported as SKILL.md
-.mcp.json                     # registers the market-data MCP server (Claude Code)
 docs/                         # TODO.md + assets/ (GitHub Pages source)
 ```
 
@@ -65,7 +63,9 @@ cluefin-openapi-cli`). Required keys in `.env` (see `.env.example`):
 - **cluefin path env var:** code reads `CLUEFIN_OPENAPI_CWD`
   (`.pi/extensions/market-data/cli.ts:9`); default fallback is `~/workspace/cluefin`.
 - TS build targets `.pi/**/*.ts` only (`tsconfig.json` `include`); output goes to
-  `dist/`, so the MCP server lands at `dist/.pi/extensions/market-data/mcp-server.js`
-  (the path `.mcp.json` references).
-- The MCP server reuses `cli.ts`/`providers/*` unchanged and only replaces the Pi
-  entrypoint (`index.ts`) — keep tool behavior in sync between the two entrypoints.
+  `dist/` and is consumed only by the Pi runtime.
+- The Claude Code `market-review` agent (`.claude/agents/market-review.md`) holds
+  bash recipes for the cluefin CLI subcommands. `providers/kis.ts`/`dart.ts` are the
+  source of truth for subcommand/param mappings (esp. price-history chunking,
+  the 6-call financials bundle, and windowed-financials fallback) — keep the agent
+  recipes in sync with them.
