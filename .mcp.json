@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "market-data": {
+      "command": "node",
+      "args": [
+        "--env-file=.env",
+        "dist/.pi/extensions/market-data/mcp-server.js"
+      ]
+    }
+  }
+}
